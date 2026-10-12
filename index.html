@@ -1,0 +1,1241 @@
+<title>Rei da Faxina</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<style>
+/* Layout: sidebar + conteúdo no desktop, barra inferior no celular. Visual cartoon com contorno grosso e sombra dura. */
+:root{
+  --bg:#EDF2FB; --surface:#FFFFFF; --surface2:#F3F6FC; --fg:#1B2340; --muted:#566080; --line:#1B2340;
+  --yellow:#FFC93C; --blue:#2B63E8; --green:#17A06A; --orange:#F2761F; --red:#D93A40;
+  --yellow-s:#FFF0BD; --blue-s:#DCE7FF; --green-s:#D3F4E4; --orange-s:#FFE2CC; --red-s:#FFDEDF;
+  --on-blue:#FFFFFF; --on-yellow:#1B2340; --on-green:#FFFFFF; --on-red:#FFFFFF;
+  --font-d:'Fredoka',ui-rounded,system-ui,sans-serif; --font-b:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:18px; --sh:0 4px 0 var(--line);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11162A; --surface:#1C2445; --surface2:#242E58; --fg:#EEF1FF; --muted:#A9B2D6; --line:#050711;
+  --blue:#6B9BFF; --green:#38D39A; --orange:#FF9A55; --red:#FF6B70;
+  --yellow-s:#4A3C10; --blue-s:#26356E; --green-s:#17493C; --orange-s:#573418; --red-s:#5A2429;
+  --on-blue:#0B1230; --on-green:#07251B; --on-red:#2A0709; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11162A; --surface:#1C2445; --surface2:#242E58; --fg:#EEF1FF; --muted:#A9B2D6; --line:#050711;
+  --blue:#6B9BFF; --green:#38D39A; --orange:#FF9A55; --red:#FF6B70;
+  --yellow-s:#4A3C10; --blue-s:#26356E; --green-s:#17493C; --orange-s:#573418; --red-s:#5A2429;
+  --on-blue:#0B1230; --on-green:#07251B; --on-red:#2A0709; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font:600 15px/1.45 var(--font-b);padding-inline:16px}
+h1,h2,h3,h4{font-family:var(--font-d);font-weight:600;line-height:1.15;margin:0;text-wrap:balance}
+h1{font-size:28px}h2{font-size:22px}h3{font-size:18px}h4{font-size:15px}
+p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px;border-radius:8px}
+.app{display:grid;grid-template-columns:1fr;gap:16px;max-width:1180px;margin:0 auto;padding-block:14px 96px}
+.side{display:none}
+.main{min-width:0;display:flex;flex-direction:column;gap:16px}
+@media(min-width:900px){
+  body{padding-inline:24px}
+  .app{grid-template-columns:230px 1fr;padding-block:22px 40px;align-items:start}
+  .side{display:flex;flex-direction:column;gap:6px;position:sticky;top:env(safe-area-inset-top,0px);padding-top:4px}
+  .bottom{display:none!important}
+}
+.brand{font:700 24px var(--font-d);display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.logo{width:42px;height:42px;border-radius:14px;background:var(--yellow);border:3px solid var(--line);box-shadow:var(--sh);display:grid;place-items:center;font-size:22px}
+.nav{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:14px;border:3px solid transparent;background:none;cursor:pointer;font:600 16px var(--font-d);text-align:left;color:var(--fg)}
+.nav svg{width:22px;height:22px;flex:none}
+.nav:hover{background:var(--surface)}
+.nav[aria-current="page"]{background:var(--yellow);color:var(--on-yellow);border-color:var(--line);box-shadow:var(--sh)}
+.bottom{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:3px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:20}
+.bottom button{display:flex;flex-direction:column;align-items:center;gap:2px;border:0;background:none;padding:6px 2px;font:600 11px var(--font-d);color:var(--muted);cursor:pointer;border-radius:12px;min-height:48px}
+.bottom button svg{width:24px;height:24px}
+.bottom button[aria-current="page"]{color:var(--fg);background:var(--yellow-s)}
+.top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.top .t{min-width:0}
+.top small{color:var(--muted);font-weight:700;display:block}
+.me{display:flex;gap:8px;align-items:center}
+.card{background:var(--surface);border:3px solid var(--line);border-radius:var(--r);box-shadow:var(--sh);padding:16px;min-width:0}
+.card.flat{box-shadow:none}
+.card h3{margin-bottom:10px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.grid.stats{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}
+.grid.stats .card{padding:12px 14px}
+.grid.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.sp{justify-content:space-between}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.grow{flex:1;min-width:0}
+.muted{color:var(--muted)}
+.sm{font-size:13px}
+.big{font:700 34px/1 var(--font-d);font-variant-numeric:tabular-nums}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat .lbl{font-size:13px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 16px;border-radius:14px;border:3px solid var(--line);background:var(--surface);box-shadow:0 3px 0 var(--line);font:600 16px var(--font-d);cursor:pointer;transition:transform .08s,box-shadow .08s;color:var(--fg)}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--line)}
+.btn.primary{background:var(--blue);color:var(--on-blue)}
+.btn.yellow{background:var(--yellow);color:var(--on-yellow)}
+.btn.green{background:var(--green);color:var(--on-green)}
+.btn.danger{background:var(--red);color:var(--on-red)}
+.btn.ghost{box-shadow:none;border-color:var(--line);background:transparent}
+.btn.sm{min-height:38px;padding:4px 12px;font-size:14px;border-radius:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;border:2px solid var(--line);font:700 12px var(--font-b);background:var(--surface2);white-space:nowrap}
+.pill.available{background:var(--blue-s)}.pill.in_progress{background:var(--yellow-s)}
+.pill.awaiting_approval,.pill.awaiting_proof{background:var(--orange-s)}.pill.done{background:var(--green-s)}
+.pill.rejected,.pill.late{background:var(--red-s)}.pill.cancelled{background:var(--surface2);color:var(--muted)}
+.pill.pts{background:var(--yellow);color:var(--on-yellow)}
+.av{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;font-size:24px;flex:none;background:var(--surface2)}
+.av.sm{width:30px;height:30px;font-size:16px;border-width:2px}
+.av.lg{width:72px;height:72px;font-size:40px}
+.bar{height:16px;border-radius:99px;border:2px solid var(--line);background:var(--surface2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .5s}
+.rank{display:grid;grid-template-columns:34px 44px 1fr auto;gap:10px;align-items:center;padding:8px 0}
+.rank + .rank{border-top:2px dashed var(--surface2)}
+.pos{font:700 22px var(--font-d);text-align:center;font-variant-numeric:tabular-nums}
+.crown{display:inline-block;width:18px;height:14px;vertical-align:-1px}
+.task{display:grid;grid-template-columns:48px 1fr;gap:12px;align-items:start}
+.task .ic{width:48px;height:48px;border-radius:14px;border:3px solid var(--line);background:var(--yellow-s);display:grid;place-items:center;font-size:24px}
+.task h4{margin-bottom:4px;overflow-wrap:anywhere}
+.meta{display:flex;gap:6px 10px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted);font-weight:700}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+label.f{display:flex;flex-direction:column;gap:5px;font-weight:800;font-size:13px}
+.in,select.in,textarea.in{width:100%;min-height:44px;padding:8px 12px;border-radius:12px;border:3px solid var(--line);background:var(--surface);font-weight:600}
+textarea.in{min-height:84px;resize:vertical}
+.form{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))}
+.form .full{grid-column:1/-1}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{padding:8px 14px;border-radius:99px;border:3px solid var(--line);background:var(--surface);font:600 15px var(--font-d);cursor:pointer;color:var(--fg)}
+.tab[aria-selected="true"]{background:var(--blue);color:var(--on-blue)}
+.ov{position:fixed;inset:0;background:rgba(5,7,17,.55);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:0}
+.sheet{background:var(--bg);border:3px solid var(--line);border-bottom:0;border-radius:24px 24px 0 0;width:100%;max-width:640px;max-height:92%;overflow:auto;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;animation:up .22s ease-out}
+@media(min-width:700px){.ov{align-items:center;padding:20px}.sheet{border-bottom:3px solid var(--line);border-radius:24px}}
+@keyframes up{from{transform:translateY(30px);opacity:0}to{transform:none;opacity:1}}
+.toasts{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:80;pointer-events:none;padding-inline:16px}
+.toast{pointer-events:auto;background:var(--surface);border:3px solid var(--line);box-shadow:var(--sh);border-radius:14px;padding:10px 16px;font:600 15px var(--font-d);max-width:480px;animation:up .2s}
+.toast.ok{background:var(--green-s)}.toast.err{background:var(--red-s)}.toast.star{background:var(--yellow-s)}
+.banner{border:3px solid var(--line);border-radius:14px;padding:10px 14px;background:var(--yellow-s);display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.banner.red{background:var(--red-s)}.banner.blue{background:var(--blue-s)}
+.empty{text-align:center;padding:26px 12px;color:var(--muted)}
+.empty .big-e{font-size:46px;margin-bottom:6px}
+.proof{width:100%;max-height:340px;object-fit:contain;border-radius:12px;border:3px solid var(--line);background:var(--surface2)}
+.drop{display:flex;gap:10px;flex-wrap:wrap}
+.ach{display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:center}
+.ach .ic{width:56px;height:56px;border-radius:50%;border:3px solid var(--line);display:grid;place-items:center;font-size:28px;background:var(--yellow)}
+.ach.lock .ic{background:var(--surface2);filter:grayscale(1);opacity:.7}
+.wheelbox{display:grid;place-items:center;position:relative;padding:8px 0}
+.wheel{width:min(86vw,340px);aspect-ratio:1;transition:transform 4.2s cubic-bezier(.12,.7,.1,1)}
+.pointer{position:absolute;top:0;left:50%;transform:translateX(-50%);width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-top:28px solid var(--red);filter:drop-shadow(0 2px 0 var(--line));z-index:2}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th,.tbl td{padding:8px 10px;text-align:left;border-bottom:2px solid var(--surface2);white-space:nowrap}
+.tbl th{font-family:var(--font-d);font-weight:600}
+.scroll{overflow-x:auto}
+.num{font-variant-numeric:tabular-nums}
+.ev{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-top:2px dashed var(--surface2)}
+.ev:first-child{border-top:0}
+.chk{display:flex;gap:8px;align-items:center;font-weight:700}
+.chk input{width:22px;height:22px;accent-color:var(--blue)}
+.picker{display:flex;gap:6px;flex-wrap:wrap}
+.picker button{width:44px;height:44px;border-radius:50%;border:3px solid var(--line);background:var(--surface);font-size:22px;cursor:pointer}
+.picker button[aria-pressed="true"]{background:var(--yellow);box-shadow:var(--sh)}
+.picker.cols button{border-radius:12px}
+.picker.cols button[aria-pressed="true"]{outline:3px solid var(--fg);outline-offset:2px}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:10px;border-radius:99px;border:2px solid var(--line);background:var(--surface)}
+.steps i.on{background:var(--yellow)}
+.login{max-width:520px;margin:6vh auto 0;display:flex;flex-direction:column;gap:18px;align-items:stretch;padding-bottom:40px}
+.who{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}
+.who button{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border-radius:var(--r);border:3px solid var(--line);background:var(--surface);box-shadow:var(--sh);cursor:pointer;font:600 18px var(--font-d);color:var(--fg)}
+.who button:hover{transform:translateY(-2px)}
+.pinin{text-align:center;letter-spacing:.5em;font:700 28px var(--font-d)}
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:90}
+.confetti span{position:absolute;top:-30px;font-size:22px;animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+.pop{animation:pop .5s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;font-weight:800}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:22px;height:0;border-top:4px solid}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<div id="app"></div>
+<div id="modal"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script>
+'use strict';
+/* ===== utilidades ===== */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+let clock=()=>new Date();
+const pad=n=>String(n).padStart(2,'0');
+const fmtD=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const today=()=>fmtD(clock());
+const nowIso=()=>clock().toISOString();
+const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const validDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&fmtD(pd(s))===s;
+const addDays=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return fmtD(d)};
+const dim=(y,m)=>new Date(y,m,0).getDate();
+const addMonth=(s,anchor)=>{const d=pd(s);let y=d.getFullYear(),m=d.getMonth()+2;if(m>12){m-=12;y++}return y+'-'+pad(m)+'-'+pad(Math.min(anchor,dim(y,m)))};
+const diffDays=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const monthEnd=s=>{const d=pd(s);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(dim(d.getFullYear(),d.getMonth()+1))};
+const brDate=s=>s?s.slice(8)+'/'+s.slice(5,7)+'/'+s.slice(0,4):'';
+const brShort=s=>s.slice(8)+'/'+s.slice(5,7);
+const dayOf=iso=>fmtD(new Date(iso));
+const brTime=iso=>{const d=new Date(iso);return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes())};
+const MESES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const periodLabel=p=>{const d=pd(p.start);return MESES[d.getMonth()]+' de '+d.getFullYear()};
+const normT=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+function randInt(n){const a=new Uint32Array(1),lim=Math.floor(4294967296/n)*n;let x;do{crypto.getRandomValues(a);x=a[0]}while(x>=lim);return x%n}
+
+/* ===== camada de dados (adapter). Para o Supabase, troque este objeto e as funções de A.* por chamadas RPC ===== */
+const Adapter={
+  key:'casa-em-jogo:v1',volatile:false,mem:new Map(),db:null,
+  load(){try{const r=localStorage.getItem(this.key);return r?JSON.parse(r):null}catch(e){this.volatile=true;return null}},
+  save(s){try{localStorage.setItem(this.key,JSON.stringify(s));this.volatile=false}catch(e){this.volatile=true}},
+  clear(){try{localStorage.removeItem(this.key)}catch(e){}},
+  idb(){if(this.db)return this.db;this.db=new Promise((res,rej)=>{try{const r=indexedDB.open('casa-em-jogo-fotos',1);r.onupgradeneeded=()=>r.result.createObjectStore('p');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return this.db},
+  async putPhoto(id,data){this.mem.set(id,data);try{const d=await this.idb();await new Promise((res,rej)=>{const t=d.transaction('p','readwrite');t.objectStore('p').put(data,id);t.oncomplete=res;t.onerror=()=>rej(t.error)})}catch(e){this.photoVolatile=true}},
+  async getPhoto(id){if(this.mem.has(id))return this.mem.get(id);try{const d=await this.idb();return await new Promise((res,rej)=>{const q=d.transaction('p').objectStore('p').get(id);q.onsuccess=()=>{if(q.result)this.mem.set(id,q.result);res(q.result||null)};q.onerror=()=>rej(q.error)})}catch(e){return null}}
+};
+
+/* ===== dados iniciais ===== */
+const CATS=[['cozinha','Cozinha','🍳'],['banheiro','Banheiro','🚿'],['quarto','Quarto','🛏️'],['sala','Sala','🛋️'],['lavanderia','Lavanderia','🧺'],['organizacao','Organização','🗂️'],['limpeza','Limpeza geral','🧽'],['animais','Cuidados com animais','🐈'],['outras','Outras tarefas','✨']];
+const CATALOG=[['Arrumar a cama',5,'quarto','daily'],['Lavar a louça',10,'cozinha','daily'],['Limpar a bancada da cozinha',5,'cozinha','daily'],['Varrer um cômodo',10,'limpeza','weekly'],['Passar aspirador',10,'limpeza','weekly'],['Tirar o lixo',5,'cozinha','daily'],['Organizar a sala',10,'sala','weekly'],['Limpar o banheiro',20,'banheiro','weekly'],['Limpar a geladeira',20,'cozinha','monthly'],['Trocar roupa de cama',10,'quarto','weekly'],['Lavar roupas',10,'lavanderia','weekly'],['Estender ou recolher roupas',10,'lavanderia','weekly'],['Dobrar e guardar roupas',10,'lavanderia','weekly'],['Limpeza geral da casa',25,'limpeza','monthly'],['Organizar um armário',20,'organizacao','monthly'],['Regar plantas',5,'outras','weekly'],['Limpar caixas de areia dos gatos',10,'animais','daily']];
+const AVATARS=['🦊','🐙','🐸','🦉','🐼','🐯','🐱','🦄','🐻','🐧','🦖','🐳'];
+const COLORS=['#2B63E8','#F2761F','#8B5CF6','#17A06A','#EC4899','#0EA5A4'];
+const DEFAULT_CHALLENGES=['Arrume 5 coisas fora do lugar em 5 minutos','Deixe a pia da cozinha vazia hoje','Limpe uma superfície que ninguém lembra de limpar','Organize uma gaveta','Passe um pano na porta da geladeira','Recolha tudo o que está fora do lugar na sala'];
+const STAT={available:'Disponível',in_progress:'Em andamento',awaiting_proof:'Aguardando comprovação',awaiting_approval:'Aguardando aprovação',done:'Concluída',rejected:'Rejeitada',late:'Atrasada',cancelled:'Cancelada'};
+const FREQ={once:'Única',daily:'Diária',weekly:'Semanal',monthly:'Mensal',custom:'Personalizada'};
+const ACH=[
+ {id:'first',name:'Primeira Missão',icon:'🚀',desc:'Ter a primeira tarefa aprovada.',coins:5,p:s=>[s.n,1]},
+ {id:'ten',name:'Casa em Movimento',icon:'🏃',desc:'Ter dez tarefas aprovadas.',coins:10,p:s=>[s.n,10]},
+ {id:'days3',name:'Consistência',icon:'📆',desc:'Ter tarefas aprovadas em três dias diferentes.',coins:5,p:s=>[s.days,3]},
+ {id:'kitchen',name:'Mestre da Cozinha',icon:'👨‍🍳',desc:'Dez tarefas aprovadas na categoria Cozinha.',coins:10,p:s=>[s.byCat.cozinha||0,10]},
+ {id:'bath',name:'Banheiro Impecável',icon:'🛁',desc:'Cinco tarefas aprovadas na categoria Banheiro.',coins:10,p:s=>[s.byCat.banheiro||0,5]},
+ {id:'clean',name:'Sem Pendências',icon:'🧘',desc:'Ter ao menos uma tarefa aprovada e nenhuma atrasada atribuída a você.',coins:5,p:s=>[s.n>=1&&s.late===0?1:0,1]},
+ {id:'week',name:'Semana Produtiva',icon:'⚡',desc:'Cinco tarefas aprovadas dentro de 7 dias.',coins:10,p:s=>[s.bestWeek,5]},
+ {id:'champ',name:'Campeão do Mês',icon:'🏆',desc:'Vencer uma competição mensal.',coins:20,p:s=>[s.wins,1]},
+ {id:'back',name:'Retorno Triunfal',icon:'🔥',desc:'Voltar a ter tarefa aprovada depois de 7 dias ou mais sem nenhuma.',coins:5,p:s=>[s.comeback?1:0,1]}
+];
+const REWARDS0=[['Escolher o filme da noite','Você escolhe o filme.',30,'normal'],['Escolher o jantar','Você escolhe o que será o jantar.',40,'normal'],['Uma hora livre de uma tarefa','Combine com o grupo qual tarefa.',60,'normal'],['Escolher a próxima playlist','A casa ouve a sua playlist.',15,'normal'],['Favor doméstico acordado','Um pequeno favor combinado de antemão.',70,'normal']];
+
+function seed(){
+  const t=nowIso();
+  const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
+  const users=[mk('Vine','🦊',COLORS[0],'admin'),mk('Camila','🐙',COLORS[1],'user'),mk('Davi','🐸',COLORS[2],'user')];
+  return {v:1,setupDone:false,
+    settings:{appName:'Rei da Faxina',prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),
+      penalty:{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:DEFAULT_CHALLENGES.slice()},
+    users,categories:CATS.map(c=>({id:c[0],name:c[1],icon:c[2]})),
+    catalog:CATALOG.map((c,i)=>({id:'m'+i,title:c[0],points:c[1],categoryId:c[2],freq:c[3]})),
+    tasks:[],occurrences:[],evidences:[],scoreTx:[],periods:[],unlocked:[],walletTx:[],
+    rewards:REWARDS0.map(r=>({id:uid('r'),name:r[0],desc:r[1],cost:r[2],kind:r[3],stock:null,active:true,limit:0})).concat([
+      {id:uid('r'),name:'Avatar especial 🦁',desc:'Libera o avatar 🦁 para você.',cost:100,kind:'avatar',emoji:'🦁',stock:null,active:true,limit:1},
+      {id:uid('r'),name:'Título Mestre do Rodo',desc:'Mostra o título ao lado do seu nome.',cost:80,kind:'title',title:'Mestre do Rodo',stock:null,active:true,limit:1}]),
+    redemptions:[],restDays:[],spins:[],audit:[]};
+}
+
+/* ===== estado ===== */
+let S=Adapter.load()||seed();
+let listeners=[];const onChange=f=>listeners.push(f);
+let celebrations=[];
+function commit(){Adapter.save(S);listeners.forEach(f=>f())}
+const ok=(x={})=>Object.assign({ok:true},x),fail=e=>({ok:false,err:e});
+
+/* ===== seletores ===== */
+const user=id=>S.users.find(u=>u.id===id);
+const actives=()=>S.users.filter(u=>u.active);
+const openPeriod=()=>S.periods.find(p=>p.status==='open')||null;
+const period=id=>S.periods.find(p=>p.id===id);
+const cat=id=>S.categories.find(c=>c.id===id)||{id:'outras',name:'Outras',icon:'✨'};
+const occ=id=>S.occurrences.find(o=>o.id===id);
+const isAdmin=id=>{const u=user(id);return !!u&&u.active&&u.role==='admin'};
+const effStatus=o=>((o.status==='available'||o.status==='in_progress')&&o.dueDate&&o.dueDate<today())?'late':o.status;
+const OPEN_ST=['available','in_progress','rejected'];
+const taskTx=(u,p)=>S.scoreTx.filter(t=>t.type==='task'&&!t.reversedBy&&(!u||t.userId===u)&&(!p||t.periodId===p));
+const score=(u,p)=>S.scoreTx.filter(t=>t.userId===u&&(!p||t.periodId===p)).reduce((a,t)=>a+t.points,0);
+const balance=u=>S.walletTx.filter(t=>t.userId===u).reduce((a,t)=>a+t.amount,0);
+function standings(pid){
+  const ids=new Set(S.users.filter(u=>u.active).map(u=>u.id));
+  S.scoreTx.filter(t=>t.periodId===pid).forEach(t=>ids.add(t.userId));
+  const rows=[...ids].map(id=>{const tx=taskTx(id,pid);return {user:user(id),id,pts:score(id,pid),tasks:tx.length,rec:tx.filter(t=>{const o=occ(t.occId);return o&&o.recurring}).reduce((a,t)=>a+t.points,0)}});
+  rows.sort((a,b)=>b.pts-a.pts||b.tasks-a.tasks||b.rec-a.rec);
+  rows.forEach((r,i)=>{const p=rows[i-1];r.pos=p&&p.pts===r.pts&&p.tasks===r.tasks&&p.rec===r.rec?p.pos:i+1});
+  rows.forEach(r=>r.tied=rows.filter(x=>x.pos===r.pos).length>1);
+  return rows;
+}
+function ustats(uid){
+  const tx=taskTx(uid),days=new Set(),byCat={};
+  tx.forEach(t=>{days.add(t.day);const o=occ(t.occId);const c=o?o.categoryId:'outras';byCat[c]=(byCat[c]||0)+1});
+  const sorted=[...days].sort();let best=0;
+  const all=tx.map(t=>t.day).sort();
+  for(let i=0;i<all.length;i++){let j=i;while(j<all.length&&diffDays(all[i],all[j])<7)j++;best=Math.max(best,j-i)}
+  let comeback=false;for(let i=1;i<sorted.length;i++)if(diffDays(sorted[i-1],sorted[i])>=7)comeback=true;
+  const late=S.occurrences.filter(o=>o.assignedTo===uid&&effStatus(o)==='late').length;
+  const wins=S.periods.filter(p=>p.status==='closed'&&p.winnerId===uid).length;
+  return {n:tx.length,days:days.size,byCat,bestWeek:best,comeback,late,wins,dayList:sorted};
+}
+function streak(uid){
+  const set=new Set(ustats(uid).dayList);let d=today();if(!set.has(d))d=addDays(d,-1);
+  let n=0;while(set.has(d)){n++;d=addDays(d,-1)}return n;
+}
+const achOf=(a,uid)=>{const [c,m]=a.p(ustats(uid));return {cur:Math.min(c,m),max:m,done:c>=m}};
+const isUnlocked=(u,a)=>S.unlocked.find(x=>x.userId===u&&x.achId===a);
+
+/* ===== auditoria e utilitários de ação ===== */
+function audit(actorId,action,entity,entityId,reason){S.audit.unshift({id:uid('au'),actorId,action,entity,entityId,reason:reason||'',at:nowIso()});if(S.audit.length>3000)S.audit.length=3000}
+function actor(id,admin){const u=user(id);if(!u||!u.active)return null;if(admin&&u.role!=='admin')return null;return u}
+const NOAUTH=fail('Você não tem permissão para esta ação.');
+function wallet(userId,type,amount,ref,reason){S.walletTx.push({id:uid('w'),userId,type,amount,ref:ref||null,reason:reason||'',createdAt:nowIso()})}
+function addTx(userId,type,points,occId,reason,by,extra){
+  const p=openPeriod();const t=Object.assign({id:uid('s'),userId,occId:occId||null,periodId:p.id,type,points,reason:reason||'',createdAt:nowIso(),day:today(),createdBy:by},extra||{});
+  S.scoreTx.push(t);return t;
+}
+function checkAch(uid){
+  ACH.forEach(a=>{
+    if(isUnlocked(uid,a.id))return;const r=achOf(a,uid);
+    if(r.done){S.unlocked.push({id:uid_('ua'),userId:uid,achId:a.id,at:nowIso()});
+      if(a.coins)wallet(uid,'bonus',a.coins,a.id,'Conquista: '+a.name);
+      audit('system','achievement','user',uid,a.name);celebrations.push({type:'ach',userId:uid,ach:a})}
+  });
+}
+const uid_=uid;
+
+/* ===== recorrência ===== */
+function mkOcc(def,due){
+  const p=openPeriod();
+  return {id:uid('o'),taskId:def.id,title:def.title,desc:def.desc||'',categoryId:def.categoryId,points:def.points,assignedTo:def.assignedTo||null,periodId:p.id,
+    dueDate:due,status:'available',recurring:def.frequency!=='once',createdAt:nowIso(),completedAt:null,submittedBy:null,submittedAt:null,reviewedBy:null,reviewedAt:null,rejectionReason:'',photoId:null,log:[{at:nowIso(),by:'system',text:'Criada'}]};
+}
+function genOccurrences(){
+  const t=today();let n=0;
+  S.tasks.forEach(d=>{
+    if(!d.active||d.frequency==='once'||!d.nextDue)return;
+    if(d.nextDue>t)return;
+    let due=d.nextDue,last=null,guard=0;
+    const adv=x=>d.frequency==='daily'?addDays(x,1):d.frequency==='weekly'?addDays(x,7):d.frequency==='monthly'?addMonth(x,d.anchorDay):addDays(x,d.interval||1);
+    while(due<=t&&guard++<800){last=due;due=adv(due)}
+    if(last&&!S.occurrences.some(o=>o.taskId===d.id&&o.dueDate===last)){S.occurrences.push(mkOcc(d,last));n++}
+    d.nextDue=due;
+  });
+  return n;
+}
+function pen(o,kind,pts){
+  const p=S.settings.penalty;const already=S.scoreTx.filter(t=>t.occId===o.id&&t.type==='penalty'&&!t.reversedBy).reduce((a,t)=>a-t.points,0);
+  const room=Math.max(0,p.maxPerOcc-already);const cur=score(o.assignedTo,openPeriod().id);
+  const amt=Math.min(pts,room,Math.max(0,cur));
+  o[kind]=true;
+  if(amt>0){addTx(o.assignedTo,'penalty',-amt,o.id,(kind==='latePen'?'Atraso: ':'Não executada no prazo: ')+o.title,'system');return true}
+  return false;
+}
+function sweep(){
+  const p=openPeriod();if(!p)return;let ch=genOccurrences()>0;const t=today(),cfg=S.settings.penalty;
+  if(cfg.enabled)S.occurrences.forEach(o=>{
+    if(o.periodId!==p.id||!o.assignedTo||!o.dueDate||!OPEN_ST.includes(o.status)||o.dueDate>=t)return;
+    if(!o.latePen&&cfg.latePoints>0){pen(o,'latePen',cfg.latePoints);ch=true}
+    if(!o.missPen&&cfg.missPoints>0&&t>addDays(o.dueDate,cfg.grace)){pen(o,'missPen',cfg.missPoints);ch=true}
+  });
+  if(ch)commit();
+}
+
+/* ===== ações (todas validam o ator; no Supabase viram funções RPC com RLS) ===== */
+const A={};
+const POINTS_OK=n=>Number.isInteger(n)&&n>0&&n<=500;
+function validTaskData(d,isNew){
+  const title=String(d.title||'').trim();
+  if(title.length<2||title.length>80)return 'Informe um nome com 2 a 80 caracteres.';
+  if(!POINTS_OK(d.points))return 'A pontuação deve ser um número inteiro de 1 a 500.';
+  if(!S.categories.some(c=>c.id===d.categoryId))return 'Categoria inválida.';
+  if(!FREQ[d.frequency])return 'Frequência inválida.';
+  if(d.frequency==='custom'&&!(Number.isInteger(d.interval)&&d.interval>=2&&d.interval<=365))return 'Informe o intervalo em dias (2 a 365).';
+  if(!validDate(d.dueDate))return 'Informe um prazo válido.';
+  if(isNew&&d.dueDate<today())return 'O prazo não pode estar no passado.';
+  if(d.assignedTo&&!actor(d.assignedTo))return 'Responsável inexistente ou inativo.';
+  return null;
+}
+A.createTask=(by,d)=>{
+  if(!actor(by,true))return NOAUTH;const e=validTaskData(d,true);if(e)return fail(e);
+  const title=d.title.trim();
+  if(S.occurrences.some(o=>normT(o.title)===normT(title)&&o.dueDate===d.dueDate&&o.status!=='cancelled'))return fail('Já existe uma tarefa com esse nome e esse prazo.');
+  const def={id:uid('t'),title,desc:(d.desc||'').trim().slice(0,300),categoryId:d.categoryId,frequency:d.frequency,interval:d.interval||null,points:d.points,assignedTo:d.assignedTo||null,
+    nextDue:d.dueDate,anchorDay:+d.dueDate.slice(8),active:true,createdAt:nowIso(),updatedAt:nowIso(),log:[{at:nowIso(),by,text:'Criada'}]};
+  S.tasks.push(def);
+  if(def.frequency==='once'){S.occurrences.push(mkOcc(def,d.dueDate));def.nextDue=null;def.active=false}
+  else genOccurrences();
+  audit(by,'create','task',def.id,title);commit();return ok({id:def.id});
+};
+A.updateDef=(by,id,d)=>{
+  if(!actor(by,true))return NOAUTH;const def=S.tasks.find(x=>x.id===id);if(!def)return fail('Tarefa não encontrada.');
+  const nd=Object.assign({},def,d,{dueDate:d.nextDue||def.nextDue||today()});const e=validTaskData(nd,false);if(e)return fail(e);
+  Object.assign(def,{title:nd.title.trim(),desc:(nd.desc||'').trim().slice(0,300),categoryId:nd.categoryId,points:nd.points,assignedTo:nd.assignedTo||null,frequency:nd.frequency,interval:nd.interval||null,active:!!nd.active,updatedAt:nowIso()});
+  def.log.push({at:nowIso(),by,text:'Editada'});audit(by,'update','task',id,'');commit();return ok();
+};
+A.deleteDef=(by,id)=>{
+  if(!actor(by,true))return NOAUTH;const i=S.tasks.findIndex(x=>x.id===id);if(i<0)return fail('Tarefa não encontrada.');
+  if(S.occurrences.some(o=>o.taskId===id)){S.tasks[i].active=false;audit(by,'deactivate','task',id,'');commit();return ok({deactivated:true})}
+  S.tasks.splice(i,1);audit(by,'delete','task',id,'');commit();return ok();
+};
+A.updateOcc=(by,id,d)=>{
+  if(!actor(by,true))return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(!OPEN_ST.includes(o.status))return fail('Só é possível editar tarefas ainda não enviadas.');
+  if(!POINTS_OK(d.points))return fail('A pontuação deve ser um número inteiro de 1 a 500.');
+  if(!validDate(d.dueDate))return fail('Informe um prazo válido.');
+  if(d.assignedTo&&!actor(d.assignedTo))return fail('Responsável inexistente ou inativo.');
+  const ch=[];if(o.points!==d.points)ch.push('pontos '+o.points+'→'+d.points);if(o.dueDate!==d.dueDate)ch.push('prazo '+brDate(o.dueDate)+'→'+brDate(d.dueDate));if((o.assignedTo||null)!==(d.assignedTo||null))ch.push('responsável alterado');
+  o.points=d.points;o.dueDate=d.dueDate;o.assignedTo=d.assignedTo||null;if(d.desc!=null)o.desc=String(d.desc).slice(0,300);
+  if(o.status==='rejected'&&false)o.status='available';
+  if(ch.length){o.log.push({at:nowIso(),by,text:'Editada: '+ch.join(', ')});audit(by,'update','occurrence',id,ch.join(', '))}
+  commit();return ok();
+};
+A.cancelOcc=(by,id,reason)=>{
+  if(!actor(by,true))return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(!OPEN_ST.includes(o.status)&&o.status!=='awaiting_approval')return fail('Esta tarefa não pode ser cancelada.');
+  o.status='cancelled';o.log.push({at:nowIso(),by,text:'Cancelada'+(reason?': '+reason:'')});audit(by,'cancel','occurrence',id,reason||'');commit();return ok();
+};
+A.claim=(by,id)=>{
+  const u=actor(by);if(!u)return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(o.assignedTo)return fail('Esta tarefa já tem responsável.');if(!OPEN_ST.includes(o.status))return fail('Esta tarefa não está disponível.');
+  o.assignedTo=by;o.log.push({at:nowIso(),by,text:'Assumida por '+u.name});audit(by,'claim','occurrence',id,'');commit();return ok();
+};
+A.assign=(by,id,to)=>{
+  if(!actor(by,true))return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');if(!actor(to))return fail('Participante inexistente ou inativo.');
+  if(!OPEN_ST.includes(o.status))return fail('Esta tarefa não pode ser reatribuída agora.');
+  o.assignedTo=to;o.log.push({at:nowIso(),by,text:'Atribuída a '+user(to).name});audit(by,'assign','occurrence',id,user(to).name);commit();return ok();
+};
+A.start=(by,id)=>{
+  const o=occ(id);if(!o||o.assignedTo!==by||!actor(by))return NOAUTH;if(o.status!=='available')return fail('Esta tarefa já foi iniciada.');
+  o.status='in_progress';o.log.push({at:nowIso(),by,text:'Iniciada'});commit();return ok();
+};
+const IMG_RE=/^data:image\/(jpeg|png|webp);base64,/;
+A.submit=async(by,id,photo)=>{
+  const u=actor(by);if(!u)return NOAUTH;let o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(o.assignedTo!==by)return fail('Só o responsável pode enviar a comprovação.');
+  if(!['available','in_progress','rejected'].includes(o.status))return fail('Esta tarefa não aceita novo envio agora.');
+  const p=openPeriod();if(!p||o.periodId!==p.id)return fail('O período desta tarefa foi encerrado.');
+  if(typeof photo!=='string'||!IMG_RE.test(photo))return fail('Envie uma foto JPEG, PNG ou WebP.');
+  if(photo.length>2.2e6)return fail('A foto é grande demais.');
+  o.status='awaiting_approval';// reserva o estado antes de qualquer await, bloqueia duplo clique
+  const pid=uid('ph');
+  try{await Adapter.putPhoto(pid,photo)}catch(e){}
+  o.photoId=pid;o.submittedBy=by;o.submittedAt=nowIso();o.rejectionReason='';
+  S.evidences.push({id:uid('e'),occId:id,submittedBy:by,photoId:pid,submittedAt:nowIso(),reviewStatus:'pending',reviewedBy:null,reviewedAt:null,rejectionReason:''});
+  o.log.push({at:nowIso(),by,text:'Comprovação enviada'});audit(by,'submit','occurrence',id,'');commit();return ok();
+};
+A.review=(by,id,approve,reason)=>{
+  const u=actor(by);if(!u)return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(o.status!=='awaiting_approval')return fail('Esta tarefa não está aguardando aprovação.');
+  if(o.submittedBy===by||o.assignedTo===by)return fail('Você não pode aprovar a sua própria tarefa.');
+  const ev=[...S.evidences].reverse().find(e=>e.occId===id&&e.reviewStatus==='pending');
+  if(!approve){
+    const r=String(reason||'').trim();if(r.length<3)return fail('Informe o motivo da rejeição.');
+    o.status='rejected';o.rejectionReason=r;o.reviewedBy=by;o.reviewedAt=nowIso();if(ev)Object.assign(ev,{reviewStatus:'rejected',reviewedBy:by,reviewedAt:nowIso(),rejectionReason:r});
+    o.log.push({at:nowIso(),by,text:'Rejeitada: '+r});audit(by,'reject','occurrence',id,r);commit();return ok();
+  }
+  const p=openPeriod();if(!p||o.periodId!==p.id)return fail('O período desta tarefa foi encerrado.');
+  if(S.scoreTx.some(t=>t.occId===id&&t.type==='task'))return fail('Os pontos desta tarefa já foram creditados.');
+  if(!o.assignedTo)return fail('Tarefa sem responsável não gera pontos.');
+  o.status='done';o.completedAt=nowIso();o.reviewedBy=by;o.reviewedAt=nowIso();
+  if(ev)Object.assign(ev,{reviewStatus:'approved',reviewedBy:by,reviewedAt:nowIso()});
+  addTx(o.assignedTo,'task',o.points,id,o.title,by);
+  const coins=Math.floor(o.points*(S.settings.coinRate||0));if(coins>0)wallet(o.assignedTo,'earn',coins,id,'Tarefa: '+o.title);
+  o.log.push({at:nowIso(),by,text:'Aprovada, +'+o.points+' pontos'});audit(by,'approve','occurrence',id,'');
+  checkAch(o.assignedTo);commit();return ok({points:o.points});
+};
+A.adjust=(by,userId,delta,reason,periodId)=>{
+  if(!actor(by,true))return NOAUTH;if(!user(userId))return fail('Participante inexistente.');
+  if(!Number.isInteger(delta)||delta===0||Math.abs(delta)>500)return fail('Informe um ajuste inteiro diferente de zero (até 500).');
+  const r=String(reason||'').trim();if(r.length<3)return fail('A justificativa é obrigatória.');
+  const p=period(periodId||openPeriod().id);if(!p)return fail('Período inexistente.');
+  const t={id:uid('s'),userId,occId:null,periodId:p.id,type:'adjust',points:delta,reason:r,createdAt:nowIso(),day:today(),createdBy:by,postClose:p.status==='closed'};
+  S.scoreTx.push(t);audit(by,p.status==='closed'?'adjust_closed':'adjust','scoreTx',t.id,r);commit();return ok();
+};
+A.reverse=(by,txId,reason)=>{
+  if(!actor(by,true))return NOAUTH;const t=S.scoreTx.find(x=>x.id===txId);if(!t)return fail('Registro não encontrado.');
+  if(t.type==='reversal'||t.reversedBy)return fail('Este registro já foi estornado ou é um estorno.');
+  const r=String(reason||'').trim();if(r.length<3)return fail('A justificativa é obrigatória.');
+  const p=period(t.periodId);
+  const rv={id:uid('s'),userId:t.userId,occId:t.occId,periodId:t.periodId,type:'reversal',points:-t.points,reason:r,refTx:t.id,createdAt:nowIso(),day:today(),createdBy:by,postClose:p.status==='closed'};
+  S.scoreTx.push(rv);t.reversedBy=rv.id;
+  if(t.type==='task'){const e=S.walletTx.filter(w=>w.type==='earn'&&w.ref===t.occId&&w.userId===t.userId).reduce((a,w)=>a+w.amount,0);
+    const back=Math.min(e,Math.max(0,balance(t.userId)));if(back>0)wallet(t.userId,'reversal',-back,t.occId,'Estorno: '+r);
+    const o=occ(t.occId);if(o)o.log.push({at:nowIso(),by,text:'Pontos estornados: '+r})}
+  audit(by,p.status==='closed'?'reverse_closed':'reverse','scoreTx',t.id,r);commit();return ok();
+};
+A.contest=(by,txId,text)=>{
+  const t=S.scoreTx.find(x=>x.id===txId);if(!t||t.type!=='penalty'||t.userId!==by||!actor(by))return NOAUTH;
+  if(t.contest)return fail('Esta penalidade já foi contestada.');const x=String(text||'').trim();if(x.length<3)return fail('Explique o motivo da contestação.');
+  t.contest={text:x,at:nowIso(),status:'open'};audit(by,'contest','scoreTx',txId,x);commit();return ok();
+};
+A.resolveContest=(by,txId,accept,reason)=>{
+  if(!actor(by,true))return NOAUTH;const t=S.scoreTx.find(x=>x.id===txId);if(!t||!t.contest||t.contest.status!=='open')return fail('Contestação não encontrada.');
+  const r=String(reason||'').trim();if(r.length<3)return fail('Informe a justificativa da decisão.');
+  if(accept){const x=A.reverse(by,txId,'Contestação aceita: '+r);if(!x.ok)return x}
+  t.contest.status=accept?'accepted':'denied';t.contest.reply=r;t.contest.by=by;audit(by,'resolve_contest','scoreTx',txId,r);commit();return ok();
+};
+A.closePeriod=(by,opt)=>{
+  if(!actor(by,true))return NOAUTH;const p=openPeriod();if(!p)return fail('Nenhum período aberto.');opt=opt||{};
+  if(S.occurrences.some(o=>o.periodId===p.id&&o.status==='awaiting_approval'))return fail('Resolva as aprovações pendentes antes de encerrar o período.');
+  const st=standings(p.id);const top=st[0];let winner=null,tie=null;
+  if(top&&top.pts>0){
+    const g=st.filter(r=>r.pos===1);
+    if(g.length>1){
+      if(opt.winnerId&&g.some(r=>r.id===opt.winnerId)){const n=String(opt.tieNote||'').trim();if(n.length<3)return fail('Registre como o empate foi decidido.');winner=opt.winnerId;tie={users:g.map(r=>r.id),note:n,by}}
+      else return ok({tie:g.map(r=>r.id)});
+    }else winner=g[0].id;
+  }
+  const t=today();p.status='closed';p.end=p.end<t?p.end:t;p.winnerId=winner;p.tieResolution=tie;p.prizeAmount=winner?S.settings.prize:0;p.prizePaid=false;p.closedAt=nowIso();p.closedBy=by;
+  p.final=st.map(r=>({userId:r.id,pts:r.pts,tasks:r.tasks,pos:r.pos}));
+  if(winner)for(let i=0;i<(S.settings.restDays||0);i++)S.restDays.push({id:uid('rd'),userId:winner,periodId:p.id,date:null,status:'pending'});
+  const ns=addDays(p.end,1),np={id:'p-'+ns,start:ns,end:monthEnd(ns),status:'open',winnerId:null,prizeAmount:0,tieResolution:null};
+  S.periods.push(np);
+  S.occurrences.forEach(o=>{if(o.periodId===p.id&&OPEN_ST.includes(o.status)){o.periodId=np.id;o.log.push({at:nowIso(),by:'system',text:'Transferida para '+periodLabel(np)})}});
+  audit(by,'close_period','period',p.id,winner?'Vencedor: '+user(winner).name:'Sem vencedor');
+  if(winner)checkAch(winner);
+  celebrations.push({type:'winner',periodId:p.id});
+  genOccurrences();commit();return ok({winner,periodId:p.id});
+};
+A.rest=(by,id,date,status)=>{
+  if(!actor(by,true))return NOAUTH;const r=S.restDays.find(x=>x.id===id);if(!r)return fail('Registro não encontrado.');
+  if(!['pending','scheduled','used'].includes(status))return fail('Status inválido.');
+  if(status!=='pending'&&!validDate(date))return fail('Informe a data do descanso.');
+  r.date=status==='pending'?null:date;r.status=status;audit(by,'rest','restDay',id,status+' '+(date||''));commit();return ok();
+};
+A.prizePaid=(by,pid,paid)=>{if(!actor(by,true))return NOAUTH;const p=period(pid);if(!p||p.status!=='closed')return fail('Período inválido.');p.prizePaid=!!paid;audit(by,'prize','period',pid,paid?'pago':'pendente');commit();return ok()};
+A.tieBreakInfo=()=>standings(openPeriod().id).filter(r=>r.pos===1);
+/* loja */
+A.redeem=(by,rid,reqId)=>{
+  const u=actor(by);if(!u)return NOAUTH;if(!S.settings.shop)return fail('A loja está desativada.');
+  if(reqId&&S.redemptions.some(r=>r.reqId===reqId))return fail('Este resgate já foi processado.');
+  const r=S.rewards.find(x=>x.id===rid);if(!r||!r.active)return fail('Recompensa indisponível.');
+  if(r.stock!=null&&r.stock<=0)return fail('Recompensa esgotada.');
+  const p=openPeriod();
+  if(r.limit>0){const n=S.redemptions.filter(x=>x.rewardId===rid&&x.userId===by&&x.status!=='cancelled'&&(r.kind==='normal'?x.periodId===p.id:true)).length;if(n>=r.limit)return fail('Você atingiu o limite desta recompensa.')}
+  if(r.kind==='avatar'&&u.avatars.includes(r.emoji))return fail('Você já tem este avatar.');
+  if(balance(by)<r.cost)return fail('Saldo de moedas insuficiente.');
+  const red={id:uid('rd'),reqId:reqId||uid('rq'),rewardId:rid,name:r.name,userId:by,cost:r.cost,status:'pending',periodId:p.id,createdAt:nowIso(),refunded:false};
+  wallet(by,'spend',-r.cost,red.id,'Resgate: '+r.name);
+  if(r.stock!=null)r.stock--;
+  if(r.kind==='avatar'){u.avatars.push(r.emoji);red.status='done'}
+  if(r.kind==='title'){u.title=r.title;red.status='done'}
+  S.redemptions.push(red);audit(by,'redeem','redemption',red.id,r.name);commit();return ok({id:red.id});
+};
+A.redemption=(by,id,action)=>{
+  const u=actor(by);if(!u)return NOAUTH;const r=S.redemptions.find(x=>x.id===id);if(!r)return fail('Resgate não encontrado.');
+  if(action==='approve'){if(r.status!=='pending')return fail('Este resgate não está pendente.');if(r.userId===by)return fail('Outra pessoa precisa aprovar o seu resgate.');r.status='approved'}
+  else if(action==='done'){if(r.status!=='approved'&&r.status!=='pending')return fail('Este resgate não pode ser concluído.');if(r.userId!==by&&u.role!=='admin')return NOAUTH;if(r.status==='pending'&&r.userId!==by&&u.role==='admin'&&false)return NOAUTH;r.status='done'}
+  else if(action==='cancel'){
+    if(r.status==='done'||r.status==='cancelled')return fail('Este resgate não pode ser cancelado.');if(r.userId!==by&&u.role!=='admin')return NOAUTH;
+    r.status='cancelled';if(!r.refunded){r.refunded=true;wallet(r.userId,'refund',r.cost,r.id,'Estorno: '+r.name);const rw=S.rewards.find(x=>x.id===r.rewardId);if(rw&&rw.stock!=null)rw.stock++}
+  }else return fail('Ação inválida.');
+  audit(by,'redemption_'+action,'redemption',id,'');commit();return ok();
+};
+A.saveReward=(by,d)=>{
+  if(!actor(by,true))return NOAUTH;const name=String(d.name||'').trim();if(name.length<2)return fail('Informe o nome da recompensa.');
+  if(!Number.isInteger(d.cost)||d.cost<0||d.cost>10000)return fail('Custo inválido.');if(d.stock!=null&&!(Number.isInteger(d.stock)&&d.stock>=0))return fail('Estoque inválido.');
+  let r=d.id&&S.rewards.find(x=>x.id===d.id);if(!r){r={id:uid('r'),kind:'normal',limit:0};S.rewards.push(r)}
+  Object.assign(r,{name,desc:String(d.desc||'').slice(0,200),cost:d.cost,stock:d.stock==null?null:d.stock,active:d.active!==false,limit:d.limit||0});audit(by,'reward','reward',r.id,name);commit();return ok();
+};
+/* roleta */
+A.pool=(mode,o)=>{
+  o=o||{};const p=openPeriod();const ex=new Set(o.exclude||[]);
+  if(mode==='user')return actives().filter(u=>!ex.has(u.id)).map(u=>({id:u.id,label:u.name,color:u.color,icon:u.avatar}));
+  if(mode==='challenge')return S.settings.challenges.map((c,i)=>({id:'c'+i,label:c}));
+  return S.occurrences.filter(x=>x.periodId===p.id&&['available','in_progress'].includes(x.status)&&(mode!=='category'||x.categoryId===o.categoryId)).map(x=>({id:x.id,label:x.title,icon:cat(x.categoryId).icon}));
+};
+A.spin=(by,mode,o)=>{
+  if(!actor(by))return NOAUTH;const pool=A.pool(mode,o);if(pool.length<2&&!(pool.length===1&&mode!=='user'))return fail(pool.length?'É preciso ao menos 2 opções para sortear.':'Não há opções elegíveis para este sorteio.');
+  const i=randInt(pool.length);const rec={id:uid('sp'),mode,options:pool.map(x=>x.label),result:pool[i].label,resultId:pool[i].id,by,at:nowIso()};
+  S.spins.push(rec);audit(by,'spin','spin',rec.id,rec.result);commit();return ok({index:i,pool,rec});
+};
+/* participantes, categorias, config */
+A.saveUser=(by,d)=>{
+  const me=actor(by);if(!me)return NOAUTH;const u=user(d.id);if(!u)return fail('Participante inexistente.');
+  if(by!==d.id&&me.role!=='admin')return NOAUTH;const name=String(d.name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');
+  if(S.users.some(x=>x.id!==u.id&&x.active&&normT(x.name)===normT(name)))return fail('Já existe um participante com esse nome.');
+  u.name=name;if(d.avatar&&(AVATARS.includes(d.avatar)||u.avatars.includes(d.avatar)))u.avatar=d.avatar;if(COLORS.includes(d.color))u.color=d.color;
+  if(me.role==='admin'&&by!==d.id||me.role==='admin'){
+    if(d.role&&['admin','user'].includes(d.role)&&d.role!==u.role){if(u.role==='admin'&&S.users.filter(x=>x.active&&x.role==='admin').length<2)return fail('Precisa existir ao menos um administrador.');u.role=d.role}
+    if(d.active!=null&&!!d.active!==u.active){
+      if(!d.active){if(u.role==='admin'&&S.users.filter(x=>x.active&&x.role==='admin').length<2)return fail('Não é possível desativar o único administrador.');if(by===u.id)return fail('Você não pode desativar a si mesmo.')}
+      else if(S.users.filter(x=>x.active).length>=4)return fail('O limite é de 4 participantes ativos.');
+      u.active=!!d.active;
+    }
+  }
+  audit(by,'update','user',u.id,'');commit();return ok();
+};
+A.addUser=(by,name)=>{
+  if(!actor(by,true))return NOAUTH;if(actives().length>=4)return fail('O limite é de 4 participantes ativos.');
+  name=String(name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');if(S.users.some(x=>x.active&&normT(x.name)===normT(name)))return fail('Já existe um participante com esse nome.');
+  const used=new Set(S.users.map(x=>x.avatar)),usedC=new Set(S.users.map(x=>x.color));
+  const u={id:uid('u'),name,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!usedC.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
+  S.users.push(u);audit(by,'create','user',u.id,name);commit();return ok({id:u.id});
+};
+A.saveSettings=(by,d)=>{
+  if(!actor(by,true))return NOAUTH;const s=S.settings;
+  if(d.appName!=null){const n=String(d.appName).trim();if(n.length<2||n.length>30)return fail('O nome do app deve ter de 2 a 30 caracteres.');s.appName=n}
+  if(d.prize!=null){if(!(d.prize>=0&&d.prize<=100000))return fail('Valor do prêmio inválido.');s.prize=d.prize}
+  if(d.restDays!=null){if(!(Number.isInteger(d.restDays)&&d.restDays>=0&&d.restDays<=10))return fail('Dias de descanso inválidos.');s.restDays=d.restDays}
+  if(d.shop!=null)s.shop=!!d.shop;
+  if(d.coinRate!=null){if(!(d.coinRate>=0&&d.coinRate<=10))return fail('Taxa de moedas inválida.');s.coinRate=d.coinRate}
+  if(d.penalty){const p=d.penalty,c=s.penalty;
+    for(const k of ['latePoints','missPoints','maxPerOcc','grace'])if(p[k]!=null){if(!(Number.isInteger(p[k])&&p[k]>=0&&p[k]<=100))return fail('Valor de penalidade inválido.');}
+    Object.assign(c,{enabled:!!p.enabled},['latePoints','missPoints','maxPerOcc','grace'].reduce((a,k)=>(p[k]!=null&&(a[k]=p[k]),a),{}))}
+  if(d.challenges)s.challenges=d.challenges.filter(x=>x.trim()).map(x=>x.trim().slice(0,120));
+  audit(by,'settings','settings','',JSON.stringify(Object.keys(d)));commit();return ok();
+};
+A.saveCategory=(by,d)=>{
+  if(!actor(by,true))return NOAUTH;const n=String(d.name||'').trim();if(n.length<2||n.length>30)return fail('Nome de categoria inválido.');
+  let c=d.id&&S.categories.find(x=>x.id===d.id);if(!c){c={id:uid('c')};S.categories.push(c)}c.name=n;c.icon=String(d.icon||'✨').slice(0,4);audit(by,'category','category',c.id,n);commit();return ok();
+};
+A.saveCatalog=(by,id,points)=>{if(!actor(by,true))return NOAUTH;const m=S.catalog.find(x=>x.id===id);if(!m||!POINTS_OK(points))return fail('Pontuação inválida (1 a 500).');m.points=points;audit(by,'catalog','catalog',id,String(points));commit();return ok()};
+
+/* ===== acesso individual (PIN) ===== */
+const Auth={fails:{},
+  async hash(pin,salt){const s=salt+':'+pin;try{if(crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}}catch(e){}let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return 'f'+h.toString(16)},
+  valid:p=>/^\d{4,6}$/.test(p),
+  async setPin(userId,pin,current){
+    const u=user(userId);if(!u||!u.active)return fail('Participante inexistente.');if(!Auth.valid(pin))return fail('O PIN deve ter de 4 a 6 números.');
+    if(u.pinHash){if(!(await Auth.check(userId,current||'')).ok)return fail('PIN atual incorreto.')}
+    u.salt=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(x=>x.toString(16).padStart(2,'0')).join('');u.pinHash=await Auth.hash(pin,u.salt);audit(userId,'pin','user',userId,'');commit();return ok();
+  },
+  async check(userId,pin){
+    const u=user(userId);if(!u||!u.active||!u.pinHash)return fail('Acesso inválido.');
+    const f=Auth.fails[userId]||(Auth.fails[userId]={n:0,until:0});if(Date.now()<f.until)return fail('Muitas tentativas. Aguarde '+Math.ceil((f.until-Date.now())/1000)+'s.');
+    if(await Auth.hash(pin,u.salt)===u.pinHash){f.n=0;return ok()}
+    f.n++;if(f.n>=5){f.n=0;f.until=Date.now()+30000;return fail('PIN incorreto. Acesso bloqueado por 30s.')}return fail('PIN incorreto.');
+  },
+  resetPin(by,userId){if(!actor(by,true))return NOAUTH;const u=user(userId);if(!u)return fail('Participante inexistente.');u.pinHash=null;u.salt=null;audit(by,'reset_pin','user',userId,'');commit();return ok()}
+};
+
+/* ===== backup e integridade ===== */
+function verifyIntegrity(st){
+  const p=[];const ids=new Set(st.users.map(u=>u.id));
+  st.scoreTx.forEach(t=>{if(!ids.has(t.userId))p.push('Pontuação de participante inexistente: '+t.id);if(!st.periods.some(x=>x.id===t.periodId))p.push('Pontuação em período inexistente: '+t.id)});
+  const seen=new Set();st.scoreTx.filter(t=>t.type==='task').forEach(t=>{if(seen.has(t.occId))p.push('Pontos duplicados na tarefa '+t.occId);seen.add(t.occId)});
+  st.occurrences.forEach(o=>{if(o.assignedTo&&!ids.has(o.assignedTo))p.push('Tarefa com responsável inexistente: '+o.id);if(o.status==='done'&&!st.scoreTx.some(t=>t.occId===o.id&&t.type==='task'))p.push('Tarefa concluída sem pontuação: '+o.id)});
+  st.walletTx.forEach(w=>{if(!ids.has(w.userId))p.push('Moedas de participante inexistente: '+w.id)});
+  st.users.forEach(u=>{const b=st.walletTx.filter(w=>w.userId===u.id).reduce((a,w)=>a+w.amount,0);if(b<0)p.push('Saldo negativo: '+u.name)});
+  if(st.periods.filter(x=>x.status==='open').length!==1)p.push('Deve existir exatamente um período aberto.');
+  return p;
+}
+async function exportBackup(){
+  const photos={};for(const o of S.occurrences){if(o.photoId){const d=await Adapter.getPhoto(o.photoId);if(d)photos[o.photoId]=d}}
+  for(const e of S.evidences){if(!photos[e.photoId]){const d=await Adapter.getPhoto(e.photoId);if(d)photos[e.photoId]=d}}
+  return JSON.stringify({app:'casa-em-jogo',version:1,exportedAt:nowIso(),state:S,photos});
+}
+async function importBackup(by,text){
+  if(!actor(by,true))return NOAUTH;let d;try{d=JSON.parse(text)}catch(e){return fail('O conteúdo não é um backup válido.')}
+  if(!d||d.app!=='casa-em-jogo'||!d.state||!Array.isArray(d.state.users)||!Array.isArray(d.state.scoreTx)||!Array.isArray(d.state.periods))return fail('O arquivo não parece ser um backup do app.');
+  const pr=verifyIntegrity(d.state);if(pr.length)return fail('Backup com problemas: '+pr.slice(0,3).join('; '));
+  for(const [k,v] of Object.entries(d.photos||{}))if(typeof v==='string'&&IMG_RE.test(v))await Adapter.putPhoto(k,v);
+  S=d.state;audit(by,'restore','backup','','');commit();return ok();
+}
+function resetAll(){Adapter.clear();S=seed();commit()}
+/* ===== UI: base ===== */
+const $=(s,r=document)=>r.querySelector(s);
+const UI={view:'home',me:null,filters:{who:'all',cat:'all',st:'open',q:''},tab:'occ',rankP:null,hist:{who:'all',type:'all',month:'all',cat:'all'},obStep:0,login:{sel:null,err:'',mode:''},spin:{mode:'task',cat:'cozinha',excl:[],stage:'pick',rot:0,res:null},shopTab:'shop',setTab:'me',achWho:null,busy:false,photo:null,modal:null};
+const ICONS={
+ home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+ tasks:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
+ rank:'<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3"/>',
+ wheel:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/>',
+ ach:'<circle cx="12" cy="15" r="5"/><path d="M8.5 3L12 10M15.5 3L12 10"/>',
+ shop:'<path d="M5 8h14l-1 12H6z"/><path d="M9 8a3 3 0 0 1 6 0"/>',
+ hist:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
+ more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
+};
+const ic=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
+const crown='<svg class="crown" viewBox="0 0 18 14" aria-label="Primeiro lugar" role="img"><path d="M1 12L2 3l4 4 3-6 3 6 4-4 1 9z" fill="#FFC93C" stroke="#1B2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+const avHtml=(u,c)=>'<span class="av '+(c||'')+'" style="background:'+esc(u.color)+'22;border-color:'+esc(u.color)+'" aria-hidden="true">'+esc(u.avatar)+'</span>';
+const nameOf=id=>id==='system'?'Sistema':(user(id)?user(id).name:'—');
+const uname=u=>esc(u.name)+(u.title?' <span class="muted sm">· '+esc(u.title)+'</span>':'');
+
+function toast(m,t){const el=document.createElement('div');el.className='toast '+(t||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),t==='err'?4800:3000)}
+function confetti(n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const w=document.createElement('div');w.className='confetti';const em=['🎉','⭐','✨','🟡','🟢','🔵','🟠'];
+  for(let i=0;i<(n||40);i++){const s=document.createElement('span');s.textContent=em[i%em.length];s.style.left=Math.random()*100+'%';s.style.animationDuration=(1.6+Math.random()*1.8)+'s';s.style.animationDelay=Math.random()*.5+'s';w.appendChild(s)}
+  document.body.appendChild(w);setTimeout(()=>w.remove(),4200);
+}
+function openModal(html){UI.modal=html;$('#modal').innerHTML='<div class="ov" data-a="ov"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';hydrate();const f=$('#modal [autofocus],#modal input:not([type=hidden]),#modal textarea,#modal select');if(f&&!f.type?.match(/file/))try{f.focus()}catch(e){}}
+function closeModal(){UI.modal=null;UI.photo=null;$('#modal').innerHTML=''}
+async function hydrate(){
+  for(const img of document.querySelectorAll('img[data-photo]')){
+    if(img.dataset.done)continue;img.dataset.done='1';const d=await Adapter.getPhoto(img.dataset.photo);
+    if(d)img.src=d;else{img.alt='Foto indisponível neste dispositivo';img.style.minHeight='80px'}
+  }
+}
+const MSGS={late:['A cozinha não vai se limpar sozinha!','Tem missão esperando por você. A casa agradece!'],none:['O trono da organização está em disputa!','Quem será o campeão deste mês?'],ok:['Mais uma tarefa para subir no ranking!','Missão concluída. A casa agradece!']};
+function dailyMsg(k){const l=MSGS[k];const d=today();let h=0;for(const c of d)h+=c.charCodeAt(0);return l[(h+(UI.me?UI.me.length:0))%l.length]}
+function pill(st){return '<span class="pill '+st+'">'+STAT[st]+'</span>'}
+
+/* ===== modais de PIN ===== */
+function pinModal(userId,opts){
+  opts=opts||{};const u=user(userId),has=!!u.pinHash;
+  openModal('<h2>'+(has?'Trocar PIN':'Criar PIN de '+esc(u.name))+'</h2><p class="muted">O PIN é pessoal e dá acesso só à conta de '+esc(u.name)+'. Use de 4 a 6 números.</p>'+
+   '<form class="col" data-f="pin" data-id="'+userId+'" data-after="'+(opts.after||'')+'">'+(has?'<label class="f">PIN atual<input class="in" name="cur" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" required></label>':'')+
+   '<label class="f">Novo PIN<input class="in" name="p1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
+   '<label class="f">Repita o PIN<input class="in" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
+   '<div class="row"><button class="btn primary" type="submit">Salvar PIN</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>');
+}
+
+/* ===== login ===== */
+function vLogin(){
+  const L=UI.login,list=actives();
+  let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>';
+  if(!L.sel){
+    h+='<div class="card"><h2>Quem vai jogar?</h2><p class="muted" style="margin-top:6px">Cada pessoa entra com o próprio PIN. Escolha o seu personagem.</p></div><div class="who">'+
+      list.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span>'+(u.pinHash?'':'<span class="pill">primeiro acesso</span>')+'</button>').join('')+'</div>';
+  }else{
+    const u=user(L.sel),first=!u.pinHash;
+    h+='<div class="card col" style="align-items:center;text-align:center">'+avHtml(u,'lg')+'<h2>'+(first?'Olá, '+esc(u.name)+'! Crie o seu PIN':'Entrar como '+esc(u.name))+'</h2>'+
+      '<form class="col" style="width:100%" data-f="login" data-id="'+u.id+'">'+
+      '<label class="f" style="text-align:left">'+(first?'Novo PIN (4 a 6 números)':'PIN')+'<input class="in pinin" name="p1" type="password" inputmode="numeric" autocomplete="'+(first?'new-password':'current-password')+'" maxlength="6" required autofocus></label>'+
+      (first?'<label class="f" style="text-align:left">Repita o PIN<input class="in pinin" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>':'')+
+      (L.err?'<div class="banner red" role="alert">'+esc(L.err)+'</div>':'')+
+      '<button class="btn primary" type="submit">'+(first?'Criar PIN e entrar':'Entrar')+'</button><button class="btn ghost" type="button" data-a="unpick">Voltar</button></form></div>';
+  }
+  return h+'</div>';
+}
+
+/* ===== primeiro acesso (onboarding) ===== */
+const OBN=7;
+function vOnboard(){
+  const st=UI.obStep,s=S.settings;let h='<div class="login" style="max-width:720px"><div class="brand"><span class="logo">👑</span>Configuração inicial</div><div class="steps" aria-label="Etapa '+(st+1)+' de '+OBN+'">'+Array.from({length:OBN},(_,i)=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div>';
+  const nav=(last)=>'<div class="row sp">'+(st>0?'<button class="btn ghost" type="button" data-a="ob-back">Voltar</button>':'<span></span>')+'<button class="btn '+(last?'green':'primary')+'" type="submit">'+(last?'Iniciar o jogo':'Continuar')+'</button></div>';
+  h+='<form class="card col" data-f="ob" data-step="'+st+'">';
+  if(st===0)h+='<h2>Bem-vindos!</h2><p class="muted">Vamos ajustar o jogo em poucos passos. Tudo pode ser alterado depois em Ajustes.</p><label class="f">Nome do aplicativo<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label>';
+  if(st===1){
+    h+='<h2>Participantes</h2><p class="muted">De 3 a 4 jogadores. O primeiro é o administrador. Cada pessoa cria o próprio PIN, passando o aparelho ou no primeiro acesso.</p>';
+    S.users.filter(u=>u.active).forEach((u,i)=>{
+      h+='<div class="card flat col"><div class="row">'+avHtml(u)+'<label class="f grow">Nome<input class="in" name="n_'+u.id+'" value="'+esc(u.name)+'" maxlength="20" required></label></div><div class="form">'+
+       '<label class="f">Avatar<select class="in" name="a_'+u.id+'">'+AVATARS.map(a=>'<option '+(a===u.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
+       '<label class="f">Cor<select class="in" name="c_'+u.id+'">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===u.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+
+       '<div class="row"><span class="pill">'+(u.role==='admin'?'Administrador':'Participante')+'</span><span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span><button class="btn sm" type="button" data-a="ob-pin" data-id="'+u.id+'">'+(u.pinHash?'Trocar PIN':'Definir PIN')+'</button>'+(i>=3?'<button class="btn sm ghost" type="button" data-a="ob-rm" data-id="'+u.id+'">Remover</button>':'')+'</div></div>';
+    });
+    if(actives().length<4)h+='<button class="btn" type="button" data-a="ob-add">Adicionar 4º participante</button>';
+  }
+  if(st===2)h+='<h2>Tabela de pontos</h2><p class="muted">Pontuação fixa por tarefa. Ajuste se quiser; cada ocorrência também pode ser editada antes de ser feita.</p><div class="form">'+S.catalog.map(m=>'<label class="f">'+esc(cat(m.categoryId).icon+' '+m.title)+'<input class="in num" type="number" min="1" max="500" step="1" name="m_'+m.id+'" value="'+m.points+'" required></label>').join('')+'</div>';
+  if(st===3)h+='<h2>Premiação</h2><div class="form"><label class="f">Prêmio em dinheiro (R$)<input class="in" type="number" min="0" step="1" name="prize" value="'+s.prize+'" required></label><label class="f">Dias de descanso total<input class="in" type="number" min="0" max="10" step="1" name="restDays" value="'+s.restDays+'" required></label></div>'+
+    '<label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Usar a loja de recompensas (moedas separadas dos pontos)</label><label class="f">Moedas ganhas por ponto aprovado<input class="in" type="number" min="0" max="10" step="1" name="coinRate" value="'+s.coinRate+'"></label><p class="muted sm">Pontos do ranking, moedas, prêmio em dinheiro e descanso são registrados separadamente. A loja nunca altera o ranking.</p>';
+  if(st===4)h+='<h2>Penalidades</h2><label class="chk"><input type="checkbox" name="pen" '+(s.penalty.enabled?'checked':'')+'> Ativar penalidades (desativadas por padrão)</label><div class="form"><label class="f">Pontos por atraso<input class="in" type="number" min="0" max="100" name="late" value="'+s.penalty.latePoints+'"></label><label class="f">Pontos por tarefa não executada<input class="in" type="number" min="0" max="100" name="miss" value="'+s.penalty.missPoints+'"></label><label class="f">Dias de tolerância após o prazo<input class="in" type="number" min="0" max="30" name="grace" value="'+s.penalty.grace+'"></label><label class="f">Máximo por tarefa<input class="in" type="number" min="0" max="100" name="max" value="'+s.penalty.maxPerOcc+'"></label></div><p class="muted sm">Cada penalidade é aplicada uma única vez por tarefa, nunca deixa a pontuação do mês abaixo de zero e pode ser contestada. Não há desconto em dinheiro.</p>';
+  if(st===5)h+='<h2>Início da competição</h2><label class="f">Primeiro dia do período<input class="in" type="date" name="start" value="'+s.startDate+'" required></label><p class="muted sm">O primeiro período vai até o fim do mês. Depois, cada mês é encerrado pelo administrador.</p>';
+  if(st===6){const pe=s.penalty;h+='<h2>Resumo das regras</h2><ul class="col" style="margin:0;padding-left:20px"><li>Vence o mês quem tiver mais pontos aprovados.</li><li>Desempate: mais tarefas aprovadas; depois mais pontos de tarefas recorrentes; persistindo, decisão manual registrada.</li><li>Prêmio: R$ '+s.prize+' e '+s.restDays+' dias de descanso total.</li><li>Todo ponto exige foto e aprovação de outra pessoa. Ninguém aprova a própria tarefa.</li><li>Cada tarefa pontua uma única vez.</li><li>Penalidades: '+(pe.enabled?'ativas (atraso '+pe.latePoints+', não executada '+pe.missPoints+', máximo '+pe.maxPerOcc+')':'desativadas')+'.</li><li>Loja: '+(s.shop?'ativada':'desativada')+'. Moedas não entram no ranking.</li><li>Cada pessoa tem o próprio PIN.</li></ul>'+(S.users[0].pinHash?'':'<div class="banner red">O administrador ('+esc(S.users[0].name)+') precisa definir o PIN antes de iniciar. Volte à etapa de participantes.</div>');}
+  h+=nav(st===OBN-1)+'</form></div>';return h;
+}
+
+/* ===== shell ===== */
+const NAV=[['home','Início'],['tasks','Tarefas'],['rank','Ranking'],['wheel','Roleta'],['ach','Conquistas'],['shop','Loja'],['hist','Histórico'],['set','Ajustes']];
+function vShell(inner){
+  const me=user(UI.me),p=openPeriod();const items=NAV.filter(n=>n[0]!=='shop'||S.settings.shop);
+  const side=items.map(n=>'<button class="nav" data-a="go" data-v="'+n[0]+'" '+(UI.view===n[0]?'aria-current="page"':'')+'>'+ic(n[0])+n[1]+'</button>').join('');
+  const mob=['home','tasks','rank','wheel'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+'</button>'}).join('')+'<button data-a="more" '+(['ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais</button>';
+  const days=p?Math.max(0,diffDays(today(),p.end)):0;
+  return '<div class="app"><aside class="side"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
+   '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
+   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong><button class="btn sm" data-a="logout">Trocar jogador</button></div></header>'+
+   (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
+   inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
+}
+function moreModal(){
+  openModal('<h2>Mais</h2><div class="col">'+['ach','shop','hist','set'].filter(k=>k!=='shop'||S.settings.shop).map(k=>'<button class="btn" data-a="go" data-v="'+k+'">'+ic(k).replace('<svg','<svg width="22" height="22"')+NAV.find(n=>n[0]===k)[1]+'</button>').join('')+'</div>');
+}
+/* ===== componentes de tarefa ===== */
+const canReview=o=>o.status==='awaiting_approval'&&o.submittedBy!==UI.me&&o.assignedTo!==UI.me;
+const empty=(e,t,s)=>'<div class="empty"><div class="big-e" aria-hidden="true">'+e+'</div><h3>'+t+'</h3><p>'+(s||'')+'</p></div>';
+function taskCard(o){
+  const st=effStatus(o),c=cat(o.categoryId),a=o.assignedTo&&user(o.assignedTo),me=UI.me,adm=isAdmin(me),mine=o.assignedTo===me;let acts='';
+  if(mine&&['available','in_progress','rejected'].includes(o.status)){if(o.status==='available')acts+='<button class="btn sm" data-a="start" data-id="'+o.id+'">Iniciar</button>';acts+='<button class="btn sm green" data-a="submit" data-id="'+o.id+'">Enviar foto</button>'}
+  if(!o.assignedTo&&OPEN_ST.includes(o.status))acts+='<button class="btn sm yellow" data-a="claim" data-id="'+o.id+'">Assumir</button>';
+  if(canReview(o))acts+='<button class="btn sm primary" data-a="review" data-id="'+o.id+'">Revisar</button>';
+  if(o.photoId&&o.status!=='awaiting_approval')acts+='<button class="btn sm" data-a="proof" data-id="'+o.id+'">Ver prova</button>';
+  if(adm&&OPEN_ST.includes(o.status))acts+='<button class="btn sm" data-a="editocc" data-id="'+o.id+'">Editar</button>';
+  if(adm&&(OPEN_ST.includes(o.status)||o.status==='awaiting_approval'))acts+='<button class="btn sm ghost" data-a="cancelocc" data-id="'+o.id+'">Cancelar</button>';
+  return '<article class="card task"><div class="ic" aria-hidden="true">'+c.icon+'</div><div class="col" style="gap:6px"><div class="row sp"><h4>'+esc(o.title)+'</h4><span class="pill pts">'+o.points+' pts</span></div>'+
+   '<div class="meta">'+pill(st)+'<span>'+esc(c.name)+'</span><span>Prazo '+brDate(o.dueDate)+'</span><span>'+(a?'Responsável: '+esc(a.name):'Sem responsável')+'</span>'+(o.recurring?'<span>Recorrente</span>':'')+'</div>'+
+   (o.desc?'<p class="sm muted">'+esc(o.desc)+'</p>':'')+(o.status==='rejected'?'<p class="sm" style="color:var(--red)">Rejeitada: '+esc(o.rejectionReason)+'. Envie uma nova foto.</p>':'')+
+   (o.status==='awaiting_approval'&&!canReview(o)?'<p class="sm muted">Aguardando aprovação de outra pessoa.</p>':'')+
+   (acts?'<div class="acts" style="margin-top:2px">'+acts+'</div>':'')+'</div></article>';
+}
+function rankRows(pid,compact){
+  const st=standings(pid),max=Math.max(1,...st.map(r=>r.pts)),lead=st[0]?st[0].pts:0;
+  return st.map(r=>{const u=r.user;const w=Math.max(0,r.pts)/max*100;
+    return '<div class="rank"><div class="pos">'+r.pos+'º</div>'+avHtml(u)+'<div class="col" style="gap:4px"><div class="row" style="gap:6px"><strong>'+uname(u)+'</strong>'+(r.pos===1&&r.pts>0?crown:'')+(r.tied&&r.pts>0?'<span class="pill">empate</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+'</div>'+
+     '<div class="bar" role="img" aria-label="'+r.pts+' pontos"><i style="width:'+w+'%;background:'+esc(u.color)+'"></i></div>'+(compact?'':'<span class="sm muted">'+r.tasks+' tarefas aprovadas · '+(r.pos===1?'líder':(lead-r.pts)+' pts do líder')+' · '+trend(r.id,pid)+'</span>')+'</div><div class="big num" style="font-size:26px">'+r.pts+'</div></div>';
+  }).join('')||empty('🏁','Sem participantes','');
+}
+function trend(uid,pid){
+  const t=today(),a=addDays(t,-6),b=addDays(t,-13);
+  const f=(x,y)=>S.scoreTx.filter(s=>s.userId===uid&&s.periodId===pid&&s.day>=x&&s.day<=y).reduce((n,s)=>n+s.points,0);
+  const cur=f(a,t),prev=f(b,addDays(a,-1));return (cur>prev?'↑ em alta':cur<prev?'↓ em queda':'→ estável')+' ('+(cur>=0?'+':'')+cur+' em 7 dias)';
+}
+function lineChart(pid){
+  const p=period(pid);if(!p)return '';const end=p.status==='closed'?p.end:(today()<p.end?today():p.end);
+  let n=diffDays(p.start,end)+1;if(n<1)n=1;if(n>32)n=32;const st=standings(pid);
+  const W=560,H=250,L=44,R=18,T=14,B=38;
+  const series=st.map(r=>{let c=0;const pts=[];const tx=S.scoreTx.filter(t=>t.userId===r.id&&t.periodId===pid);
+    for(let i=0;i<n;i++){const d=addDays(p.start,i);c+=tx.filter(t=>(i===0?t.day<=d:t.day===d)).reduce((a,t)=>a+t.points,0);pts.push(c)}
+    return {u:r.user,pts}});
+  let mx=5,mn=0;series.forEach(s=>s.pts.forEach(v=>{mx=Math.max(mx,v);mn=Math.min(mn,v)}));mx=Math.ceil(mx/5)*5;if(mn<0)mn=Math.floor(mn/5)*5;
+  const X=i=>n===1?(L+(W-L-R)/2):L+i*(W-L-R)/(n-1),Y=v=>T+(mx-v)*(H-T-B)/(mx-mn);
+  const dash=['','9 5','2 5','12 4 2 4'];let g='';
+  [mn,Math.round((mx+mn)/2),mx].forEach(v=>{g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" style="stroke:var(--muted)" stroke-opacity=".3" stroke-dasharray="3 4"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="12" style="fill:var(--muted)">'+v+'</text>'});
+  [0,Math.floor((n-1)/2),n-1].filter((v,i,a)=>a.indexOf(v)===i).forEach(i=>{g+='<text x="'+X(i)+'" y="'+(H-14)+'" text-anchor="middle" font-size="12" style="fill:var(--muted)">'+brShort(addDays(p.start,i))+'</text>'});
+  g+='<text x="'+(L+(W-L-R)/2)+'" y="'+(H-1)+'" text-anchor="middle" font-size="11" style="fill:var(--muted)">Dia do período</text>';
+  series.forEach((s,k)=>{const d=s.pts.map((v,i)=>(i?'L':'M')+X(i)+' '+Y(v)).join(' ');
+    g+='<path d="'+d+'" fill="none" stroke="'+esc(s.u.color)+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="'+dash[k%4]+'"/><circle cx="'+X(n-1)+'" cy="'+Y(s.pts[n-1])+'" r="6" fill="'+esc(s.u.color)+'" style="stroke:var(--line)" stroke-width="2.5"/>'});
+  const leg=series.map((s,k)=>'<span><svg width="34" height="10" aria-hidden="true"><line x1="2" x2="32" y1="5" y2="5" stroke="'+esc(s.u.color)+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+dash[k%4]+'"/></svg>'+esc(s.u.name)+' ('+s.pts[n-1]+')</span>').join('');
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Pontos acumulados por dia">'+g+'</svg><div class="legend">'+leg+'</div><p class="sm muted">Pontos acumulados por dia, a partir de '+brDate(p.start)+'. Eixo vertical em pontos.</p>';
+}
+
+/* ===== Início ===== */
+function vHome(){
+  const p=openPeriod(),me=UI.me,st=standings(p.id),mypos=st.find(r=>r.id===me);
+  const mine=S.occurrences.filter(o=>o.assignedTo===me&&OPEN_ST.includes(o.status)).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  const late=S.occurrences.filter(o=>effStatus(o)==='late');const toReview=S.occurrences.filter(canReview);
+  const done=taskTx(null,p.id).length,days=Math.max(0,diffDays(today(),p.end));
+  const unassigned=S.occurrences.filter(o=>!o.assignedTo&&OPEN_ST.includes(o.status));
+  const feature=[...late,...unassigned.filter(o=>!late.includes(o)),...mine.filter(o=>!late.includes(o))].slice(0,5);
+  let h='';
+  if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
+  if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
+  h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
+  h+='<div class="grid stats">'+
+   '<div class="card stat"><span class="lbl">Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
+   '<div class="card stat"><span class="lbl">Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
+   '<div class="card stat"><span class="lbl">Minha posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pontos · sequência de '+streak(me)+' dia(s)':'')+'</span></div>'+
+   '<div class="card stat"><span class="lbl">Dias restantes</span><span class="big">'+days+'</span><span class="sm muted">até '+brDate(p.end)+'</span></div>'+
+   (S.settings.shop?'<div class="card stat"><span class="lbl">Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
+  h+='<div class="grid two"><section class="card"><div class="row sp"><h3>Ranking do mês</h3><button class="btn sm" data-a="go" data-v="rank">Ver tudo</button></div>'+rankRows(p.id,true)+'</section>'+
+   '<section class="card"><h3>Missões em destaque</h3>'+(feature.length?'<div class="col">'+feature.map(taskCard).join('')+'</div>':empty('🎯','Nenhuma missão urgente','Veja a aba Tarefas para o que está por vir.'))+'</section></div>';
+  const ua=S.unlocked.slice(-4).reverse();
+  h+='<section class="card"><h3>Conquistas recentes</h3>'+(ua.length?'<div class="grid">'+ua.map(x=>{const a=ACH.find(k=>k.id===x.achId),u=user(x.userId);return '<div class="ach"><div class="ic">'+a.icon+'</div><div><strong>'+esc(a.name)+'</strong><div class="sm muted">'+esc(u.name)+' · '+brTime(x.at)+'</div></div></div>'}).join('')+'</div>':empty('🏅','Ainda sem conquistas','A primeira tarefa aprovada desbloqueia a Primeira Missão.'))+'</section>';
+  return h;
+}
+
+/* ===== Tarefas ===== */
+function filterOccs(){
+  const f=UI.filters,q=normT(f.q);
+  return S.occurrences.filter(o=>{
+    const st=effStatus(o);
+    if(f.who!=='all'&&(f.who==='none'?o.assignedTo:o.assignedTo!==f.who))return false;
+    if(f.cat!=='all'&&o.categoryId!==f.cat)return false;
+    if(f.st==='open'){if(!OPEN_ST.includes(o.status)&&o.status!=='awaiting_approval')return false}
+    else if(f.st==='late'){if(st!=='late')return false}
+    else if(f.st!=='all'&&o.status!==f.st)return false;
+    if(q&&!normT(o.title).includes(q))return false;return true;
+  }).sort((a,b)=>(a.status==='done')-(b.status==='done')||a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
+}
+function vTasks(){
+  const f=UI.filters,adm=isAdmin(UI.me);
+  let h='<div class="row sp"><div class="tabs" role="tablist"><button class="tab" role="tab" data-a="tab" data-t="occ" aria-selected="'+(UI.tab==='occ')+'">Tarefas</button><button class="tab" role="tab" data-a="tab" data-t="defs" aria-selected="'+(UI.tab==='defs')+'">Recorrentes</button></div>'+(adm?'<button class="btn yellow" data-a="newtask">Nova tarefa</button>':'')+'</div>';
+  if(UI.tab==='defs'){
+    h+='<div class="col">'+(S.tasks.filter(d=>d.frequency!=='once').map(d=>'<div class="card row sp"><div class="row"><div class="task"><div class="ic">'+cat(d.categoryId).icon+'</div></div><div><strong>'+esc(d.title)+'</strong><div class="meta"><span>'+FREQ[d.frequency]+(d.frequency==='custom'?' ('+d.interval+' dias)':'')+'</span><span>'+d.points+' pts</span><span>'+(d.assignedTo?esc(nameOf(d.assignedTo)):'Sem responsável')+'</span><span>'+(d.active?'Próxima: '+brDate(d.nextDue):'Pausada')+'</span></div></div></div>'+(adm?'<div class="row"><button class="btn sm" data-a="editdef" data-id="'+d.id+'">Editar</button><button class="btn sm ghost" data-a="deldef" data-id="'+d.id+'">Remover</button></div>':'')+'</div>').join('')||empty('🔁','Nenhuma tarefa recorrente','Crie uma tarefa diária, semanal ou mensal para ela se repetir sozinha.'))+'</div>';
+    return h;
+  }
+  const opt=(v,l,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+l+'</option>';
+  h+='<div class="card form" style="box-shadow:none">'+
+   '<label class="f">Responsável<select class="in" data-filter="who">'+opt('all','Todos',f.who)+opt('none','Sem responsável',f.who)+actives().map(u=>opt(u.id,esc(u.name),f.who)).join('')+'</select></label>'+
+   '<label class="f">Categoria<select class="in" data-filter="cat">'+opt('all','Todas',f.cat)+S.categories.map(c=>opt(c.id,esc(c.icon+' '+c.name),f.cat)).join('')+'</select></label>'+
+   '<label class="f">Status<select class="in" data-filter="st">'+opt('open','Em aberto',f.st)+opt('all','Todos',f.st)+opt('late','Atrasadas',f.st)+['available','in_progress','awaiting_approval','done','rejected','cancelled'].map(s=>opt(s,STAT[s],f.st)).join('')+'</select></label>'+
+   '<label class="f">Buscar<input class="in" id="q" type="search" placeholder="Nome da tarefa" value="'+esc(f.q)+'"></label></div>';
+  h+='<div class="col" id="tasklist">'+taskList()+'</div>';return h;
+}
+function taskList(){
+  const l=filterOccs();
+  if(l.length)return l.map(taskCard).join('');
+  return '<div class="card">'+(S.occurrences.length?empty('🔍','Nada por aqui','Nenhuma tarefa corresponde aos filtros.'):empty('🧹','A casa ainda não tem tarefas',isAdmin(UI.me)?'Crie a primeira a partir de um modelo da tabela de pontos.':'Peça a um administrador para criar as primeiras tarefas.'))+'</div>';
+}
+
+/* ===== Ranking ===== */
+function vRank(){
+  const pid=UI.rankP&&period(UI.rankP)?UI.rankP:openPeriod().id,p=period(pid),adm=isAdmin(UI.me);
+  let h='<div class="row sp"><label class="f" style="min-width:220px">Período<select class="in" data-filter="rankP">'+[...S.periods].reverse().map(x=>'<option value="'+x.id+'" '+(x.id===pid?'selected':'')+'>'+esc(periodLabel(x))+(x.status==='closed'?' (encerrado)':' (atual)')+'</option>').join('')+'</select></label>'+
+   (adm&&p.status==='open'?'<button class="btn yellow" data-a="close-period">Encerrar período</button>':'')+'</div>';
+  if(p.status==='closed')h+='<div class="banner blue"><span><strong>Resultado oficial:</strong> '+(p.winnerId?'campeão '+esc(nameOf(p.winnerId))+' · prêmio R$ '+p.prizeAmount:'sem vencedor')+(p.tieResolution?' · empate decidido: '+esc(p.tieResolution.note):'')+'</span></div>';
+  h+='<section class="card"><h3>Classificação</h3>'+rankRows(pid)+'</section>';
+  const st=standings(pid);
+  h+='<section class="card"><h3>Comparação</h3><div class="scroll"><table class="tbl"><thead><tr><th>Jogador</th><th>Pontos</th><th>Tarefas</th><th>Pts recorrentes</th><th>Sequência</th><th>Histórico</th></tr></thead><tbody>'+st.map(r=>'<tr><td>'+esc(r.user.avatar+' '+r.user.name)+'</td><td class="num">'+r.pts+'</td><td class="num">'+r.tasks+'</td><td class="num">'+r.rec+'</td><td class="num">'+streak(r.id)+' dia(s)</td><td class="num">'+score(r.id)+' pts</td></tr>').join('')+'</tbody></table></div></section>';
+  h+='<section class="card"><h3>Evolução no mês</h3>'+lineChart(pid)+'</section>';
+  const cl=S.periods.filter(x=>x.status==='closed').reverse();
+  h+='<section class="card"><h3>Campeões e prêmios</h3>'+(cl.length?cl.map(x=>{const rd=S.restDays.filter(r=>r.periodId===x.id);
+   return '<div class="card flat col" style="margin-bottom:10px"><div class="row sp"><strong>'+esc(periodLabel(x))+'</strong><span>'+(x.winnerId?'🏆 '+esc(nameOf(x.winnerId)):'Sem vencedor')+'</span></div>'+
+    (x.winnerId?'<div class="row sp"><span>Prêmio: R$ '+x.prizeAmount+' · '+(x.prizePaid?'pago':'a pagar')+'</span>'+(adm?'<button class="btn sm" data-a="paid" data-id="'+x.id+'" data-v="'+(x.prizePaid?'0':'1')+'">'+(x.prizePaid?'Marcar a pagar':'Marcar como pago')+'</button>':'')+'</div>'+
+    rd.map((r,i)=>'<div class="row sp"><span>Descanso '+(i+1)+': '+({pending:'pendente',scheduled:'agendado',used:'usufruído'}[r.status])+(r.date?' · '+brDate(r.date):'')+'</span>'+(adm?'<button class="btn sm" data-a="restedit" data-id="'+r.id+'">Definir</button>':'')+'</div>').join(''):'')+'</div>'}).join(''):'<p class="muted">Nenhum mês foi encerrado ainda.</p>')+'</section>';
+  return h;
+}
+
+/* ===== Roleta ===== */
+const WCOL=['--yellow','--blue','--green','--orange','--red'];
+function wheelSvg(pool){
+  const n=pool.length,seg=360/n;let g='';
+  if(n===1)g='<circle r="98" cx="0" cy="0" style="fill:var(--yellow)" stroke-width="3" class="wl"/>';
+  pool.forEach((o,i)=>{if(n===1)return;const a0=(i*seg-90)*Math.PI/180,a1=((i+1)*seg-90)*Math.PI/180,R=98;
+    g+='<path d="M0 0L'+(R*Math.cos(a0)).toFixed(2)+' '+(R*Math.sin(a0)).toFixed(2)+'A'+R+' '+R+' 0 '+(seg>180?1:0)+' 1 '+(R*Math.cos(a1)).toFixed(2)+' '+(R*Math.sin(a1)).toFixed(2)+'Z" style="fill:var('+WCOL[i%5]+')" class="wl"/>'});
+  if(n<=12)pool.forEach((o,i)=>{const mid=(i+.5)*seg-90;const t=(o.icon?o.icon+' ':'')+o.label;const flip=Math.cos(mid*Math.PI/180)<0;g+='<text transform="rotate('+(flip?mid+180:mid).toFixed(1)+') translate('+(flip?-30:30)+' 0)" text-anchor="'+(flip?'end':'start')+'" font-size="'+(n>8?5.5:7)+'" font-weight="800" dominant-baseline="middle" style="fill:#1B2340;paint-order:stroke;stroke:#ffffff88;stroke-width:1.2px">'+esc(t.length>(n>8?12:15)?t.slice(0,(n>8?11:14))+'…':t)+'</text>'});
+  return '<svg class="wheel" viewBox="-102 -102 204 204" role="img" aria-label="Roleta com '+n+' opções" style="transform:rotate('+UI.spin.rot+'deg)"><g stroke="#1B2340" stroke-width="2.5">'+g+'</g><circle r="9" style="fill:var(--surface)" stroke="#1B2340" stroke-width="3"/></svg>';
+}
+function vWheel(){
+  const sp=UI.spin,adm=isAdmin(UI.me);let h='';
+  const modes=[['task','Tarefa'],['user','Participante'],['challenge','Desafio'],['category','Tarefa por categoria']];
+  h+='<div class="tabs" role="tablist">'+modes.map(m=>'<button class="tab" role="tab" data-a="spin-mode" data-m="'+m[0]+'" aria-selected="'+(sp.mode===m[0])+'">'+m[1]+'</button>').join('')+'</div>';
+  const opts={categoryId:sp.cat,exclude:sp.excl};const pool=A.pool(sp.mode,opts);
+  if(sp.stage==='spin'||sp.stage==='result'){
+    h+='<section class="card col" style="align-items:center"><div class="wheelbox"><div class="pointer"></div>'+wheelSvg(sp.pool)+'</div>';
+    if(sp.stage==='spin')h+='<p class="muted" aria-live="polite">Girando…</p>';
+    else{h+='<div class="pop col" style="align-items:center;text-align:center"><span class="muted">Resultado</span><h2>'+esc((sp.pool[sp.idx].icon?sp.pool[sp.idx].icon+' ':'')+sp.pool[sp.idx].label)+'</h2><p class="sm muted">Entre '+sp.pool.length+' opções: '+esc(sp.pool.map(x=>x.label).join(', '))+'. O sorteio foi registrado e não altera pontos.</p><div class="row">';
+      const r=sp.pool[sp.idx];
+      if(sp.mode==='task'||sp.mode==='category'){const o=occ(r.id);if(o&&!o.assignedTo&&OPEN_ST.includes(o.status))h+='<button class="btn yellow" data-a="claim" data-id="'+o.id+'">Assumir esta tarefa</button>';if(o&&adm&&OPEN_ST.includes(o.status))h+='<button class="btn" data-a="assignpick" data-oid="'+o.id+'">Atribuir a alguém</button>'}
+      if(sp.mode==='user'&&adm)h+='<button class="btn" data-a="assignto" data-uid="'+r.id+'">Atribuir uma tarefa a '+esc(r.label)+'</button>';
+      h+='<button class="btn primary" data-a="spin-reset">Novo sorteio</button></div></div>'}
+    h+='</section>';
+  }else{
+    h+='<section class="card col"><h3>Configurar sorteio</h3>';
+    if(sp.mode==='category')h+='<label class="f">Categoria<select class="in" data-filter="spinCat">'+S.categories.map(c=>'<option value="'+c.id+'" '+(c.id===sp.cat?'selected':'')+'>'+esc(c.icon+' '+c.name)+'</option>').join('')+'</select></label>';
+    if(sp.mode==='user')h+='<fieldset class="col" style="border:0;padding:0;margin:0"><legend class="f" style="font-weight:800;font-size:13px">Quem participa</legend>'+actives().map(u=>'<label class="chk"><input type="checkbox" data-excl="'+u.id+'" '+(sp.excl.includes(u.id)?'':'checked')+'> '+esc(u.avatar+' '+u.name)+'</label>').join('')+'</fieldset>';
+    if(sp.mode==='task')h+='<p class="muted sm">Sorteia entre as tarefas em aberto do período atual. Tarefas concluídas ou aguardando aprovação ficam de fora.</p>';
+    if(sp.mode==='challenge')h+='<p class="muted sm">Sorteia um desafio da lista. Desafios não geram pontos automaticamente. A lista pode ser editada em Ajustes.</p>';
+    if(sp.stage==='confirm'){
+      h+=pool.length?'<div class="banner blue col" style="align-items:flex-start"><strong>Participam deste sorteio ('+pool.length+'):</strong><span>'+esc(pool.map(x=>x.label).join(', '))+'</span></div><div class="row"><button class="btn green" data-a="spin-go">Confirmar e girar</button><button class="btn ghost" data-a="spin-cancel">Cancelar</button></div>':'';
+    }else h+=pool.length?'<div><strong>'+pool.length+' opção(ões) elegível(is)</strong><p class="sm muted">'+esc(pool.map(x=>x.label).join(', '))+'</p></div><button class="btn yellow" data-a="spin-ask" '+(pool.length<2&&sp.mode==='user'?'disabled':'')+'>Sortear</button>':empty('🎡','Nada para sortear','Não há opções elegíveis neste modo.');
+    h+='</section><section class="card"><div class="wheelbox">'+(pool.length?wheelSvg(pool.slice(0,24)):'')+'</div></section>';
+  }
+  const last=S.spins.slice(-5).reverse();
+  if(last.length)h+='<section class="card"><h3>Últimos sorteios</h3>'+last.map(s=>'<div class="ev"><span aria-hidden="true">🎡</span><span>'+esc(s.result)+' <span class="muted sm">('+({task:'tarefa',user:'participante',challenge:'desafio',category:'categoria'}[s.mode])+', por '+esc(nameOf(s.by))+')</span></span><span class="sm muted">'+brTime(s.at)+'</span></div>').join('')+'</section>';
+  return h;
+}
+
+/* ===== Conquistas ===== */
+function vAch(){
+  const who=UI.achWho&&user(UI.achWho)?UI.achWho:UI.me;
+  let h='<div class="tabs" role="tablist">'+actives().map(u=>'<button class="tab" role="tab" data-a="achwho" data-id="'+u.id+'" aria-selected="'+(u.id===who)+'">'+esc(u.avatar+' '+u.name)+'</button>').join('')+'</div><div class="grid">';
+  ACH.forEach(a=>{const r=achOf(a,who),un=isUnlocked(who,a.id);
+    h+='<article class="card ach '+(un?'':'lock')+'"><div class="ic" aria-hidden="true">'+a.icon+'</div><div class="col" style="gap:6px"><div><strong>'+esc(a.name)+'</strong> '+(un?'<span class="pill done">Desbloqueada</span>':'<span class="pill">Bloqueada</span>')+'</div><p class="sm muted">'+esc(a.desc)+'</p>'+
+     '<div class="bar" role="img" aria-label="'+r.cur+' de '+r.max+'"><i style="width:'+(r.cur/r.max*100)+'%;background:var(--green)"></i></div><span class="sm muted">'+(un?'Em '+brDate(dayOf(un.at)):r.cur+' de '+r.max)+(a.coins?' · recompensa: '+a.coins+' moedas':'')+'</span></div></article>'});
+  return h+'</div>';
+}
+
+/* ===== Loja ===== */
+function vShop(){
+  const me=UI.me,adm=isAdmin(me);let h='<div class="row sp"><div class="tabs" role="tablist"><button class="tab" role="tab" data-a="shoptab" data-t="shop" aria-selected="'+(UI.shopTab==='shop')+'">Recompensas</button><button class="tab" role="tab" data-a="shoptab" data-t="mine" aria-selected="'+(UI.shopTab==='mine')+'">Resgates</button></div><div class="card row" style="padding:8px 14px"><span class="lbl muted">Moedas</span><span class="big" style="font-size:26px">'+balance(me)+'</span></div></div>';
+  h+='<p class="muted sm">Moedas vêm das tarefas aprovadas e não entram no ranking nem no prêmio do mês.</p>';
+  if(UI.shopTab==='shop'){
+    h+='<div class="grid">'+S.rewards.filter(r=>r.active||adm).map(r=>{const can=balance(me)>=r.cost&&(r.stock==null||r.stock>0)&&r.active;
+     return '<article class="card col"><div class="row sp"><h4>'+esc(r.name)+'</h4><span class="pill pts">'+r.cost+' moedas</span></div><p class="sm muted">'+esc(r.desc)+'</p><div class="meta">'+(r.stock!=null?'<span>Estoque: '+r.stock+'</span>':'')+(r.limit?'<span>Limite: '+r.limit+(r.kind==='normal'?' por mês':'')+'</span>':'')+(r.active?'':'<span class="pill">inativa</span>')+'</div>'+
+      '<div class="row"><button class="btn sm '+(can?'yellow':'')+'" data-a="buy" data-id="'+r.id+'" '+(can?'':'disabled')+'>'+(r.stock===0?'Esgotada':balance(me)<r.cost?'Faltam '+(r.cost-balance(me))+' moedas':'Resgatar')+'</button>'+(adm?'<button class="btn sm ghost" data-a="editreward" data-id="'+r.id+'">Editar</button>':'')+'</div></article>'}).join('')+'</div>'+(adm?'<button class="btn" data-a="editreward">Nova recompensa</button>':'');
+  }else{
+    const l=S.redemptions.filter(r=>adm||r.userId===me||r.status==='pending'||r.status==='approved').slice().reverse();
+    h+='<div class="col">'+(l.length?l.map(r=>{const mineR=r.userId===me,lab={pending:'Pendente',approved:'Aprovada',done:'Concluída',cancelled:'Cancelada'}[r.status];
+     return '<div class="card row sp"><div><strong>'+esc(r.name)+'</strong><div class="meta"><span>'+esc(nameOf(r.userId))+'</span><span>'+r.cost+' moedas</span><span>'+brTime(r.createdAt)+'</span><span class="pill">'+lab+'</span></div></div><div class="row">'+
+      (r.status==='pending'&&!mineR?'<button class="btn sm primary" data-a="red" data-act="approve" data-id="'+r.id+'">Aprovar</button>':'')+((r.status==='approved'||r.status==='pending')&&(mineR||adm)?'<button class="btn sm green" data-a="red" data-act="done" data-id="'+r.id+'">Concluir</button>':'')+((r.status==='pending'||r.status==='approved')&&(mineR||adm)?'<button class="btn sm ghost" data-a="red" data-act="cancel" data-id="'+r.id+'">Cancelar e estornar</button>':'')+'</div></div>'}).join(''):empty('🛍️','Nenhum resgate ainda','Troque moedas por recompensas na aba Recompensas.'))+'</div>';
+  }
+  return h;
+}
+
+/* ===== Histórico ===== */
+function events(){
+  const E=[];const tc=t=>{const o=occ(t.occId);return o?o.categoryId:null};
+  S.scoreTx.forEach(t=>{const sg=t.points>0?'+':'';
+    const m={task:['task','Tarefa aprovada: '+t.reason],adjust:['adjust','Ajuste manual: '+t.reason],penalty:['penalty','Penalidade: '+t.reason],reversal:['adjust','Estorno: '+t.reason]}[t.type];E.push({at:t.createdAt,userId:t.userId,type:m[0],text:m[1],pts:sg+t.points,cat:tc(t)})});
+  S.evidences.filter(e=>e.reviewStatus==='rejected').forEach(e=>{const o=occ(e.occId);E.push({at:e.reviewedAt,userId:e.submittedBy,type:'reject',text:'Comprovação rejeitada ('+(o?o.title:'')+'): '+e.rejectionReason,cat:o?o.categoryId:null})});
+  S.unlocked.forEach(x=>E.push({at:x.at,userId:x.userId,type:'ach',text:'Conquista: '+ACH.find(a=>a.id===x.achId).name}));
+  S.redemptions.forEach(r=>E.push({at:r.createdAt,userId:r.userId,type:'shop',text:'Resgate: '+r.name+' ('+r.cost+' moedas, '+({pending:'pendente',approved:'aprovado',done:'concluído',cancelled:'cancelado'}[r.status])+')'}));
+  S.periods.filter(p=>p.status==='closed'&&p.winnerId).forEach(p=>E.push({at:p.closedAt,userId:p.winnerId,type:'prize',text:'Campeão de '+periodLabel(p)+': R$ '+p.prizeAmount}));
+  S.restDays.forEach(r=>{if(r.status!=='pending')E.push({at:nowIso(),userId:r.userId,type:'rest',text:'Descanso '+(r.status==='used'?'usufruído':'agendado')+' em '+brDate(r.date)})});
+  S.spins.forEach(s=>E.push({at:s.at,userId:s.by,type:'spin',text:'Roleta: '+s.result}));
+  return E.sort((a,b)=>b.at.localeCompare(a.at));
+}
+const ETYPE={task:'Tarefas',reject:'Rejeições',adjust:'Ajustes e estornos',penalty:'Penalidades',ach:'Conquistas',shop:'Loja',prize:'Prêmios',rest:'Descansos',spin:'Roleta'};
+function vHist(){
+  const f=UI.hist;let ev=events();
+  if(f.who!=='all')ev=ev.filter(e=>e.userId===f.who);if(f.type!=='all')ev=ev.filter(e=>e.type===f.type);if(f.cat!=='all')ev=ev.filter(e=>e.cat===f.cat);if(f.month!=='all')ev=ev.filter(e=>dayOf(e.at).slice(0,7)===f.month);
+  const months=[...new Set(events().map(e=>dayOf(e.at).slice(0,7)))];
+  const scope=S.occurrences.filter(o=>f.who==='all'||o.assignedTo===f.who);
+  const assigned=scope.filter(o=>o.assignedTo&&o.status!=='cancelled');const doneN=assigned.filter(o=>o.status==='done').length;
+  const byCat={};taskTx(f.who==='all'?null:f.who).forEach(t=>{const c=tc_(t);byCat[c]=(byCat[c]||0)+1});
+  const topCat=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];
+  const sel=(k,v,l)=>'<option value="'+v+'" '+(f[k]===v?'selected':'')+'>'+l+'</option>';
+  let h='<div class="grid stats">'+
+   '<div class="card stat"><span class="lbl">Tarefas concluídas</span><span class="big">'+taskTx(f.who==='all'?null:f.who).length+'</span></div>'+
+   '<div class="card stat"><span class="lbl">Taxa de conclusão</span><span class="big">'+(assigned.length?Math.round(doneN/assigned.length*100):0)+'%</span><span class="sm muted">'+doneN+' de '+assigned.length+' atribuídas</span></div>'+
+   '<div class="card stat"><span class="lbl">Atrasadas agora</span><span class="big">'+scope.filter(o=>effStatus(o)==='late').length+'</span></div>'+
+   '<div class="card stat"><span class="lbl">Categoria líder</span><span class="big" style="font-size:22px">'+(topCat?esc(cat(topCat[0]).icon+' '+cat(topCat[0]).name):'—')+'</span></div>'+
+   '<div class="card stat"><span class="lbl">Conquistas</span><span class="big">'+S.unlocked.filter(x=>f.who==='all'||x.userId===f.who).length+'</span></div></div>';
+  const mx=Math.max(1,...Object.values(byCat));
+  h+='<div class="grid two"><section class="card"><h3>Tarefas aprovadas por categoria</h3>'+(Object.keys(byCat).length?'<div class="col">'+Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,n])=>'<div><div class="row sp sm"><span>'+esc(cat(c).icon+' '+cat(c).name)+'</span><strong class="num">'+n+'</strong></div><div class="bar"><i style="width:'+n/mx*100+'%;background:var(--blue)"></i></div></div>').join('')+'</div>':'<p class="muted">Sem tarefas aprovadas ainda.</p>')+'</section>'+
+   '<section class="card"><h3>Pontos por mês</h3>'+(S.periods.length?'<div class="scroll"><table class="tbl"><thead><tr><th>Mês</th>'+actives().map(u=>'<th>'+esc(u.name)+'</th>').join('')+'</tr></thead><tbody>'+S.periods.map(p=>'<tr><td>'+esc(periodLabel(p))+(p.status==='open'?' (atual)':'')+'</td>'+actives().map(u=>'<td class="num">'+score(u.id,p.id)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>':'')+'</section></div>';
+  h+='<section class="card col"><h3>Eventos</h3><div class="form">'+
+   '<label class="f">Participante<select class="in" data-hist="who">'+sel('who','all','Todos')+S.users.map(u=>sel('who',u.id,esc(u.name))).join('')+'</select></label>'+
+   '<label class="f">Tipo<select class="in" data-hist="type">'+sel('type','all','Todos')+Object.entries(ETYPE).map(([k,v])=>sel('type',k,v)).join('')+'</select></label>'+
+   '<label class="f">Mês<select class="in" data-hist="month">'+sel('month','all','Todos')+months.map(m=>sel('month',m,m.slice(5)+'/'+m.slice(0,4))).join('')+'</select></label>'+
+   '<label class="f">Categoria<select class="in" data-hist="cat">'+sel('cat','all','Todas')+S.categories.map(c=>sel('cat',c.id,esc(c.name))).join('')+'</select></label></div>'+
+   (ev.length?'<div>'+ev.slice(0,80).map(e=>{const u=user(e.userId);return '<div class="ev"><span aria-hidden="true">'+(u?esc(u.avatar):'')+'</span><span>'+esc(e.text)+'<span class="muted sm"> · '+esc(u?u.name:'')+'</span></span><span class="sm"><strong>'+(e.pts||'')+'</strong> <span class="muted">'+brTime(e.at)+'</span></span></div>'}).join('')+'</div>':empty('📭','Sem eventos','Nada corresponde aos filtros.'))+'</section>';
+  const txs=S.scoreTx.filter(t=>f.who==='all'||t.userId===f.who).slice().reverse().slice(0,40);
+  const adm=isAdmin(UI.me);
+  h+='<section class="card"><h3>Registro de pontos</h3><p class="sm muted">Fonte oficial do ranking. Correções geram um estorno, nunca apagam o registro original.</p>'+(txs.length?'<div class="scroll"><table class="tbl"><thead><tr><th>Data</th><th>Jogador</th><th>Tipo</th><th>Pontos</th><th>Motivo</th><th></th></tr></thead><tbody>'+txs.map(t=>'<tr><td>'+brDate(t.day)+'</td><td>'+esc(nameOf(t.userId))+'</td><td>'+({task:'Tarefa',adjust:'Ajuste',penalty:'Penalidade',reversal:'Estorno'}[t.type])+(t.postClose?' (período encerrado)':'')+'</td><td class="num">'+(t.points>0?'+':'')+t.points+'</td><td style="white-space:normal;min-width:180px">'+esc(t.reason)+(t.reversedBy?' <span class="pill">estornado</span>':'')+(t.contest?' <span class="pill">contestação '+({open:'aberta',accepted:'aceita',denied:'negada'}[t.contest.status])+'</span>':'')+'</td><td>'+
+    (adm&&t.type!=='reversal'&&!t.reversedBy?'<button class="btn sm" data-a="reverse" data-id="'+t.id+'">Estornar</button>':'')+(t.type==='penalty'&&t.userId===UI.me&&!t.contest&&!t.reversedBy?'<button class="btn sm" data-a="contest" data-id="'+t.id+'">Contestar</button>':'')+(adm&&t.contest&&t.contest.status==='open'?'<button class="btn sm yellow" data-a="resolve" data-id="'+t.id+'">Decidir</button>':'')+'</td></tr>').join('')+'</tbody></table></div>':'<p class="muted">Sem registros.</p>')+'</section>';
+  return h;
+}
+const tc_=t=>{const o=occ(t.occId);return o?o.categoryId:'outras'};
+
+/* ===== Ajustes ===== */
+function vSet(){
+  const me=user(UI.me),adm=me.role==='admin';const tabs=[['me','Meu perfil'],...(adm?[['people','Participantes'],['rules','Regras'],['cats','Categorias']]:[]),['data','Dados']];
+  if(!tabs.some(t=>t[0]===UI.setTab))UI.setTab='me';
+  let h='<div class="tabs" role="tablist">'+tabs.map(t=>'<button class="tab" role="tab" data-a="settab" data-t="'+t[0]+'" aria-selected="'+(UI.setTab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
+  const t=UI.setTab,s=S.settings;
+  if(t==='me'){
+    const av=AVATARS.concat(me.avatars);
+    h+='<form class="card col" data-f="profile" data-id="'+me.id+'"><h3>Meu perfil</h3><div class="row">'+avHtml(me,'lg')+'<div><strong>'+esc(me.name)+'</strong><div class="muted sm">'+(me.role==='admin'?'Administrador':'Participante')+(me.title?' · '+esc(me.title):'')+'</div></div></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(me.name)+'" maxlength="20" required></label>'+
+     '<label class="f">Avatar<select class="in" name="avatar">'+av.map(a=>'<option '+(a===me.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===me.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn" type="button" data-a="changepin">Trocar meu PIN</button></div></form>';
+  }
+  if(t==='people'&&adm){
+    h+='<section class="card col"><h3>Participantes</h3><p class="muted sm">Desativar mantém todo o histórico. O PIN de cada pessoa é só dela: o administrador pode apenas pedir um novo.</p>'+S.users.map(u=>'<form class="card flat col" data-f="person" data-id="'+u.id+'"><div class="row">'+avHtml(u,'sm')+'<strong>'+esc(u.name)+'</strong>'+(u.active?'':'<span class="pill">inativo</span>')+'<span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(u.name)+'" maxlength="20" required></label><label class="f">Perfil<select class="in" name="role"><option value="user" '+(u.role==='user'?'selected':'')+'>Participante</option><option value="admin" '+(u.role==='admin'?'selected':'')+'>Administrador</option></select></label><label class="f">Situação<select class="in" name="active"><option value="1" '+(u.active?'selected':'')+'>Ativo</option><option value="0" '+(!u.active?'selected':'')+'>Inativo</option></select></label></div><div class="row"><button class="btn sm primary" type="submit">Salvar</button>'+(u.id!==UI.me?'<button class="btn sm" type="button" data-a="resetpin" data-id="'+u.id+'">Pedir novo PIN</button>':'')+'</div></form>').join('')+
+     (actives().length<4?'<form class="row" data-f="adduser"><label class="f grow">Novo participante<input class="in" name="name" maxlength="20" placeholder="Nome" required></label><button class="btn yellow" type="submit" style="align-self:flex-end">Adicionar</button></form>':'')+'</section>';
+  }
+  if(t==='rules'&&adm){
+    const pe=s.penalty,p=openPeriod();
+    h+='<form class="card col" data-f="rules"><h3>Jogo e premiação</h3><div class="form"><label class="f">Nome do app<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label><label class="f">Prêmio (R$)<input class="in" type="number" min="0" name="prize" value="'+s.prize+'" required></label><label class="f">Dias de descanso<input class="in" type="number" min="0" max="10" name="restDays" value="'+s.restDays+'" required></label><label class="f">Moedas por ponto<input class="in" type="number" min="0" max="10" name="coinRate" value="'+s.coinRate+'" required></label></div><label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Loja de recompensas ativa</label>'+
+     '<h3>Penalidades</h3><label class="chk"><input type="checkbox" name="pen" '+(pe.enabled?'checked':'')+'> Penalidades ativas</label><div class="form"><label class="f">Pontos por atraso<input class="in" type="number" min="0" max="100" name="late" value="'+pe.latePoints+'"></label><label class="f">Pontos por não execução<input class="in" type="number" min="0" max="100" name="miss" value="'+pe.missPoints+'"></label><label class="f">Tolerância (dias)<input class="in" type="number" min="0" max="30" name="grace" value="'+pe.grace+'"></label><label class="f">Máximo por tarefa<input class="in" type="number" min="0" max="100" name="max" value="'+pe.maxPerOcc+'"></label></div><p class="sm muted">Recomenda-se definir as regras antes do início do período. Mudanças valem para os próximos eventos e ficam na auditoria.</p>'+
+     '<label class="f">Desafios da roleta (um por linha)<textarea class="in" name="challenges">'+esc(s.challenges.join('\n'))+'</textarea></label><button class="btn primary" type="submit">Salvar regras</button></form>';
+    h+='<form class="card col" data-f="catalog"><h3>Tabela de pontos (modelos)</h3><div class="form">'+S.catalog.map(m=>'<label class="f">'+esc(cat(m.categoryId).icon+' '+m.title)+'<input class="in" type="number" min="1" max="500" name="m_'+m.id+'" value="'+m.points+'"></label>').join('')+'</div><button class="btn primary" type="submit">Salvar pontos dos modelos</button></form>';
+    h+='<section class="card col"><h3>Período atual</h3><p>'+esc(periodLabel(p))+', de '+brDate(p.start)+' a '+brDate(p.end)+'.</p><button class="btn yellow" data-a="close-period">Encerrar período agora</button></section>';
+    h+='<form class="card col" data-f="adjust"><h3>Ajuste manual de pontos</h3><div class="form"><label class="f">Participante<select class="in" name="uid">'+actives().map(u=>'<option value="'+u.id+'">'+esc(u.name)+'</option>').join('')+'</select></label><label class="f">Período<select class="in" name="pid">'+[...S.periods].reverse().map(x=>'<option value="'+x.id+'">'+esc(periodLabel(x))+(x.status==='closed'?' (encerrado, exceção)':'')+'</option>').join('')+'</select></label><label class="f">Pontos (+ ou -)<input class="in" type="number" step="1" name="delta" required></label><label class="f full">Justificativa obrigatória<input class="in" name="reason" minlength="3" required></label></div><button class="btn" type="submit">Registrar ajuste</button></form>';
+  }
+  if(t==='cats'&&adm){
+    h+='<section class="card col"><h3>Categorias</h3>'+S.categories.map(c=>'<form class="row" data-f="cat" data-id="'+c.id+'"><input class="in" style="width:70px" name="icon" value="'+esc(c.icon)+'" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" value="'+esc(c.name)+'" maxlength="30" aria-label="Nome" required><button class="btn sm" type="submit">Salvar</button></form>').join('')+'<form class="row" data-f="cat"><input class="in" style="width:70px" name="icon" value="✨" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" placeholder="Nova categoria" maxlength="30" aria-label="Nome da nova categoria" required><button class="btn sm yellow" type="submit">Adicionar</button></form></section>';
+  }
+  if(t==='data'){
+    h+='<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Nesta versão tudo fica <strong>neste navegador e neste aparelho</strong>: pontos e histórico em armazenamento local, fotos no IndexedDB (reduzidas para economizar espaço). Não há sincronização entre moradores. Limpar os dados do navegador apaga tudo, então faça backup. O PIN protege o acesso dentro do app, mas não impede alguém com acesso técnico ao aparelho de alterar os dados. A proteção real vem com o Supabase (login individual e regras no servidor).</p></section>';
+    if(adm){
+      h+='<section class="card col"><h3>Backup e restauração</h3><div class="row"><button class="btn primary" data-a="backup">Copiar backup</button><button class="btn" data-a="integrity">Verificar integridade</button></div><form class="col" data-f="restore"><label class="f">Restaurar: cole aqui o backup ou escolha o arquivo<textarea class="in" name="txt" id="restoretxt" placeholder="Conteúdo do backup"></textarea></label><input type="file" id="restorefile" accept=".json,application/json" class="in"><button class="btn danger" type="submit">Restaurar backup (substitui os dados atuais)</button></form></section>';
+      h+='<section class="card"><h3>Auditoria</h3><p class="sm muted">Últimas 40 ações.</p><div class="scroll"><table class="tbl"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>'+S.audit.slice(0,40).map(a=>'<tr><td>'+brTime(a.at)+'</td><td>'+esc(nameOf(a.actorId))+'</td><td>'+esc(a.action+' '+a.entity)+'</td><td style="white-space:normal">'+esc(a.reason)+'</td></tr>').join('')+'</tbody></table></div></section>';
+      h+='<form class="card col" data-f="reset"><h3>Apagar tudo</h3><p class="sm muted">Remove todos os dados deste aparelho. Digite APAGAR para confirmar.</p><div class="row"><input class="in grow" name="c" placeholder="APAGAR" autocomplete="off"><button class="btn danger" type="submit">Apagar tudo</button></div></form>';
+    }
+  }
+  return h;
+}
+/* ===== render ===== */
+const VIEWS={home:vHome,tasks:vTasks,rank:vRank,wheel:vWheel,ach:vAch,shop:vShop,hist:vHist,set:vSet};
+function render(){
+  const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
+  if(!S.setupDone)app.innerHTML=vOnboard();
+  else if(!UI.me||!actor(UI.me)){UI.me=null;app.innerHTML=vLogin()}
+  else{if(UI.view==='shop'&&!S.settings.shop)UI.view='home';app.innerHTML=vShell(VIEWS[UI.view]())}
+  document.title=S.settings.appName;
+  if(fid==='q'){const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
+  window.scrollTo(0,y);hydrate();flush();
+}
+function flush(){
+  const c=celebrations;celebrations=[];
+  c.forEach(x=>{
+    if(x.type==='ach'){toast('Conquista desbloqueada: '+x.ach.name+' ('+nameOf(x.userId)+')','star');confetti(24)}
+    if(x.type==='winner')winnerModal(x.periodId);
+  });
+}
+function res(r,msg){if(!r.ok){toast(r.err,'err');return false}if(msg)toast(msg,'ok');return true}
+const me_=()=>UI.me;
+
+/* ===== modais ===== */
+function confirmModal(title,text,yes,cb,danger){UI.cb=cb;openModal('<h2>'+esc(title)+'</h2><p>'+text+'</p><div class="row"><button class="btn '+(danger?'danger':'primary')+'" data-a="yes">'+esc(yes)+'</button><button class="btn ghost" data-a="close">Voltar</button></div>')}
+function askText(title,label,btn,cb,opts){UI.askCb=cb;opts=opts||{};openModal('<h2>'+esc(title)+'</h2><form class="col" data-f="ask"><label class="f">'+esc(label)+'<'+(opts.number?'input type="number" step="1"':'textarea')+' class="in" name="t" required minlength="3" autofocus></'+(opts.number?'input':'textarea')+'></label><div class="row"><button class="btn primary" type="submit">'+esc(btn)+'</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')}
+function taskForm(def){
+  const isNew=!def,d=def||{title:'',desc:'',categoryId:'cozinha',frequency:'once',interval:2,points:10,assignedTo:null,nextDue:today(),active:true};
+  const o=(v,l,c)=>'<option value="'+v+'" '+(c===v?'selected':'')+'>'+l+'</option>';
+  openModal('<h2>'+(isNew?'Nova tarefa':'Editar tarefa recorrente')+'</h2><form class="col" data-f="task" data-id="'+(def?def.id:'')+'">'+
+   (isNew?'<label class="f">Modelo da tabela de pontos<select class="in" data-tpl="1"><option value="">Personalizada</option>'+S.catalog.map(m=>'<option value="'+m.id+'">'+esc(m.title)+' ('+m.points+' pts)</option>').join('')+'</select></label>':'')+
+   '<div class="form"><label class="f full">Nome<input class="in" name="title" value="'+esc(d.title)+'" maxlength="80" required></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(d.desc||'')+'" maxlength="300"></label>'+
+   '<label class="f">Categoria<select class="in" name="categoryId">'+S.categories.map(c=>o(c.id,esc(c.icon+' '+c.name),d.categoryId)).join('')+'</select></label>'+
+   '<label class="f">Frequência<select class="in" name="frequency">'+Object.entries(FREQ).map(([k,v])=>o(k,v,d.frequency)).join('')+'</select></label>'+
+   '<label class="f">Intervalo em dias (personalizada)<input class="in" type="number" name="interval" min="2" max="365" value="'+(d.interval||2)+'"></label>'+
+   '<label class="f">Pontos (fixos)<input class="in" type="number" name="points" min="1" max="500" step="1" value="'+d.points+'" required></label>'+
+   '<label class="f">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>o(u.id,esc(u.name),d.assignedTo)).join('')+'</select></label>'+
+   '<label class="f">'+(isNew?'Prazo (ou primeira data)':'Próxima ocorrência')+'<input class="in" type="date" name="dueDate" value="'+(d.nextDue||today())+'" required></label></div>'+
+   (isNew?'':'<label class="chk"><input type="checkbox" name="active" '+(d.active?'checked':'')+'> Ativa</label>')+
+   '<p class="sm muted">Tarefa sem responsável aparece para qualquer pessoa assumir e só pontua depois de atribuída.</p><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>');
+}
+function submitModal(id){
+  const o=occ(id);UI.photo=null;
+  openModal('<h2>Enviar comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos · prazo '+brDate(o.dueDate)+'</p>'+(o.status==='rejected'?'<div class="banner red">Rejeitada: '+esc(o.rejectionReason)+'</div>':'')+
+   '<div class="drop"><label class="btn" for="photocam">Tirar foto</label><label class="btn" for="photofile">Escolher da galeria</label></div>'+
+   '<input class="sr" id="photocam" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"><input class="sr" id="photofile" type="file" accept="image/jpeg,image/png,image/webp">'+
+   '<div id="prevbox" class="muted sm">Nenhuma foto escolhida. Aceitamos JPEG, PNG e WebP de até 10 MB.</div>'+
+   '<div class="row"><button class="btn green" id="sendbtn" data-a="send-proof" data-id="'+id+'" disabled>Enviar para aprovação</button><button class="btn ghost" data-a="close">Cancelar</button></div>');
+}
+function reviewModal(id){
+  const o=occ(id);
+  openModal('<h2>Revisar comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos<br><span class="muted sm">Enviada por '+esc(nameOf(o.submittedBy))+' em '+brTime(o.submittedAt)+'</span></p><img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação enviada por '+esc(nameOf(o.submittedBy))+'">'+
+   '<p class="sm muted">A foto mostra uma situação, não garante todo o trabalho. Aprove se a tarefa parece feita.</p><button class="btn green" data-a="approve" data-id="'+id+'">Aprovar e creditar '+o.points+' pontos</button>'+
+   '<label class="f">Se for rejeitar, explique o motivo<textarea class="in" id="rejreason" placeholder="Ex.: a pia ainda tem louça"></textarea></label><button class="btn danger" data-a="reject" data-id="'+id+'">Rejeitar</button><button class="btn ghost" data-a="close">Voltar</button>');
+}
+function proofModal(id){
+  const o=occ(id);
+  openModal('<h2>Comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+(o.status==='done'?'aprovada':STAT[o.status].toLowerCase())+'</p><img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação"><div class="meta"><span>Enviada por '+esc(nameOf(o.submittedBy))+' '+(o.submittedAt?brTime(o.submittedAt):'')+'</span>'+(o.reviewedBy?'<span>Analisada por '+esc(nameOf(o.reviewedBy))+' '+brTime(o.reviewedAt)+'</span>':'')+'</div>'+
+   '<h4>Histórico da tarefa</h4><div>'+o.log.slice().reverse().map(l=>'<div class="ev"><span></span><span>'+esc(l.text)+' <span class="muted sm">· '+esc(nameOf(l.by))+'</span></span><span class="sm muted">'+brTime(l.at)+'</span></div>').join('')+'</div><button class="btn" data-a="close">Fechar</button>');
+}
+function winnerModal(pid){
+  const p=period(pid);if(!p)return;const w=p.winnerId&&user(p.winnerId);
+  openModal('<div class="col pop" style="align-items:center;text-align:center"><div style="font-size:64px" aria-hidden="true">'+(w?'🏆':'🏁')+'</div><h1>'+(w?esc(w.name)+' é o campeão!':'Mês encerrado')+'</h1><p>'+esc(periodLabel(p))+(w?' · prêmio de R$ '+p.prizeAmount+' e '+S.restDays.filter(r=>r.periodId===p.id).length+' dias de descanso total registrados.':' · ninguém pontuou o suficiente para vencer.')+'</p>'+(p.tieResolution?'<p class="sm muted">Empate decidido: '+esc(p.tieResolution.note)+'</p>':'')+'</div>'+
+   '<div>'+p.final.map(r=>'<div class="ev"><strong>'+r.pos+'º</strong><span>'+esc(nameOf(r.userId))+' <span class="muted sm">· '+r.tasks+' tarefas</span></span><strong>'+r.pts+' pts</strong></div>').join('')+'</div><p class="sm muted">Um novo período já foi iniciado. O histórico foi preservado.</p><button class="btn primary" data-a="close">Começar o novo mês</button>');
+  confetti(70);
+}
+function closePeriodModal(){
+  const p=openPeriod(),st=standings(p.id);
+  openModal('<h2>Encerrar '+esc(periodLabel(p))+'?</h2><p class="muted">Classificação atual. Depois de encerrar, pontos retroativos só entram por correção administrativa com justificativa.</p>'+rankRows(p.id,true)+'<p class="sm muted">Tarefas ainda abertas passam para o novo período, sem duplicar. Tarefas aguardando aprovação precisam ser resolvidas antes.</p><div class="row"><button class="btn yellow" data-a="close-go">Encerrar e anunciar o campeão</button><button class="btn ghost" data-a="close">Voltar</button></div>');
+}
+function tieModal(ids){
+  openModal('<h2>Empate no topo</h2><p>Os critérios automáticos (tarefas aprovadas e pontos recorrentes) não separaram '+esc(ids.map(nameOf).join(', '))+'. Registrem a decisão tomada pelos participantes.</p><form class="col" data-f="tie"><label class="f">Quem vence<select class="in" name="w">'+ids.map(i=>'<option value="'+i+'">'+esc(nameOf(i))+'</option>').join('')+'</select></label><label class="f">Como foi decidido<input class="in" name="note" required minlength="3" placeholder="Ex.: decidido em comum acordo por jogo de cartas"></label><div class="row"><button class="btn primary" type="submit">Registrar e encerrar</button><button class="btn ghost" type="button" data-a="close">Voltar</button></div></form>');
+}
+
+/* ===== ações de clique ===== */
+const H={
+ close:()=>closeModal(),
+ yes:()=>{const f=UI.cb;closeModal();if(f)f()},
+ go:d=>{UI.view=d.v;if(d.st)UI.filters.st=d.st;closeModal();render()},
+ more:()=>moreModal(),
+ logout:()=>{try{sessionStorage.removeItem('cj:me')}catch(e){}UI.me=null;UI.login={sel:null,err:''};render()},
+ tab:d=>{UI.tab=d.t;render()},settab:d=>{UI.setTab=d.t;render()},shoptab:d=>{UI.shopTab=d.t;render()},achwho:d=>{UI.achWho=d.id;render()},
+ pick:d=>{UI.login={sel:d.id,err:''};render()},unpick:()=>{UI.login={sel:null,err:''};render()},
+ start:d=>{res(A.start(UI.me,d.id))},
+ claim:d=>{if(res(A.claim(UI.me,d.id),'Tarefa assumida. Boa missão!')&&UI.spin.stage==='result')render()},
+ submit:d=>submitModal(d.id),review:d=>reviewModal(d.id),proof:d=>proofModal(d.id),
+ newtask:()=>taskForm(),editdef:d=>taskForm(S.tasks.find(x=>x.id===d.id)),
+ deldef:d=>confirmModal('Remover tarefa recorrente?','Se ela já tem ocorrências, será apenas desativada e o histórico continua.','Remover',()=>{const r=A.deleteDef(UI.me,d.id);if(res(r,r.deactivated?'Tarefa desativada':'Tarefa removida'));}),
+ editocc:d=>{const o=occ(d.id);openModal('<h2>Editar tarefa</h2><p><strong>'+esc(o.title)+'</strong></p><form class="col" data-f="occ" data-id="'+o.id+'"><div class="form"><label class="f">Pontos<input class="in" type="number" min="1" max="500" step="1" name="points" value="'+o.points+'" required></label><label class="f">Prazo<input class="in" type="date" name="dueDate" value="'+o.dueDate+'" required></label><label class="f full">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>'<option value="'+u.id+'" '+(u.id===o.assignedTo?'selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(o.desc||'')+'" maxlength="300"></label></div><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ cancelocc:d=>confirmModal('Cancelar tarefa?','Ela continua no histórico como cancelada e não gera pontos nem penalidade.','Cancelar tarefa',()=>res(A.cancelOcc(UI.me,d.id),'Tarefa cancelada'),true),
+ 'send-proof':async d=>{
+  if(UI.busy)return;if(!UI.photo){toast('Escolha uma foto primeiro.','err');return}UI.busy=true;
+  try{const r=await A.submit(UI.me,d.id,UI.photo);if(res(r,'Enviada! Agora outra pessoa precisa aprovar.'))closeModal()}finally{UI.busy=false}
+ },
+ approve:d=>{const r=A.review(UI.me,d.id,true);if(res(r,'Aprovada! +'+(r.points||0)+' pontos creditados.')){closeModal();confetti(30)}},
+ reject:d=>{const r=A.review(UI.me,d.id,false,($('#rejreason')||{}).value);if(res(r,'Rejeitada. O jogador pode reenviar.'))closeModal()},
+ 'close-period':()=>closePeriodModal(),
+ 'close-go':()=>{const r=A.closePeriod(UI.me);if(!r.ok){toast(r.err,'err');return}if(r.tie){tieModal(r.tie);return}closeModal();UI.rankP=null},
+ paid:d=>res(A.prizePaid(UI.me,d.id,d.v==='1'),'Atualizado'),
+ restedit:d=>{const r=S.restDays.find(x=>x.id===d.id);openModal('<h2>Dia de descanso</h2><form class="col" data-f="rest" data-id="'+r.id+'"><label class="f">Data<input class="in" type="date" name="date" value="'+(r.date||'')+'"></label><label class="f">Situação<select class="in" name="status"><option value="pending" '+(r.status==='pending'?'selected':'')+'>Pendente</option><option value="scheduled" '+(r.status==='scheduled'?'selected':'')+'>Agendado</option><option value="used" '+(r.status==='used'?'selected':'')+'>Usufruído</option></select></label><p class="sm muted">O descanso é uma recompensa combinada com a casa, não uma tarefa passada a outra pessoa.</p><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ buy:d=>{const r=S.rewards.find(x=>x.id===d.id);const rq=uid('rq');confirmModal('Resgatar '+r.name+'?','Custa <strong>'+r.cost+' moedas</strong>. Você tem '+balance(UI.me)+'. As moedas são debitadas uma vez e o ranking não muda.','Resgatar',()=>res(A.redeem(UI.me,r.id,rq),'Resgate registrado!'))},
+ red:d=>{const lab={approve:'aprovado',done:'concluído',cancel:'cancelado e moedas devolvidas'}[d.act];res(A.redemption(UI.me,d.id,d.act),'Resgate '+lab)},
+ editreward:d=>{const r=d.id?S.rewards.find(x=>x.id===d.id):{name:'',desc:'',cost:20,stock:null,active:true,limit:0};openModal('<h2>'+(d.id?'Editar':'Nova')+' recompensa</h2><form class="col" data-f="reward" data-id="'+(d.id||'')+'"><div class="form"><label class="f full">Nome<input class="in" name="name" value="'+esc(r.name)+'" required></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(r.desc)+'"></label><label class="f">Custo (moedas)<input class="in" type="number" min="0" step="1" name="cost" value="'+r.cost+'" required></label><label class="f">Estoque (vazio = ilimitado)<input class="in" type="number" min="0" step="1" name="stock" value="'+(r.stock==null?'':r.stock)+'"></label><label class="f">Limite por pessoa (0 = sem)<input class="in" type="number" min="0" step="1" name="limit" value="'+(r.limit||0)+'"></label></div><label class="chk"><input type="checkbox" name="active" '+(r.active?'checked':'')+'> Ativa</label><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ reverse:d=>askText('Estornar registro','Justificativa (obrigatória)','Estornar',t=>res(A.reverse(UI.me,d.id,t),'Estorno registrado')),
+ contest:d=>askText('Contestar penalidade','Explique o motivo','Enviar contestação',t=>res(A.contest(UI.me,d.id,t),'Contestação enviada ao administrador')),
+ resolve:d=>{const t=S.scoreTx.find(x=>x.id===d.id);openModal('<h2>Decidir contestação</h2><p>'+esc(nameOf(t.userId))+': '+esc(t.contest.text)+'</p><form class="col" data-f="resolve" data-id="'+t.id+'"><label class="f">Decisão<select class="in" name="acc"><option value="1">Aceitar e devolver os pontos</option><option value="0">Negar</option></select></label><label class="f">Justificativa<input class="in" name="r" required minlength="3"></label><div class="row"><button class="btn primary" type="submit">Registrar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ 'spin-mode':d=>{UI.spin=Object.assign(UI.spin,{mode:d.m,stage:'pick'});render()},
+ 'spin-ask':()=>{UI.spin.stage='confirm';render()},'spin-cancel':()=>{UI.spin.stage='pick';render()},
+ 'spin-reset':()=>{UI.spin.stage='pick';UI.spin.rot=0;render()},
+ 'spin-go':()=>{
+  const sp=UI.spin;const r=A.spin(UI.me,sp.mode,{categoryId:sp.cat,exclude:sp.excl});if(!r.ok){toast(r.err,'err');sp.stage='pick';render();return}
+  sp.pool=r.pool;sp.idx=r.index;sp.rot=0;sp.stage='spin';render();
+  const seg=360/r.pool.length,final=360*5-(r.index+.5)*seg;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{const w=$('.wheel');if(w)w.style.transform='rotate('+final+'deg)';sp.rot=final}));
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setTimeout(()=>{if(UI.spin===sp){sp.stage='result';render();confetti(20)}},reduce?50:4400);
+ },
+ assignpick:d=>{openModal('<h2>Atribuir tarefa</h2><form class="col" data-f="assign" data-oid="'+d.oid+'"><label class="f">Para quem<select class="in" name="to">'+actives().map(u=>'<option value="'+u.id+'">'+esc(u.name)+'</option>').join('')+'</select></label><p class="sm muted">A atribuição só vale depois de confirmada aqui.</p><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ assignto:d=>{const l=S.occurrences.filter(o=>OPEN_ST.includes(o.status));if(!l.length){toast('Não há tarefas em aberto.','err');return}openModal('<h2>Atribuir a '+esc(nameOf(d.uid))+'</h2><form class="col" data-f="assign2" data-uid="'+d.uid+'"><label class="f">Tarefa<select class="in" name="oid">'+l.map(o=>'<option value="'+o.id+'">'+esc(o.title)+' ('+o.points+' pts, '+esc(o.assignedTo?nameOf(o.assignedTo):'sem responsável')+')</option>').join('')+'</select></label><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ backup:async()=>{const t=await exportBackup();openModal('<h2>Backup</h2><p class="sm muted">Copie e guarde em um lugar seguro. Inclui dados e fotos. Para restaurar, cole em Ajustes, Dados.</p><textarea class="in" id="bk" readonly>'+esc(t)+'</textarea><div class="row"><button class="btn primary" data-a="copybk">Copiar</button><button class="btn ghost" data-a="close">Fechar</button></div>');const x=$('#bk');x.focus();x.select()},
+ copybk:async()=>{const x=$('#bk');try{await navigator.clipboard.writeText(x.value);toast('Backup copiado','ok')}catch(e){x.focus();x.select();toast('Selecionamos o texto. Copie com Ctrl+C.')}},
+ integrity:()=>{const p=verifyIntegrity(S);openModal('<h2>Integridade dos dados</h2>'+(p.length?'<ul>'+p.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Tudo certo: relações, pontuação única por tarefa e saldos consistentes.</p>')+'<button class="btn" data-a="close">Fechar</button>')},
+ resetpin:d=>confirmModal('Pedir novo PIN?',esc(nameOf(d.id))+' vai criar um PIN novo no próximo acesso.','Confirmar',()=>res(Auth.resetPin(UI.me,d.id),'PIN liberado para redefinição')),
+ changepin:()=>pinModal(UI.me),
+ 'ob-back':()=>{UI.obStep=Math.max(0,UI.obStep-1);render()},
+ 'ob-pin':d=>{obRead();pinModal(d.id)},
+ 'ob-add':()=>{obRead();const n=['Participante 4','Quarto jogador'].find(x=>!S.users.some(u=>u.name===x));const used=new Set(S.users.map(x=>x.avatar)),uc=new Set(S.users.map(x=>x.color));S.users.push({id:uid('u'),name:n,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!uc.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()});commit()},
+ 'ob-rm':d=>{obRead();S.users=S.users.filter(u=>u.id!==d.id);commit()}
+};
+function obRead(){
+  const f=$('form[data-f="ob"]');if(!f||UI.obStep!==1)return;const fd=new FormData(f);
+  S.users.forEach(u=>{const n=fd.get('n_'+u.id);if(n!=null&&n.trim().length>=2)u.name=n.trim();const a=fd.get('a_'+u.id);if(AVATARS.includes(a))u.avatar=a;const c=fd.get('c_'+u.id);if(COLORS.includes(c))u.color=c});
+}
+
+/* ===== formulários ===== */
+const num=(fd,k)=>{const v=fd.get(k);return v===''||v==null?NaN:Number(v)};
+const F={
+ ask:async fd=>{const f=UI.askCb;const t=fd.get('t');closeModal();if(f)f(t)},
+ pin:async(fd,f)=>{const id=f.dataset.id,p1=fd.get('p1'),p2=fd.get('p2');if(p1!==p2){toast('Os PINs não são iguais.','err');return}
+   const r=await Auth.setPin(id,p1,fd.get('cur'));if(res(r,'PIN salvo')){closeModal();render()}},
+ login:async(fd,f)=>{
+   const id=f.dataset.id,u=user(id),p1=fd.get('p1');let r;
+   if(!u.pinHash){if(p1!==fd.get('p2')){UI.login.err='Os PINs não são iguais.';render();return}r=await Auth.setPin(id,p1)}else r=await Auth.check(id,p1);
+   if(!r.ok){UI.login.err=r.err;render();return}
+   UI.me=id;UI.login={sel:null,err:''};UI.view='home';try{sessionStorage.setItem('cj:me',id)}catch(e){}sweep();render();
+ },
+ ob:async(fd,f)=>{
+   const st=+f.dataset.step,s=S.settings;
+   if(st===0){const n=String(fd.get('appName')).trim();if(n.length<2){toast('Informe o nome do app.','err');return}s.appName=n}
+   if(st===1){obRead();const names=S.users.filter(u=>u.active).map(u=>normT(u.name));if(new Set(names).size!==names.length){toast('Os nomes precisam ser diferentes.','err');return}if(actives().length<3){toast('São necessários ao menos 3 participantes.','err');return}}
+   if(st===2){for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(!POINTS_OK(v)){toast('Pontos inválidos em "'+m.title+'".','err');return}m.points=v}}
+   if(st===3){const p=num(fd,'prize'),r=num(fd,'restDays');if(!(p>=0)||!(r>=0&&r<=10)){toast('Confira a premiação.','err');return}s.prize=p;s.restDays=Math.floor(r);s.shop=fd.get('shop')==='on';s.coinRate=Math.max(0,Math.min(10,Math.floor(num(fd,'coinRate')||0)))}
+   if(st===4){const g=k=>Math.max(0,Math.min(100,Math.floor(num(fd,k)||0)));s.penalty={enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')}}
+   if(st===5){const d=fd.get('start');if(!validDate(d)){toast('Informe uma data válida.','err');return}s.startDate=d}
+   if(st===6){
+     if(!S.users[0].pinHash){toast('O administrador precisa definir o PIN.','err');return}
+     const ns=s.startDate;S.periods=[{id:'p-'+ns,start:ns,end:monthEnd(ns),status:'open',winnerId:null,prizeAmount:0,tieResolution:null}];S.setupDone=true;audit('system','setup','app','','Configuração inicial');
+     UI.me=S.users[0].id;try{sessionStorage.setItem('cj:me',UI.me)}catch(e){}UI.view='home';commit();toast('Jogo iniciado! Boa sorte a todos.','star');confetti(40);return;
+   }
+   UI.obStep=Math.min(OBN-1,st+1);commit();
+ },
+ task:async(fd,f)=>{
+   const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency'),interval:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate')};
+   const id=f.dataset.id;const r=id?A.updateDef(UI.me,id,Object.assign(d,{nextDue:d.dueDate,active:fd.get('active')==='on'})):A.createTask(UI.me,d);
+   if(res(r,id?'Tarefa atualizada':'Tarefa criada'))closeModal();
+ },
+ occ:async(fd,f)=>{if(res(A.updateOcc(UI.me,f.dataset.id,{points:num(fd,'points'),dueDate:fd.get('dueDate'),assignedTo:fd.get('assignedTo')||null,desc:fd.get('desc')}),'Tarefa atualizada'))closeModal()},
+ tie:async fd=>{const r=A.closePeriod(UI.me,{winnerId:fd.get('w'),tieNote:fd.get('note')});if(!r.ok){toast(r.err,'err');return}closeModal()},
+ rest:async(fd,f)=>{if(res(A.rest(UI.me,f.dataset.id,fd.get('date'),fd.get('status')),'Descanso atualizado'))closeModal()},
+ reward:async(fd,f)=>{const st=fd.get('stock');if(res(A.saveReward(UI.me,{id:f.dataset.id||null,name:fd.get('name'),desc:fd.get('desc'),cost:num(fd,'cost'),stock:st===''?null:Number(st),limit:Number(fd.get('limit'))||0,active:fd.get('active')==='on'}),'Recompensa salva'))closeModal()},
+ resolve:async(fd,f)=>{if(res(A.resolveContest(UI.me,f.dataset.id,fd.get('acc')==='1',fd.get('r')),'Decisão registrada'))closeModal()},
+ assign:async(fd,f)=>{if(res(A.assign(UI.me,f.dataset.oid,fd.get('to')),'Tarefa atribuída'))closeModal()},
+ assign2:async(fd,f)=>{if(res(A.assign(UI.me,fd.get('oid'),f.dataset.uid),'Tarefa atribuída'))closeModal()},
+ profile:async(fd,f)=>{res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color')}),'Perfil salvo')},
+ person:async(fd,f)=>{res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),role:fd.get('role'),active:fd.get('active')==='1'}),'Participante salvo')},
+ adduser:async fd=>{res(A.addUser(UI.me,fd.get('name')),'Participante adicionado. Ele cria o PIN no primeiro acesso.')},
+ rules:async fd=>{const g=k=>Math.floor(num(fd,k));res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
+ catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
+ adjust:async fd=>{res(A.adjust(UI.me,fd.get('uid'),num(fd,'delta'),fd.get('reason'),fd.get('pid')),'Ajuste registrado')},
+ cat:async(fd,f)=>{res(A.saveCategory(UI.me,{id:f.dataset.id||null,name:fd.get('name'),icon:fd.get('icon')}),'Categoria salva')},
+ restore:async fd=>{const t=fd.get('txt');if(!t){toast('Cole o backup ou escolha o arquivo.','err');return}
+   confirmModal('Restaurar backup?','Isto substitui todos os dados atuais pelos do backup.','Restaurar',async()=>{const r=await importBackup(UI.me,t);if(res(r,'Backup restaurado')){if(!actor(UI.me))H.logout()}},true)},
+ reset:async fd=>{if(fd.get('c')!=='APAGAR'){toast('Digite APAGAR para confirmar.','err');return}if(!isAdmin(UI.me))return;resetAll();H.logout();UI.obStep=0;render()}
+};
+
+/* ===== eventos globais ===== */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-a]');if(!el)return;
+  if(el.dataset.a==='ov'){if(e.target===el)closeModal();return}
+  const fn=H[el.dataset.a];if(fn)fn(el.dataset,el,e);
+});
+document.addEventListener('submit',async e=>{
+  const f=e.target.closest('form[data-f]');if(!f)return;e.preventDefault();
+  const fn=F[f.dataset.f];if(fn)await fn(new FormData(f),f);
+});
+document.addEventListener('change',async e=>{
+  const t=e.target;
+  if(t.dataset.filter){const k=t.dataset.filter;if(k==='rankP')UI.rankP=t.value;else if(k==='spinCat')UI.spin.cat=t.value;else UI.filters[k]=t.value;render()}
+  else if(t.dataset.hist){UI.hist[t.dataset.hist]=t.value;render()}
+  else if(t.dataset.excl){const x=UI.spin.excl,id=t.dataset.excl;UI.spin.excl=t.checked?x.filter(i=>i!==id):x.concat(id);UI.spin.stage='pick';render()}
+  else if(t.dataset.tpl){const m=S.catalog.find(x=>x.id===t.value);if(m){const f=t.form;f.title.value=m.title;f.categoryId.value=m.categoryId;f.points.value=m.points;f.frequency.value=m.freq==='once'?'once':m.freq}}
+  else if(t.id==='photocam'||t.id==='photofile'){const file=t.files&&t.files[0];if(file)loadPhoto(file)}
+  else if(t.id==='restorefile'){const file=t.files&&t.files[0];if(file){const r=new FileReader();r.onload=()=>{$('#restoretxt').value=r.result};r.readAsText(file)}}
+});
+document.addEventListener('input',e=>{if(e.target.id==='q'){UI.filters.q=e.target.value;const l=$('#tasklist');if(l)l.innerHTML=taskList()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.modal)closeModal()});
+function loadPhoto(file){
+  const box=$('#prevbox'),btn=$('#sendbtn');
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('Use uma imagem JPEG, PNG ou WebP.','err');return}
+  if(file.size>10*1024*1024){toast('A foto passa de 10 MB.','err');return}
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{const m=960,k=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);UI.photo=c.toDataURL('image/jpeg',.72);URL.revokeObjectURL(url);
+    box.innerHTML='<img class="proof" alt="Pré-visualização da foto" src="'+UI.photo+'"><p class="sm muted">Para trocar, escolha outra foto.</p>';btn.disabled=false};
+  img.onerror=()=>{toast('Não foi possível ler essa imagem.','err');URL.revokeObjectURL(url)};img.src=url;
+}
+
+/* ===== início ===== */
+onChange(render);
+try{const m=sessionStorage.getItem('cj:me');if(m&&S.setupDone&&actor(m))UI.me=m}catch(e){}
+if(S.setupDone&&openPeriod())sweep();
+render();
+setInterval(()=>{if(UI.me&&!UI.modal&&openPeriod())sweep()},300000);
+window.__cj={get S(){return S},set S(v){S=v},A,Auth,UI,sweep,standings,verifyIntegrity,exportBackup,importBackup,resetAll,effStatus,balance,score,streak,openPeriod,setClock:f=>{clock=f},seed,H,F,render};
+</script>
