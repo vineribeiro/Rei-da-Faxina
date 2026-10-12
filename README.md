@@ -14,3 +14,6 @@ Use Ajustes, Dados para copiar um backup. O PIN protege o acesso dentro do app, 
 `supabase-schema.sql` traz tabelas, RLS, funções atômicas (aprovação, ajuste, estorno, resgate) e o bucket de fotos.
 Falta no app trocar `Adapter` e `A.*` por chamadas ao Supabase, e no servidor implementar encerramento do mês, recorrências, penalidades e conquistas.
 Com o Supabase, o login individual passa a ser feito pelo Supabase Auth.
+
+## Instalar como app (PWA)
+Com o GitHub Pages ativo, abra o endereço do site no Chrome do celular e use o menu, "Instalar app" (ou "Adicionar à tela inicial"). No computador, o ícone de instalar aparece na barra de endereço. O app abre em tela cheia e funciona offline.
