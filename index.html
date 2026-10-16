@@ -177,8 +177,14 @@ textarea.in{min-height:84px;resize:vertical}
 <div id="app"></div>
 <div id="modal"></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script>
 'use strict';
+/* Modo Supabase: ligado quando config.js traz url e anonKey. Sem isso, o app funciona só neste aparelho (modo local). */
+const CFG=window.SUPABASE_CONFIG||{};
+const WANT_REMOTE=!!(CFG.url&&CFG.anonKey);
+const REMOTE=WANT_REMOTE&&!!window.supabase;
 /* ===== utilidades ===== */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid=p=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
@@ -238,9 +244,9 @@ const REWARDS0=[['Escolher o filme da noite','Você escolhe o filme.',30,'normal
 function seed(){
   const t=nowIso();
   const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
-  const users=[mk('Vine','🦊',COLORS[0],'admin'),mk('Camila','🐙',COLORS[1],'user'),mk('Davi','🐸',COLORS[2],'user')];
+  const users=[Object.assign(mk('Administrador','🛡️',COLORS[0],'admin'),{plays:false})];
   return {v:1,setupDone:false,
-    settings:{appName:'Rei da Faxina',prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),
+    settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),
       penalty:{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:DEFAULT_CHALLENGES.slice()},
     users,categories:CATS.map(c=>({id:c[0],name:c[1],icon:c[2]})),
     catalog:CATALOG.map((c,i)=>({id:'m'+i,title:c[0],points:c[1],categoryId:c[2],freq:c[3]})),
@@ -252,7 +258,7 @@ function seed(){
 }
 
 /* ===== estado ===== */
-let S=Adapter.load()||seed();
+let S=REMOTE?remoteSkeleton():(Adapter.load()||seed());
 let listeners=[];const onChange=f=>listeners.push(f);
 let celebrations=[];
 function commit(){Adapter.save(S);listeners.forEach(f=>f())}
@@ -260,7 +266,8 @@ const ok=(x={})=>Object.assign({ok:true},x),fail=e=>({ok:false,err:e});
 
 /* ===== seletores ===== */
 const user=id=>S.users.find(u=>u.id===id);
-const actives=()=>S.users.filter(u=>u.active);
+const plays=u=>!!u&&u.plays!==false;
+const actives=()=>S.users.filter(u=>u.active&&u.plays!==false);
 const openPeriod=()=>S.periods.find(p=>p.status==='open')||null;
 const period=id=>S.periods.find(p=>p.id===id);
 const cat=id=>S.categories.find(c=>c.id===id)||{id:'outras',name:'Outras',icon:'✨'};
@@ -272,7 +279,7 @@ const taskTx=(u,p)=>S.scoreTx.filter(t=>t.type==='task'&&!t.reversedBy&&(!u||t.u
 const score=(u,p)=>S.scoreTx.filter(t=>t.userId===u&&(!p||t.periodId===p)).reduce((a,t)=>a+t.points,0);
 const balance=u=>S.walletTx.filter(t=>t.userId===u).reduce((a,t)=>a+t.amount,0);
 function standings(pid){
-  const ids=new Set(S.users.filter(u=>u.active).map(u=>u.id));
+  const ids=new Set(S.users.filter(u=>u.active&&u.plays!==false).map(u=>u.id));
   S.scoreTx.filter(t=>t.periodId===pid).forEach(t=>ids.add(t.userId));
   const rows=[...ids].map(id=>{const tx=taskTx(id,pid);return {user:user(id),id,pts:score(id,pid),tasks:tx.length,rec:tx.filter(t=>{const o=occ(t.occId);return o&&o.recurring}).reduce((a,t)=>a+t.points,0)}});
   rows.sort((a,b)=>b.pts-a.pts||b.tasks-a.tasks||b.rec-a.rec);
@@ -568,12 +575,13 @@ A.saveUser=(by,d)=>{
   const me=actor(by);if(!me)return NOAUTH;const u=user(d.id);if(!u)return fail('Participante inexistente.');
   if(by!==d.id&&me.role!=='admin')return NOAUTH;const name=String(d.name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');
   if(S.users.some(x=>x.id!==u.id&&x.active&&normT(x.name)===normT(name)))return fail('Já existe um participante com esse nome.');
-  u.name=name;if(d.avatar&&(AVATARS.includes(d.avatar)||u.avatars.includes(d.avatar)))u.avatar=d.avatar;if(COLORS.includes(d.color))u.color=d.color;
+  u.name=name;if(d.avatar&&(AVATARS.includes(d.avatar)||u.avatars.includes(d.avatar)||d.avatar===u.avatar))u.avatar=d.avatar;if(COLORS.includes(d.color))u.color=d.color;
+  if(d.plays!=null&&by===d.id&&me.role==='admin'){const w=!!d.plays;if(w&&!plays(u)&&actives().length>=4)return fail('O jogo já tem 4 jogadores.');u.plays=w}
   if(me.role==='admin'&&by!==d.id||me.role==='admin'){
     if(d.role&&['admin','user'].includes(d.role)&&d.role!==u.role){if(u.role==='admin'&&S.users.filter(x=>x.active&&x.role==='admin').length<2)return fail('Precisa existir ao menos um administrador.');u.role=d.role}
     if(d.active!=null&&!!d.active!==u.active){
       if(!d.active){if(u.role==='admin'&&S.users.filter(x=>x.active&&x.role==='admin').length<2)return fail('Não é possível desativar o único administrador.');if(by===u.id)return fail('Você não pode desativar a si mesmo.')}
-      else if(S.users.filter(x=>x.active).length>=4)return fail('O limite é de 4 participantes ativos.');
+      else if(plays(u)&&actives().length>=4)return fail('O limite é de 4 participantes ativos.');
       u.active=!!d.active;
     }
   }
@@ -586,12 +594,22 @@ A.addUser=(by,name)=>{
   const u={id:uid('u'),name,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!usedC.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
   S.users.push(u);audit(by,'create','user',u.id,name);commit();return ok({id:u.id});
 };
+A.signup=d=>{
+  if(!S.setupDone)return fail('O administrador ainda não configurou o jogo.');
+  if(S.settings.openSignup===false)return fail('Os cadastros estão fechados. Peça ao administrador.');
+  if(actives().length>=4)return fail('O jogo já tem 4 jogadores.');
+  const name=String(d.name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');
+  if(S.users.some(x=>x.active&&normT(x.name)===normT(name)))return fail('Já existe alguém com esse nome.');
+  const u={id:uid('u'),name,avatar:AVATARS.includes(d.avatar)?d.avatar:AVATARS[0],color:COLORS.includes(d.color)?d.color:COLORS[0],role:'user',plays:true,active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
+  S.users.push(u);audit(u.id,'signup','user',u.id,name);commit();return ok({id:u.id});
+};
 A.saveSettings=(by,d)=>{
   if(!actor(by,true))return NOAUTH;const s=S.settings;
   if(d.appName!=null){const n=String(d.appName).trim();if(n.length<2||n.length>30)return fail('O nome do app deve ter de 2 a 30 caracteres.');s.appName=n}
   if(d.prize!=null){if(!(d.prize>=0&&d.prize<=100000))return fail('Valor do prêmio inválido.');s.prize=d.prize}
   if(d.restDays!=null){if(!(Number.isInteger(d.restDays)&&d.restDays>=0&&d.restDays<=10))return fail('Dias de descanso inválidos.');s.restDays=d.restDays}
   if(d.shop!=null)s.shop=!!d.shop;
+  if(d.openSignup!=null)s.openSignup=!!d.openSignup;
   if(d.coinRate!=null){if(!(d.coinRate>=0&&d.coinRate<=10))return fail('Taxa de moedas inválida.');s.coinRate=d.coinRate}
   if(d.penalty){const p=d.penalty,c=s.penalty;
     for(const k of ['latePoints','missPoints','maxPerOcc','grace'])if(p[k]!=null){if(!(Number.isInteger(p[k])&&p[k]>=0&&p[k]<=100))return fail('Valor de penalidade inválido.');}
@@ -698,11 +716,27 @@ function pinModal(userId,opts){
 
 /* ===== login ===== */
 function vLogin(){
-  const L=UI.login,list=actives();
+  if(REMOTE)return vLoginRemote();
+  const L=UI.login,list=actives(),adm=S.users.filter(u=>u.active&&u.role==='admin'&&u.plays===false);
+  const open=S.settings.openSignup!==false&&list.length<4;
   let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>';
-  if(!L.sel){
-    h+='<div class="card"><h2>Quem vai jogar?</h2><p class="muted" style="margin-top:6px">Cada pessoa entra com o próprio PIN. Escolha o seu personagem.</p></div><div class="who">'+
-      list.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span>'+(u.pinHash?'':'<span class="pill">primeiro acesso</span>')+'</button>').join('')+'</div>';
+  if(L.mode==='signup'){
+    const dr=L.draft||{},usedA=new Set(S.users.map(u=>u.avatar)),usedC=new Set(S.users.map(u=>u.color));
+    const av=dr.avatar||AVATARS.find(a=>!usedA.has(a))||AVATARS[0],co=dr.color||COLORS.find(c=>!usedC.has(c))||COLORS[0];
+    h+='<div class="card col"><h2>Criar meu cadastro</h2><p class="muted">Escolha seu nome, personagem e PIN. O PIN é só seu e dá acesso só à sua conta.</p>'+
+      '<form class="col" data-f="signup"><label class="f">Seu nome<input class="in" name="name" maxlength="20" value="'+esc(dr.name||'')+'" autocomplete="given-name" required autofocus></label>'+
+      '<div class="form"><label class="f">Personagem<select class="in" name="avatar">'+AVATARS.map(a=>'<option '+(a===av?'selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
+      '<label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===co?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+
+      '<label class="f">PIN (4 a 6 números)<input class="in pinin" name="p1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
+      '<label class="f">Repita o PIN<input class="in pinin" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
+      (L.err?'<div class="banner red" role="alert">'+esc(L.err)+'</div>':'')+
+      '<button class="btn primary" type="submit">Criar cadastro e entrar</button><button class="btn ghost" type="button" data-a="unpick">Voltar</button></form></div>';
+  }else if(!L.sel){
+    h+='<div class="card"><h2>Quem vai jogar?</h2><p class="muted" style="margin-top:6px">Cada pessoa entra com o próprio PIN. Ainda não tem cadastro? Crie o seu.</p></div>';
+    if(list.length)h+='<div class="who">'+list.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span>'+(u.pinHash?'':'<span class="pill">primeiro acesso</span>')+'</button>').join('')+'</div>';
+    else h+='<div class="card empty"><div class="big-e" aria-hidden="true">🎮</div><h3>Nenhum jogador ainda</h3><p>Seja o primeiro: crie o seu cadastro.</p></div>';
+    h+=open?'<button class="btn yellow" data-a="signup">Criar meu cadastro</button>':'<p class="muted sm" style="text-align:center">'+(list.length>=4?'O jogo já tem 4 jogadores.':'Os cadastros estão fechados pelo administrador.')+'</p>';
+    if(adm.length)h+='<h3 style="margin-top:6px">Administração</h3><div class="who">'+adm.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span><span class="pill">'+(u.pinHash?'administrador':'primeiro acesso')+'</span></button>').join('')+'</div>';
   }else{
     const u=user(L.sel),first=!u.pinHash;
     h+='<div class="card col" style="align-items:center;text-align:center">'+avHtml(u,'lg')+'<h2>'+(first?'Olá, '+esc(u.name)+'! Crie o seu PIN':'Entrar como '+esc(u.name))+'</h2>'+
@@ -723,21 +757,18 @@ function vOnboard(){
   h+='<form class="card col" data-f="ob" data-step="'+st+'">';
   if(st===0)h+='<h2>Bem-vindos!</h2><p class="muted">Vamos ajustar o jogo em poucos passos. Tudo pode ser alterado depois em Ajustes.</p><label class="f">Nome do aplicativo<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label>';
   if(st===1){
-    h+='<h2>Participantes</h2><p class="muted">De 3 a 4 jogadores. O primeiro é o administrador. Cada pessoa cria o próprio PIN, passando o aparelho ou no primeiro acesso.</p>';
-    S.users.filter(u=>u.active).forEach((u,i)=>{
-      h+='<div class="card flat col"><div class="row">'+avHtml(u)+'<label class="f grow">Nome<input class="in" name="n_'+u.id+'" value="'+esc(u.name)+'" maxlength="20" required></label></div><div class="form">'+
-       '<label class="f">Avatar<select class="in" name="a_'+u.id+'">'+AVATARS.map(a=>'<option '+(a===u.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
-       '<label class="f">Cor<select class="in" name="c_'+u.id+'">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===u.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+
-       '<div class="row"><span class="pill">'+(u.role==='admin'?'Administrador':'Participante')+'</span><span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span><button class="btn sm" type="button" data-a="ob-pin" data-id="'+u.id+'">'+(u.pinHash?'Trocar PIN':'Definir PIN')+'</button>'+(i>=3?'<button class="btn sm ghost" type="button" data-a="ob-rm" data-id="'+u.id+'">Remover</button>':'')+'</div></div>';
-    });
-    if(actives().length<4)h+='<button class="btn" type="button" data-a="ob-add">Adicionar 4º participante</button>';
+    const ad=S.users.find(u=>u.role==='admin');
+    h+='<h2>Perfil do administrador</h2><p class="muted">Este perfil só administra: cria tarefas, define regras, corrige erros e encerra o mês. Ele não joga e não aparece no ranking. É o único perfil criado por você.</p>'+
+     '<div class="card flat col"><div class="row">'+avHtml(ad)+'<label class="f grow">Nome do administrador<input class="in" name="n_'+ad.id+'" value="'+esc(ad.name)+'" maxlength="20" required></label></div><div class="row"><span class="pill">Administrador</span><span class="pill">'+(ad.pinHash?'PIN definido':'PIN pendente')+'</span><button class="btn sm" type="button" data-a="ob-pin" data-id="'+ad.id+'">'+(ad.pinHash?'Trocar PIN':'Definir PIN')+'</button></div></div>'+
+     '<h3>Jogadores</h3><p class="muted">Até 4 pessoas. Cada uma faz o próprio cadastro (nome, personagem e PIN) na tela de entrada. Você não precisa cadastrar ninguém.</p>'+
+     '<label class="chk"><input type="checkbox" name="openSignup" '+(s.openSignup!==false?'checked':'')+'> Permitir que novos jogadores se cadastrem (dá para fechar depois em Ajustes)</label>';
   }
   if(st===2)h+='<h2>Tabela de pontos</h2><p class="muted">Pontuação fixa por tarefa. Ajuste se quiser; cada ocorrência também pode ser editada antes de ser feita.</p><div class="form">'+S.catalog.map(m=>'<label class="f">'+esc(cat(m.categoryId).icon+' '+m.title)+'<input class="in num" type="number" min="1" max="500" step="1" name="m_'+m.id+'" value="'+m.points+'" required></label>').join('')+'</div>';
   if(st===3)h+='<h2>Premiação</h2><div class="form"><label class="f">Prêmio em dinheiro (R$)<input class="in" type="number" min="0" step="1" name="prize" value="'+s.prize+'" required></label><label class="f">Dias de descanso total<input class="in" type="number" min="0" max="10" step="1" name="restDays" value="'+s.restDays+'" required></label></div>'+
     '<label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Usar a loja de recompensas (moedas separadas dos pontos)</label><label class="f">Moedas ganhas por ponto aprovado<input class="in" type="number" min="0" max="10" step="1" name="coinRate" value="'+s.coinRate+'"></label><p class="muted sm">Pontos do ranking, moedas, prêmio em dinheiro e descanso são registrados separadamente. A loja nunca altera o ranking.</p>';
   if(st===4)h+='<h2>Penalidades</h2><label class="chk"><input type="checkbox" name="pen" '+(s.penalty.enabled?'checked':'')+'> Ativar penalidades (desativadas por padrão)</label><div class="form"><label class="f">Pontos por atraso<input class="in" type="number" min="0" max="100" name="late" value="'+s.penalty.latePoints+'"></label><label class="f">Pontos por tarefa não executada<input class="in" type="number" min="0" max="100" name="miss" value="'+s.penalty.missPoints+'"></label><label class="f">Dias de tolerância após o prazo<input class="in" type="number" min="0" max="30" name="grace" value="'+s.penalty.grace+'"></label><label class="f">Máximo por tarefa<input class="in" type="number" min="0" max="100" name="max" value="'+s.penalty.maxPerOcc+'"></label></div><p class="muted sm">Cada penalidade é aplicada uma única vez por tarefa, nunca deixa a pontuação do mês abaixo de zero e pode ser contestada. Não há desconto em dinheiro.</p>';
   if(st===5)h+='<h2>Início da competição</h2><label class="f">Primeiro dia do período<input class="in" type="date" name="start" value="'+s.startDate+'" required></label><p class="muted sm">O primeiro período vai até o fim do mês. Depois, cada mês é encerrado pelo administrador.</p>';
-  if(st===6){const pe=s.penalty;h+='<h2>Resumo das regras</h2><ul class="col" style="margin:0;padding-left:20px"><li>Vence o mês quem tiver mais pontos aprovados.</li><li>Desempate: mais tarefas aprovadas; depois mais pontos de tarefas recorrentes; persistindo, decisão manual registrada.</li><li>Prêmio: R$ '+s.prize+' e '+s.restDays+' dias de descanso total.</li><li>Todo ponto exige foto e aprovação de outra pessoa. Ninguém aprova a própria tarefa.</li><li>Cada tarefa pontua uma única vez.</li><li>Penalidades: '+(pe.enabled?'ativas (atraso '+pe.latePoints+', não executada '+pe.missPoints+', máximo '+pe.maxPerOcc+')':'desativadas')+'.</li><li>Loja: '+(s.shop?'ativada':'desativada')+'. Moedas não entram no ranking.</li><li>Cada pessoa tem o próprio PIN.</li></ul>'+(S.users[0].pinHash?'':'<div class="banner red">O administrador ('+esc(S.users[0].name)+') precisa definir o PIN antes de iniciar. Volte à etapa de participantes.</div>');}
+  if(st===6){const pe=s.penalty;h+='<h2>Resumo das regras</h2><ul class="col" style="margin:0;padding-left:20px"><li>Vence o mês quem tiver mais pontos aprovados.</li><li>Desempate: mais tarefas aprovadas; depois mais pontos de tarefas recorrentes; persistindo, decisão manual registrada.</li><li>Prêmio: R$ '+s.prize+' e '+s.restDays+' dias de descanso total.</li><li>Todo ponto exige foto e aprovação de outra pessoa. Ninguém aprova a própria tarefa.</li><li>Cada tarefa pontua uma única vez.</li><li>Penalidades: '+(pe.enabled?'ativas (atraso '+pe.latePoints+', não executada '+pe.missPoints+', máximo '+pe.maxPerOcc+')':'desativadas')+'.</li><li>Loja: '+(s.shop?'ativada':'desativada')+'. Moedas não entram no ranking.</li><li>Cada jogador faz o próprio cadastro e tem o próprio PIN. O administrador não joga.</li></ul>'+(S.users.find(u=>u.role==='admin').pinHash?'':'<div class="banner red">O administrador ('+esc(S.users.find(u=>u.role==='admin').name)+') precisa definir o PIN antes de iniciar. Volte à etapa de participantes.</div>');}
   h+=nav(st===OBN-1)+'</form></div>';return h;
 }
 
@@ -750,7 +781,7 @@ function vShell(inner){
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
   return '<div class="app"><aside class="side"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
-   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong><button class="btn sm" data-a="logout">Trocar jogador</button></div></header>'+
+   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'')+'<button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
    inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
 }
@@ -779,7 +810,7 @@ function rankRows(pid,compact){
   return st.map(r=>{const u=r.user;const w=Math.max(0,r.pts)/max*100;
     return '<div class="rank"><div class="pos">'+r.pos+'º</div>'+avHtml(u)+'<div class="col" style="gap:4px"><div class="row" style="gap:6px"><strong>'+uname(u)+'</strong>'+(r.pos===1&&r.pts>0?crown:'')+(r.tied&&r.pts>0?'<span class="pill">empate</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+'</div>'+
      '<div class="bar" role="img" aria-label="'+r.pts+' pontos"><i style="width:'+w+'%;background:'+esc(u.color)+'"></i></div>'+(compact?'':'<span class="sm muted">'+r.tasks+' tarefas aprovadas · '+(r.pos===1?'líder':(lead-r.pts)+' pts do líder')+' · '+trend(r.id,pid)+'</span>')+'</div><div class="big num" style="font-size:26px">'+r.pts+'</div></div>';
-  }).join('')||empty('🏁','Sem participantes','');
+  }).join('')||empty('🏁','Nenhum jogador ainda','Cada pessoa cria o próprio cadastro na tela de entrada.');
 }
 function trend(uid,pid){
   const t=today(),a=addDays(t,-6),b=addDays(t,-13);
@@ -814,6 +845,7 @@ function vHome(){
   const unassigned=S.occurrences.filter(o=>!o.assignedTo&&OPEN_ST.includes(o.status));
   const feature=[...late,...unassigned.filter(o=>!late.includes(o)),...mine.filter(o=>!late.includes(o))].slice(0,5);
   let h='';
+  if(isAdmin(me)&&(REMOTE?actives().length<4&&S.settings.openSignup!==false:!actives().length))h+='<div class="banner blue"><span><strong>'+(actives().length?actives().length+' de 4 jogadores cadastrados.':'Nenhum jogador cadastrado ainda.')+'</strong> Cada pessoa toca em "Criar meu cadastro" na tela de entrada'+(REMOTE&&S.settings.houseCode?' e digita o código da casa: <strong>'+esc(S.settings.houseCode)+'</strong>':'')+'.</span></div>';
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
   if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
   h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
@@ -822,7 +854,7 @@ function vHome(){
    '<div class="card stat"><span class="lbl">Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
    '<div class="card stat"><span class="lbl">Minha posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pontos · sequência de '+streak(me)+' dia(s)':'')+'</span></div>'+
    '<div class="card stat"><span class="lbl">Dias restantes</span><span class="big">'+days+'</span><span class="sm muted">até '+brDate(p.end)+'</span></div>'+
-   (S.settings.shop?'<div class="card stat"><span class="lbl">Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
+   (S.settings.shop&&plays(user(me))?'<div class="card stat"><span class="lbl">Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
   h+='<div class="grid two"><section class="card"><div class="row sp"><h3>Ranking do mês</h3><button class="btn sm" data-a="go" data-v="rank">Ver tudo</button></div>'+rankRows(p.id,true)+'</section>'+
    '<section class="card"><h3>Missões em destaque</h3>'+(feature.length?'<div class="col">'+feature.map(taskCard).join('')+'</div>':empty('🎯','Nenhuma missão urgente','Veja a aba Tarefas para o que está por vir.'))+'</section></div>';
   const ua=S.unlocked.slice(-4).reverse();
@@ -924,7 +956,7 @@ function vWheel(){
 
 /* ===== Conquistas ===== */
 function vAch(){
-  const who=UI.achWho&&user(UI.achWho)?UI.achWho:UI.me;
+  const who=UI.achWho&&user(UI.achWho)?UI.achWho:(plays(user(UI.me))?UI.me:((actives()[0]||{}).id||UI.me));
   let h='<div class="tabs" role="tablist">'+actives().map(u=>'<button class="tab" role="tab" data-a="achwho" data-id="'+u.id+'" aria-selected="'+(u.id===who)+'">'+esc(u.avatar+' '+u.name)+'</button>').join('')+'</div><div class="grid">';
   ACH.forEach(a=>{const r=achOf(a,who),un=isUnlocked(who,a.id);
     h+='<article class="card ach '+(un?'':'lock')+'"><div class="ic" aria-hidden="true">'+a.icon+'</div><div class="col" style="gap:6px"><div><strong>'+esc(a.name)+'</strong> '+(un?'<span class="pill done">Desbloqueada</span>':'<span class="pill">Bloqueada</span>')+'</div><p class="sm muted">'+esc(a.desc)+'</p>'+
@@ -982,7 +1014,7 @@ function vHist(){
   h+='<div class="grid two"><section class="card"><h3>Tarefas aprovadas por categoria</h3>'+(Object.keys(byCat).length?'<div class="col">'+Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,n])=>'<div><div class="row sp sm"><span>'+esc(cat(c).icon+' '+cat(c).name)+'</span><strong class="num">'+n+'</strong></div><div class="bar"><i style="width:'+n/mx*100+'%;background:var(--blue)"></i></div></div>').join('')+'</div>':'<p class="muted">Sem tarefas aprovadas ainda.</p>')+'</section>'+
    '<section class="card"><h3>Pontos por mês</h3>'+(S.periods.length?'<div class="scroll"><table class="tbl"><thead><tr><th>Mês</th>'+actives().map(u=>'<th>'+esc(u.name)+'</th>').join('')+'</tr></thead><tbody>'+S.periods.map(p=>'<tr><td>'+esc(periodLabel(p))+(p.status==='open'?' (atual)':'')+'</td>'+actives().map(u=>'<td class="num">'+score(u.id,p.id)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>':'')+'</section></div>';
   h+='<section class="card col"><h3>Eventos</h3><div class="form">'+
-   '<label class="f">Participante<select class="in" data-hist="who">'+sel('who','all','Todos')+S.users.map(u=>sel('who',u.id,esc(u.name))).join('')+'</select></label>'+
+   '<label class="f">Participante<select class="in" data-hist="who">'+sel('who','all','Todos')+S.users.filter(plays).map(u=>sel('who',u.id,esc(u.name))).join('')+'</select></label>'+
    '<label class="f">Tipo<select class="in" data-hist="type">'+sel('type','all','Todos')+Object.entries(ETYPE).map(([k,v])=>sel('type',k,v)).join('')+'</select></label>'+
    '<label class="f">Mês<select class="in" data-hist="month">'+sel('month','all','Todos')+months.map(m=>sel('month',m,m.slice(5)+'/'+m.slice(0,4))).join('')+'</select></label>'+
    '<label class="f">Categoria<select class="in" data-hist="cat">'+sel('cat','all','Todas')+S.categories.map(c=>sel('cat',c.id,esc(c.name))).join('')+'</select></label></div>'+
@@ -1002,13 +1034,15 @@ function vSet(){
   let h='<div class="tabs" role="tablist">'+tabs.map(t=>'<button class="tab" role="tab" data-a="settab" data-t="'+t[0]+'" aria-selected="'+(UI.setTab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
   const t=UI.setTab,s=S.settings;
   if(t==='me'){
-    const av=AVATARS.concat(me.avatars);
+    const av=[...new Set([me.avatar].concat(AVATARS,me.avatars))];
     h+='<form class="card col" data-f="profile" data-id="'+me.id+'"><h3>Meu perfil</h3><div class="row">'+avHtml(me,'lg')+'<div><strong>'+esc(me.name)+'</strong><div class="muted sm">'+(me.role==='admin'?'Administrador':'Participante')+(me.title?' · '+esc(me.title):'')+'</div></div></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(me.name)+'" maxlength="20" required></label>'+
-     '<label class="f">Avatar<select class="in" name="avatar">'+av.map(a=>'<option '+(a===me.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===me.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn" type="button" data-a="changepin">Trocar meu PIN</button></div></form>';
+     '<label class="f">Avatar<select class="in" name="avatar">'+av.map(a=>'<option '+(a===me.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===me.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+(me.role==='admin'?'<label class="chk"><input type="checkbox" name="plays" '+(plays(me)?'checked':'')+'> Também jogar com este perfil (aparece no ranking)</label>':'')+'<div class="row"><button class="btn primary" type="submit">Salvar</button>'+(REMOTE?'<button class="btn" type="button" data-a="changepass">Trocar minha senha</button>':'<button class="btn" type="button" data-a="changepin">Trocar meu PIN</button>')+'</div></form>';
   }
   if(t==='people'&&adm){
-    h+='<section class="card col"><h3>Participantes</h3><p class="muted sm">Desativar mantém todo o histórico. O PIN de cada pessoa é só dela: o administrador pode apenas pedir um novo.</p>'+S.users.map(u=>'<form class="card flat col" data-f="person" data-id="'+u.id+'"><div class="row">'+avHtml(u,'sm')+'<strong>'+esc(u.name)+'</strong>'+(u.active?'':'<span class="pill">inativo</span>')+'<span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(u.name)+'" maxlength="20" required></label><label class="f">Perfil<select class="in" name="role"><option value="user" '+(u.role==='user'?'selected':'')+'>Participante</option><option value="admin" '+(u.role==='admin'?'selected':'')+'>Administrador</option></select></label><label class="f">Situação<select class="in" name="active"><option value="1" '+(u.active?'selected':'')+'>Ativo</option><option value="0" '+(!u.active?'selected':'')+'>Inativo</option></select></label></div><div class="row"><button class="btn sm primary" type="submit">Salvar</button>'+(u.id!==UI.me?'<button class="btn sm" type="button" data-a="resetpin" data-id="'+u.id+'">Pedir novo PIN</button>':'')+'</div></form>').join('')+
-     (actives().length<4?'<form class="row" data-f="adduser"><label class="f grow">Novo participante<input class="in" name="name" maxlength="20" placeholder="Nome" required></label><button class="btn yellow" type="submit" style="align-self:flex-end">Adicionar</button></form>':'')+'</section>';
+    h+='<section class="card col"><h3>Participantes</h3><p class="muted sm">Cada jogador faz o próprio cadastro (até 4). Desativar mantém todo o histórico. Há um único administrador.</p>'+
+     '<form class="row" data-f="signupset"><label class="chk grow"><input type="checkbox" name="open" '+(s.openSignup!==false?'checked':'')+'> Permitir novos cadastros de jogadores</label><button class="btn sm primary" type="submit">Salvar</button></form>'+
+     (REMOTE?'<form class="card flat col" data-f="housecode"><h4>Código da casa</h4><p class="sm muted">Quem for se cadastrar precisa digitar este código. Passe só para quem vai jogar e troque se vazar.</p><div class="row"><input class="in grow" name="code" value="'+esc(s.houseCode||'')+'" minlength="4" maxlength="20" required aria-label="Código da casa" style="text-transform:uppercase"><button class="btn sm primary" type="submit">Salvar código</button></div></form>':'')+
+     S.users.map(u=>'<form class="card flat col" data-f="person" data-id="'+u.id+'"><div class="row">'+avHtml(u,'sm')+'<strong>'+esc(u.name)+'</strong>'+(u.role==='admin'?'<span class="pill">Administrador</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+(REMOTE?'':'<span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span>')+'</div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(u.name)+'" maxlength="20" required></label>'+(u.role==='admin'?'':'<label class="f">Situação<select class="in" name="active"><option value="1" '+(u.active?'selected':'')+'>Ativo</option><option value="0" '+(!u.active?'selected':'')+'>Inativo</option></select></label>')+'</div><div class="row"><button class="btn sm primary" type="submit">Salvar</button>'+(!REMOTE&&u.id!==UI.me?'<button class="btn sm" type="button" data-a="resetpin" data-id="'+u.id+'">Pedir novo PIN</button>':'')+'</div></form>').join('')+'</section>';
   }
   if(t==='rules'&&adm){
     const pe=s.penalty,p=openPeriod();
@@ -1023,11 +1057,11 @@ function vSet(){
     h+='<section class="card col"><h3>Categorias</h3>'+S.categories.map(c=>'<form class="row" data-f="cat" data-id="'+c.id+'"><input class="in" style="width:70px" name="icon" value="'+esc(c.icon)+'" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" value="'+esc(c.name)+'" maxlength="30" aria-label="Nome" required><button class="btn sm" type="submit">Salvar</button></form>').join('')+'<form class="row" data-f="cat"><input class="in" style="width:70px" name="icon" value="✨" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" placeholder="Nova categoria" maxlength="30" aria-label="Nome da nova categoria" required><button class="btn sm yellow" type="submit">Adicionar</button></form></section>';
   }
   if(t==='data'){
-    h+='<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Nesta versão tudo fica <strong>neste navegador e neste aparelho</strong>: pontos e histórico em armazenamento local, fotos no IndexedDB (reduzidas para economizar espaço). Não há sincronização entre moradores. Limpar os dados do navegador apaga tudo, então faça backup. O PIN protege o acesso dentro do app, mas não impede alguém com acesso técnico ao aparelho de alterar os dados. A proteção real vem com o Supabase (login individual e regras no servidor).</p></section>';
+    h+=REMOTE?'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Tudo fica no <strong>Supabase</strong> (banco de dados na nuvem), compartilhado entre todos os aparelhos. Pontos, aprovações, moedas e resgates só mudam por funções do servidor, que conferem quem está pedindo. As fotos ficam num armazenamento privado: só quem está logado vê. Para backup do banco, use o painel do Supabase.</p></section>':'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Nesta versão tudo fica <strong>neste navegador e neste aparelho</strong>: pontos e histórico em armazenamento local, fotos no IndexedDB (reduzidas para economizar espaço). Não há sincronização entre moradores. Limpar os dados do navegador apaga tudo, então faça backup. O PIN protege o acesso dentro do app, mas não impede alguém com acesso técnico ao aparelho de alterar os dados. A proteção real vem com o Supabase (login individual e regras no servidor).</p></section>';
     if(adm){
-      h+='<section class="card col"><h3>Backup e restauração</h3><div class="row"><button class="btn primary" data-a="backup">Copiar backup</button><button class="btn" data-a="integrity">Verificar integridade</button></div><form class="col" data-f="restore"><label class="f">Restaurar: cole aqui o backup ou escolha o arquivo<textarea class="in" name="txt" id="restoretxt" placeholder="Conteúdo do backup"></textarea></label><input type="file" id="restorefile" accept=".json,application/json" class="in"><button class="btn danger" type="submit">Restaurar backup (substitui os dados atuais)</button></form></section>';
+      if(!REMOTE)h+='<section class="card col"><h3>Backup e restauração</h3><div class="row"><button class="btn primary" data-a="backup">Copiar backup</button><button class="btn" data-a="integrity">Verificar integridade</button></div><form class="col" data-f="restore"><label class="f">Restaurar: cole aqui o backup ou escolha o arquivo<textarea class="in" name="txt" id="restoretxt" placeholder="Conteúdo do backup"></textarea></label><input type="file" id="restorefile" accept=".json,application/json" class="in"><button class="btn danger" type="submit">Restaurar backup (substitui os dados atuais)</button></form></section>';
       h+='<section class="card"><h3>Auditoria</h3><p class="sm muted">Últimas 40 ações.</p><div class="scroll"><table class="tbl"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>'+S.audit.slice(0,40).map(a=>'<tr><td>'+brTime(a.at)+'</td><td>'+esc(nameOf(a.actorId))+'</td><td>'+esc(a.action+' '+a.entity)+'</td><td style="white-space:normal">'+esc(a.reason)+'</td></tr>').join('')+'</tbody></table></div></section>';
-      h+='<form class="card col" data-f="reset"><h3>Apagar tudo</h3><p class="sm muted">Remove todos os dados deste aparelho. Digite APAGAR para confirmar.</p><div class="row"><input class="in grow" name="c" placeholder="APAGAR" autocomplete="off"><button class="btn danger" type="submit">Apagar tudo</button></div></form>';
+      if(!REMOTE)h+='<form class="card col" data-f="reset"><h3>Apagar tudo</h3><p class="sm muted">Remove todos os dados deste aparelho. Digite APAGAR para confirmar.</p><div class="row"><input class="in grow" name="c" placeholder="APAGAR" autocomplete="off"><button class="btn danger" type="submit">Apagar tudo</button></div></form>';
     }
   }
   return h;
@@ -1038,6 +1072,7 @@ function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
   if(!S.setupDone)app.innerHTML=vOnboard();
   else if(!UI.me||!actor(UI.me)){UI.me=null;app.innerHTML=vLogin()}
+  else if(!openPeriod()){app.innerHTML='<div class="login"><div class="card empty"><div class="big-e" aria-hidden="true">⚠️</div><h3>Nenhum período aberto</h3><p>O banco não tem um período em andamento. Avise o administrador.</p></div></div>'}
   else{if(UI.view==='shop'&&!S.settings.shop)UI.view='home';app.innerHTML=vShell(VIEWS[UI.view]())}
   document.title=S.settings.appName;
   if(fid==='q'){const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
@@ -1050,7 +1085,7 @@ function flush(){
     if(x.type==='winner')winnerModal(x.periodId);
   });
 }
-function res(r,msg){if(!r.ok){toast(r.err,'err');return false}if(msg)toast(msg,'ok');return true}
+async function res(r,msg){r=await r;if(!r.ok){toast(r.err,'err');return false}if(msg)toast(msg,'ok');return true}
 const me_=()=>UI.me;
 
 /* ===== modais ===== */
@@ -1106,58 +1141,58 @@ function tieModal(ids){
 
 /* ===== ações de clique ===== */
 const H={
- close:()=>closeModal(),
- yes:()=>{const f=UI.cb;closeModal();if(f)f()},
- go:d=>{UI.view=d.v;if(d.st)UI.filters.st=d.st;closeModal();render()},
- more:()=>moreModal(),
- logout:()=>{try{sessionStorage.removeItem('cj:me')}catch(e){}UI.me=null;UI.login={sel:null,err:''};render()},
- tab:d=>{UI.tab=d.t;render()},settab:d=>{UI.setTab=d.t;render()},shoptab:d=>{UI.shopTab=d.t;render()},achwho:d=>{UI.achWho=d.id;render()},
- pick:d=>{UI.login={sel:d.id,err:''};render()},unpick:()=>{UI.login={sel:null,err:''};render()},
- start:d=>{res(A.start(UI.me,d.id))},
- claim:d=>{if(res(A.claim(UI.me,d.id),'Tarefa assumida. Boa missão!')&&UI.spin.stage==='result')render()},
- submit:d=>submitModal(d.id),review:d=>reviewModal(d.id),proof:d=>proofModal(d.id),
- newtask:()=>taskForm(),editdef:d=>taskForm(S.tasks.find(x=>x.id===d.id)),
- deldef:d=>confirmModal('Remover tarefa recorrente?','Se ela já tem ocorrências, será apenas desativada e o histórico continua.','Remover',()=>{const r=A.deleteDef(UI.me,d.id);if(res(r,r.deactivated?'Tarefa desativada':'Tarefa removida'));}),
- editocc:d=>{const o=occ(d.id);openModal('<h2>Editar tarefa</h2><p><strong>'+esc(o.title)+'</strong></p><form class="col" data-f="occ" data-id="'+o.id+'"><div class="form"><label class="f">Pontos<input class="in" type="number" min="1" max="500" step="1" name="points" value="'+o.points+'" required></label><label class="f">Prazo<input class="in" type="date" name="dueDate" value="'+o.dueDate+'" required></label><label class="f full">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>'<option value="'+u.id+'" '+(u.id===o.assignedTo?'selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(o.desc||'')+'" maxlength="300"></label></div><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
- cancelocc:d=>confirmModal('Cancelar tarefa?','Ela continua no histórico como cancelada e não gera pontos nem penalidade.','Cancelar tarefa',()=>res(A.cancelOcc(UI.me,d.id),'Tarefa cancelada'),true),
+ close:async ()=>closeModal(),
+ yes:async ()=>{const f=UI.cb;closeModal();if(f)await f()},
+ go:async d=>{UI.view=d.v;if(d.st)UI.filters.st=d.st;closeModal();render()},
+ more:async ()=>moreModal(),
+ logout:async ()=>{try{sessionStorage.removeItem('cj:me')}catch(e){}UI.me=null;UI.login={sel:null,err:''};render()},
+ tab:async d=>{UI.tab=d.t;render()},settab:d=>{UI.setTab=d.t;render()},shoptab:d=>{UI.shopTab=d.t;render()},achwho:d=>{UI.achWho=d.id;render()},
+ pick:async d=>{UI.login={sel:d.id,err:'',mode:''};render()},unpick:()=>{UI.login={sel:null,err:'',mode:''};render()},signup:()=>{UI.login={sel:null,err:'',mode:'signup'};render()},
+ start:async d=>{await res(A.start(UI.me,d.id))},
+ claim:async d=>{if(await res(A.claim(UI.me,d.id),'Tarefa assumida. Boa missão!')&&UI.spin.stage==='result')render()},
+ submit:async d=>submitModal(d.id),review:d=>reviewModal(d.id),proof:d=>proofModal(d.id),
+ newtask:async ()=>taskForm(),editdef:d=>taskForm(S.tasks.find(x=>x.id===d.id)),
+ deldef:async d=>confirmModal('Remover tarefa recorrente?','Se ela já tem ocorrências, será apenas desativada e o histórico continua.','Remover',async ()=>{const r=await A.deleteDef(UI.me,d.id);if(await res(r,r.deactivated?'Tarefa desativada':'Tarefa removida'));}),
+ editocc:async d=>{const o=occ(d.id);openModal('<h2>Editar tarefa</h2><p><strong>'+esc(o.title)+'</strong></p><form class="col" data-f="occ" data-id="'+o.id+'"><div class="form"><label class="f">Pontos<input class="in" type="number" min="1" max="500" step="1" name="points" value="'+o.points+'" required></label><label class="f">Prazo<input class="in" type="date" name="dueDate" value="'+o.dueDate+'" required></label><label class="f full">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>'<option value="'+u.id+'" '+(u.id===o.assignedTo?'selected':'')+'>'+esc(u.name)+'</option>').join('')+'</select></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(o.desc||'')+'" maxlength="300"></label></div><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ cancelocc:async d=>confirmModal('Cancelar tarefa?','Ela continua no histórico como cancelada e não gera pontos nem penalidade.','Cancelar tarefa',async ()=>await res(A.cancelOcc(UI.me,d.id),'Tarefa cancelada'),true),
  'send-proof':async d=>{
   if(UI.busy)return;if(!UI.photo){toast('Escolha uma foto primeiro.','err');return}UI.busy=true;
-  try{const r=await A.submit(UI.me,d.id,UI.photo);if(res(r,'Enviada! Agora outra pessoa precisa aprovar.'))closeModal()}finally{UI.busy=false}
+  try{const r=await A.submit(UI.me,d.id,UI.photo);if(await res(r,'Enviada! Agora outra pessoa precisa aprovar.'))closeModal()}finally{UI.busy=false}
  },
- approve:d=>{const r=A.review(UI.me,d.id,true);if(res(r,'Aprovada! +'+(r.points||0)+' pontos creditados.')){closeModal();confetti(30)}},
- reject:d=>{const r=A.review(UI.me,d.id,false,($('#rejreason')||{}).value);if(res(r,'Rejeitada. O jogador pode reenviar.'))closeModal()},
- 'close-period':()=>closePeriodModal(),
- 'close-go':()=>{const r=A.closePeriod(UI.me);if(!r.ok){toast(r.err,'err');return}if(r.tie){tieModal(r.tie);return}closeModal();UI.rankP=null},
- paid:d=>res(A.prizePaid(UI.me,d.id,d.v==='1'),'Atualizado'),
- restedit:d=>{const r=S.restDays.find(x=>x.id===d.id);openModal('<h2>Dia de descanso</h2><form class="col" data-f="rest" data-id="'+r.id+'"><label class="f">Data<input class="in" type="date" name="date" value="'+(r.date||'')+'"></label><label class="f">Situação<select class="in" name="status"><option value="pending" '+(r.status==='pending'?'selected':'')+'>Pendente</option><option value="scheduled" '+(r.status==='scheduled'?'selected':'')+'>Agendado</option><option value="used" '+(r.status==='used'?'selected':'')+'>Usufruído</option></select></label><p class="sm muted">O descanso é uma recompensa combinada com a casa, não uma tarefa passada a outra pessoa.</p><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
- buy:d=>{const r=S.rewards.find(x=>x.id===d.id);const rq=uid('rq');confirmModal('Resgatar '+r.name+'?','Custa <strong>'+r.cost+' moedas</strong>. Você tem '+balance(UI.me)+'. As moedas são debitadas uma vez e o ranking não muda.','Resgatar',()=>res(A.redeem(UI.me,r.id,rq),'Resgate registrado!'))},
- red:d=>{const lab={approve:'aprovado',done:'concluído',cancel:'cancelado e moedas devolvidas'}[d.act];res(A.redemption(UI.me,d.id,d.act),'Resgate '+lab)},
- editreward:d=>{const r=d.id?S.rewards.find(x=>x.id===d.id):{name:'',desc:'',cost:20,stock:null,active:true,limit:0};openModal('<h2>'+(d.id?'Editar':'Nova')+' recompensa</h2><form class="col" data-f="reward" data-id="'+(d.id||'')+'"><div class="form"><label class="f full">Nome<input class="in" name="name" value="'+esc(r.name)+'" required></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(r.desc)+'"></label><label class="f">Custo (moedas)<input class="in" type="number" min="0" step="1" name="cost" value="'+r.cost+'" required></label><label class="f">Estoque (vazio = ilimitado)<input class="in" type="number" min="0" step="1" name="stock" value="'+(r.stock==null?'':r.stock)+'"></label><label class="f">Limite por pessoa (0 = sem)<input class="in" type="number" min="0" step="1" name="limit" value="'+(r.limit||0)+'"></label></div><label class="chk"><input type="checkbox" name="active" '+(r.active?'checked':'')+'> Ativa</label><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
- reverse:d=>askText('Estornar registro','Justificativa (obrigatória)','Estornar',t=>res(A.reverse(UI.me,d.id,t),'Estorno registrado')),
- contest:d=>askText('Contestar penalidade','Explique o motivo','Enviar contestação',t=>res(A.contest(UI.me,d.id,t),'Contestação enviada ao administrador')),
- resolve:d=>{const t=S.scoreTx.find(x=>x.id===d.id);openModal('<h2>Decidir contestação</h2><p>'+esc(nameOf(t.userId))+': '+esc(t.contest.text)+'</p><form class="col" data-f="resolve" data-id="'+t.id+'"><label class="f">Decisão<select class="in" name="acc"><option value="1">Aceitar e devolver os pontos</option><option value="0">Negar</option></select></label><label class="f">Justificativa<input class="in" name="r" required minlength="3"></label><div class="row"><button class="btn primary" type="submit">Registrar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
- 'spin-mode':d=>{UI.spin=Object.assign(UI.spin,{mode:d.m,stage:'pick'});render()},
- 'spin-ask':()=>{UI.spin.stage='confirm';render()},'spin-cancel':()=>{UI.spin.stage='pick';render()},
- 'spin-reset':()=>{UI.spin.stage='pick';UI.spin.rot=0;render()},
- 'spin-go':()=>{
-  const sp=UI.spin;const r=A.spin(UI.me,sp.mode,{categoryId:sp.cat,exclude:sp.excl});if(!r.ok){toast(r.err,'err');sp.stage='pick';render();return}
+ approve:async d=>{const r=await A.review(UI.me,d.id,true);if(await res(r,'Aprovada! +'+(r.points||0)+' pontos creditados.')){closeModal();confetti(30)}},
+ reject:async d=>{const r=await A.review(UI.me,d.id,false,($('#rejreason')||{}).value);if(await res(r,'Rejeitada. O jogador pode reenviar.'))closeModal()},
+ 'close-period':async ()=>closePeriodModal(),
+ 'close-go':async ()=>{const r=await A.closePeriod(UI.me);if(!r.ok){toast(r.err,'err');return}if(r.tie){tieModal(r.tie);return}closeModal();UI.rankP=null},
+ paid:async d=>await res(A.prizePaid(UI.me,d.id,d.v==='1'),'Atualizado'),
+ restedit:async d=>{const r=S.restDays.find(x=>x.id===d.id);openModal('<h2>Dia de descanso</h2><form class="col" data-f="rest" data-id="'+r.id+'"><label class="f">Data<input class="in" type="date" name="date" value="'+(r.date||'')+'"></label><label class="f">Situação<select class="in" name="status"><option value="pending" '+(r.status==='pending'?'selected':'')+'>Pendente</option><option value="scheduled" '+(r.status==='scheduled'?'selected':'')+'>Agendado</option><option value="used" '+(r.status==='used'?'selected':'')+'>Usufruído</option></select></label><p class="sm muted">O descanso é uma recompensa combinada com a casa, não uma tarefa passada a outra pessoa.</p><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ buy:async d=>{const r=S.rewards.find(x=>x.id===d.id);const rq=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():uid('rq');confirmModal('Resgatar '+r.name+'?','Custa <strong>'+r.cost+' moedas</strong>. Você tem '+balance(UI.me)+'. As moedas são debitadas uma vez e o ranking não muda.','Resgatar',async ()=>await res(A.redeem(UI.me,r.id,rq),'Resgate registrado!'))},
+ red:async d=>{const lab={approve:'aprovado',done:'concluído',cancel:'cancelado e moedas devolvidas'}[d.act];await res(A.redemption(UI.me,d.id,d.act),'Resgate '+lab)},
+ editreward:async d=>{const r=d.id?S.rewards.find(x=>x.id===d.id):{name:'',desc:'',cost:20,stock:null,active:true,limit:0};openModal('<h2>'+(d.id?'Editar':'Nova')+' recompensa</h2><form class="col" data-f="reward" data-id="'+(d.id||'')+'"><div class="form"><label class="f full">Nome<input class="in" name="name" value="'+esc(r.name)+'" required></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(r.desc)+'"></label><label class="f">Custo (moedas)<input class="in" type="number" min="0" step="1" name="cost" value="'+r.cost+'" required></label><label class="f">Estoque (vazio = ilimitado)<input class="in" type="number" min="0" step="1" name="stock" value="'+(r.stock==null?'':r.stock)+'"></label><label class="f">Limite por pessoa (0 = sem)<input class="in" type="number" min="0" step="1" name="limit" value="'+(r.limit||0)+'"></label></div><label class="chk"><input type="checkbox" name="active" '+(r.active?'checked':'')+'> Ativa</label><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ reverse:async d=>askText('Estornar registro','Justificativa (obrigatória)','Estornar',async t=>await res(A.reverse(UI.me,d.id,t),'Estorno registrado')),
+ contest:async d=>askText('Contestar penalidade','Explique o motivo','Enviar contestação',async t=>await res(A.contest(UI.me,d.id,t),'Contestação enviada ao administrador')),
+ resolve:async d=>{const t=S.scoreTx.find(x=>x.id===d.id);openModal('<h2>Decidir contestação</h2><p>'+esc(nameOf(t.userId))+': '+esc(t.contest.text)+'</p><form class="col" data-f="resolve" data-id="'+t.id+'"><label class="f">Decisão<select class="in" name="acc"><option value="1">Aceitar e devolver os pontos</option><option value="0">Negar</option></select></label><label class="f">Justificativa<input class="in" name="r" required minlength="3"></label><div class="row"><button class="btn primary" type="submit">Registrar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ 'spin-mode':async d=>{UI.spin=Object.assign(UI.spin,{mode:d.m,stage:'pick'});render()},
+ 'spin-ask':async ()=>{UI.spin.stage='confirm';render()},'spin-cancel':()=>{UI.spin.stage='pick';render()},
+ 'spin-reset':async ()=>{UI.spin.stage='pick';UI.spin.rot=0;render()},
+ 'spin-go':async ()=>{
+  const sp=UI.spin;const r=await A.spin(UI.me,sp.mode,{categoryId:sp.cat,exclude:sp.excl});if(!r.ok){toast(r.err,'err');sp.stage='pick';render();return}
   sp.pool=r.pool;sp.idx=r.index;sp.rot=0;sp.stage='spin';render();
   const seg=360/r.pool.length,final=360*5-(r.index+.5)*seg;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{const w=$('.wheel');if(w)w.style.transform='rotate('+final+'deg)';sp.rot=final}));
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
   setTimeout(()=>{if(UI.spin===sp){sp.stage='result';render();confetti(20)}},reduce?50:4400);
  },
- assignpick:d=>{openModal('<h2>Atribuir tarefa</h2><form class="col" data-f="assign" data-oid="'+d.oid+'"><label class="f">Para quem<select class="in" name="to">'+actives().map(u=>'<option value="'+u.id+'">'+esc(u.name)+'</option>').join('')+'</select></label><p class="sm muted">A atribuição só vale depois de confirmada aqui.</p><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
- assignto:d=>{const l=S.occurrences.filter(o=>OPEN_ST.includes(o.status));if(!l.length){toast('Não há tarefas em aberto.','err');return}openModal('<h2>Atribuir a '+esc(nameOf(d.uid))+'</h2><form class="col" data-f="assign2" data-uid="'+d.uid+'"><label class="f">Tarefa<select class="in" name="oid">'+l.map(o=>'<option value="'+o.id+'">'+esc(o.title)+' ('+o.points+' pts, '+esc(o.assignedTo?nameOf(o.assignedTo):'sem responsável')+')</option>').join('')+'</select></label><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ assignpick:async d=>{openModal('<h2>Atribuir tarefa</h2><form class="col" data-f="assign" data-oid="'+d.oid+'"><label class="f">Para quem<select class="in" name="to">'+actives().map(u=>'<option value="'+u.id+'">'+esc(u.name)+'</option>').join('')+'</select></label><p class="sm muted">A atribuição só vale depois de confirmada aqui.</p><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
+ assignto:async d=>{const l=S.occurrences.filter(o=>OPEN_ST.includes(o.status));if(!l.length){toast('Não há tarefas em aberto.','err');return}openModal('<h2>Atribuir a '+esc(nameOf(d.uid))+'</h2><form class="col" data-f="assign2" data-uid="'+d.uid+'"><label class="f">Tarefa<select class="in" name="oid">'+l.map(o=>'<option value="'+o.id+'">'+esc(o.title)+' ('+o.points+' pts, '+esc(o.assignedTo?nameOf(o.assignedTo):'sem responsável')+')</option>').join('')+'</select></label><div class="row"><button class="btn primary" type="submit">Confirmar atribuição</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')},
  backup:async()=>{const t=await exportBackup();openModal('<h2>Backup</h2><p class="sm muted">Copie e guarde em um lugar seguro. Inclui dados e fotos. Para restaurar, cole em Ajustes, Dados.</p><textarea class="in" id="bk" readonly>'+esc(t)+'</textarea><div class="row"><button class="btn primary" data-a="copybk">Copiar</button><button class="btn ghost" data-a="close">Fechar</button></div>');const x=$('#bk');x.focus();x.select()},
  copybk:async()=>{const x=$('#bk');try{await navigator.clipboard.writeText(x.value);toast('Backup copiado','ok')}catch(e){x.focus();x.select();toast('Selecionamos o texto. Copie com Ctrl+C.')}},
- integrity:()=>{const p=verifyIntegrity(S);openModal('<h2>Integridade dos dados</h2>'+(p.length?'<ul>'+p.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Tudo certo: relações, pontuação única por tarefa e saldos consistentes.</p>')+'<button class="btn" data-a="close">Fechar</button>')},
- resetpin:d=>confirmModal('Pedir novo PIN?',esc(nameOf(d.id))+' vai criar um PIN novo no próximo acesso.','Confirmar',()=>res(Auth.resetPin(UI.me,d.id),'PIN liberado para redefinição')),
- changepin:()=>pinModal(UI.me),
- 'ob-back':()=>{UI.obStep=Math.max(0,UI.obStep-1);render()},
- 'ob-pin':d=>{obRead();pinModal(d.id)},
- 'ob-add':()=>{obRead();const n=['Participante 4','Quarto jogador'].find(x=>!S.users.some(u=>u.name===x));const used=new Set(S.users.map(x=>x.avatar)),uc=new Set(S.users.map(x=>x.color));S.users.push({id:uid('u'),name:n,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!uc.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()});commit()},
- 'ob-rm':d=>{obRead();S.users=S.users.filter(u=>u.id!==d.id);commit()}
+ integrity:async ()=>{const p=verifyIntegrity(S);openModal('<h2>Integridade dos dados</h2>'+(p.length?'<ul>'+p.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Tudo certo: relações, pontuação única por tarefa e saldos consistentes.</p>')+'<button class="btn" data-a="close">Fechar</button>')},
+ resetpin:async d=>confirmModal('Pedir novo PIN?',esc(nameOf(d.id))+' vai criar um PIN novo no próximo acesso.','Confirmar',async ()=>await res(Auth.resetPin(UI.me,d.id),'PIN liberado para redefinição')),
+ changepin:async ()=>pinModal(UI.me),
+ 'ob-back':async ()=>{UI.obStep=Math.max(0,UI.obStep-1);render()},
+ 'ob-pin':async d=>{obRead();pinModal(d.id)},
+ 'ob-add':async ()=>{obRead();const n=['Participante 4','Quarto jogador'].find(x=>!S.users.some(u=>u.name===x));const used=new Set(S.users.map(x=>x.avatar)),uc=new Set(S.users.map(x=>x.color));S.users.push({id:uid('u'),name:n,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!uc.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()});commit()},
+ 'ob-rm':async d=>{obRead();S.users=S.users.filter(u=>u.id!==d.id);commit()}
 };
 function obRead(){
   const f=$('form[data-f="ob"]');if(!f||UI.obStep!==1)return;const fd=new FormData(f);
@@ -1167,9 +1202,20 @@ function obRead(){
 /* ===== formulários ===== */
 const num=(fd,k)=>{const v=fd.get(k);return v===''||v==null?NaN:Number(v)};
 const F={
- ask:async fd=>{const f=UI.askCb;const t=fd.get('t');closeModal();if(f)f(t)},
+ ask:async fd=>{const f=UI.askCb;const t=fd.get('t');closeModal();if(f)await f(t)},
  pin:async(fd,f)=>{const id=f.dataset.id,p1=fd.get('p1'),p2=fd.get('p2');if(p1!==p2){toast('Os PINs não são iguais.','err');return}
-   const r=await Auth.setPin(id,p1,fd.get('cur'));if(res(r,'PIN salvo')){closeModal();render()}},
+   const r=await Auth.setPin(id,p1,fd.get('cur'));if(await res(r,'PIN salvo')){closeModal();render()}},
+ signup:async fd=>{
+   const dr={name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color')},p1=fd.get('p1'),p2=fd.get('p2');
+   const bad=m=>{UI.login={sel:null,err:m,mode:'signup',draft:dr};render()};
+   if(!Auth.valid(p1))return bad('O PIN deve ter de 4 a 6 números.');
+   if(p1!==p2)return bad('Os PINs não são iguais.');
+   const r=await A.signup(dr);if(!r.ok)return bad(r.err);
+   const sp=await Auth.setPin(r.id,p1);
+   if(!sp.ok){S.users=S.users.filter(u=>u.id!==r.id);commit();return bad(sp.err)}
+   UI.me=r.id;UI.login={sel:null,err:'',mode:''};UI.view='home';try{sessionStorage.setItem('cj:me',r.id)}catch(e){}sweep();toast('Cadastro criado! Bem-vindo(a).','star');render();
+ },
+ signupset:async fd=>{await res(A.saveSettings(UI.me,{openSignup:fd.get('open')==='on'}),'Cadastros atualizados')},
  login:async(fd,f)=>{
    const id=f.dataset.id,u=user(id),p1=fd.get('p1');let r;
    if(!u.pinHash){if(p1!==fd.get('p2')){UI.login.err='Os PINs não são iguais.';render();return}r=await Auth.setPin(id,p1)}else r=await Auth.check(id,p1);
@@ -1179,51 +1225,54 @@ const F={
  ob:async(fd,f)=>{
    const st=+f.dataset.step,s=S.settings;
    if(st===0){const n=String(fd.get('appName')).trim();if(n.length<2){toast('Informe o nome do app.','err');return}s.appName=n}
-   if(st===1){obRead();const names=S.users.filter(u=>u.active).map(u=>normT(u.name));if(new Set(names).size!==names.length){toast('Os nomes precisam ser diferentes.','err');return}if(actives().length<3){toast('São necessários ao menos 3 participantes.','err');return}}
+   if(st===1){obRead();s.openSignup=fd.get('openSignup')==='on';if(!S.users.find(u=>u.role==='admin').pinHash){toast('Defina o PIN do administrador.','err');return}}
    if(st===2){for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(!POINTS_OK(v)){toast('Pontos inválidos em "'+m.title+'".','err');return}m.points=v}}
    if(st===3){const p=num(fd,'prize'),r=num(fd,'restDays');if(!(p>=0)||!(r>=0&&r<=10)){toast('Confira a premiação.','err');return}s.prize=p;s.restDays=Math.floor(r);s.shop=fd.get('shop')==='on';s.coinRate=Math.max(0,Math.min(10,Math.floor(num(fd,'coinRate')||0)))}
    if(st===4){const g=k=>Math.max(0,Math.min(100,Math.floor(num(fd,k)||0)));s.penalty={enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')}}
    if(st===5){const d=fd.get('start');if(!validDate(d)){toast('Informe uma data válida.','err');return}s.startDate=d}
    if(st===6){
-     if(!S.users[0].pinHash){toast('O administrador precisa definir o PIN.','err');return}
+     if(!S.users.find(u=>u.role==='admin').pinHash){toast('O administrador precisa definir o PIN.','err');return}
      const ns=s.startDate;S.periods=[{id:'p-'+ns,start:ns,end:monthEnd(ns),status:'open',winnerId:null,prizeAmount:0,tieResolution:null}];S.setupDone=true;audit('system','setup','app','','Configuração inicial');
-     UI.me=S.users[0].id;try{sessionStorage.setItem('cj:me',UI.me)}catch(e){}UI.view='home';commit();toast('Jogo iniciado! Boa sorte a todos.','star');confetti(40);return;
+     UI.me=S.users.find(u=>u.role==='admin').id;try{sessionStorage.setItem('cj:me',UI.me)}catch(e){}UI.view='home';commit();toast('Jogo iniciado! Agora cada jogador cria o próprio cadastro.','star');confetti(40);return;
    }
    UI.obStep=Math.min(OBN-1,st+1);commit();
  },
  task:async(fd,f)=>{
    const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency'),interval:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate')};
-   const id=f.dataset.id;const r=id?A.updateDef(UI.me,id,Object.assign(d,{nextDue:d.dueDate,active:fd.get('active')==='on'})):A.createTask(UI.me,d);
-   if(res(r,id?'Tarefa atualizada':'Tarefa criada'))closeModal();
+   const id=f.dataset.id;const r=id?await A.updateDef(UI.me,id,Object.assign(d,{nextDue:d.dueDate,active:fd.get('active')==='on'})):await A.createTask(UI.me,d);
+   if(await res(r,id?'Tarefa atualizada':'Tarefa criada'))closeModal();
  },
- occ:async(fd,f)=>{if(res(A.updateOcc(UI.me,f.dataset.id,{points:num(fd,'points'),dueDate:fd.get('dueDate'),assignedTo:fd.get('assignedTo')||null,desc:fd.get('desc')}),'Tarefa atualizada'))closeModal()},
- tie:async fd=>{const r=A.closePeriod(UI.me,{winnerId:fd.get('w'),tieNote:fd.get('note')});if(!r.ok){toast(r.err,'err');return}closeModal()},
- rest:async(fd,f)=>{if(res(A.rest(UI.me,f.dataset.id,fd.get('date'),fd.get('status')),'Descanso atualizado'))closeModal()},
- reward:async(fd,f)=>{const st=fd.get('stock');if(res(A.saveReward(UI.me,{id:f.dataset.id||null,name:fd.get('name'),desc:fd.get('desc'),cost:num(fd,'cost'),stock:st===''?null:Number(st),limit:Number(fd.get('limit'))||0,active:fd.get('active')==='on'}),'Recompensa salva'))closeModal()},
- resolve:async(fd,f)=>{if(res(A.resolveContest(UI.me,f.dataset.id,fd.get('acc')==='1',fd.get('r')),'Decisão registrada'))closeModal()},
- assign:async(fd,f)=>{if(res(A.assign(UI.me,f.dataset.oid,fd.get('to')),'Tarefa atribuída'))closeModal()},
- assign2:async(fd,f)=>{if(res(A.assign(UI.me,fd.get('oid'),f.dataset.uid),'Tarefa atribuída'))closeModal()},
- profile:async(fd,f)=>{res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color')}),'Perfil salvo')},
- person:async(fd,f)=>{res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),role:fd.get('role'),active:fd.get('active')==='1'}),'Participante salvo')},
- adduser:async fd=>{res(A.addUser(UI.me,fd.get('name')),'Participante adicionado. Ele cria o PIN no primeiro acesso.')},
- rules:async fd=>{const g=k=>Math.floor(num(fd,k));res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
- catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
- adjust:async fd=>{res(A.adjust(UI.me,fd.get('uid'),num(fd,'delta'),fd.get('reason'),fd.get('pid')),'Ajuste registrado')},
- cat:async(fd,f)=>{res(A.saveCategory(UI.me,{id:f.dataset.id||null,name:fd.get('name'),icon:fd.get('icon')}),'Categoria salva')},
+ occ:async(fd,f)=>{if(await res(A.updateOcc(UI.me,f.dataset.id,{points:num(fd,'points'),dueDate:fd.get('dueDate'),assignedTo:fd.get('assignedTo')||null,desc:fd.get('desc')}),'Tarefa atualizada'))closeModal()},
+ tie:async fd=>{const r=await A.closePeriod(UI.me,{winnerId:fd.get('w'),tieNote:fd.get('note')});if(!r.ok){toast(r.err,'err');return}closeModal()},
+ rest:async(fd,f)=>{if(await res(A.rest(UI.me,f.dataset.id,fd.get('date'),fd.get('status')),'Descanso atualizado'))closeModal()},
+ reward:async(fd,f)=>{const st=fd.get('stock');if(await res(A.saveReward(UI.me,{id:f.dataset.id||null,name:fd.get('name'),desc:fd.get('desc'),cost:num(fd,'cost'),stock:st===''?null:Number(st),limit:Number(fd.get('limit'))||0,active:fd.get('active')==='on'}),'Recompensa salva'))closeModal()},
+ resolve:async(fd,f)=>{if(await res(A.resolveContest(UI.me,f.dataset.id,fd.get('acc')==='1',fd.get('r')),'Decisão registrada'))closeModal()},
+ assign:async(fd,f)=>{if(await res(A.assign(UI.me,f.dataset.oid,fd.get('to')),'Tarefa atribuída'))closeModal()},
+ assign2:async(fd,f)=>{if(await res(A.assign(UI.me,fd.get('oid'),f.dataset.uid),'Tarefa atribuída'))closeModal()},
+ profile:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),plays:isAdmin(UI.me)?fd.get('plays')==='on':null}),'Perfil salvo')},
+ person:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),active:fd.get('active')==null?null:fd.get('active')==='1'}),'Participante salvo')},
+ adduser:async fd=>{await res(A.addUser(UI.me,fd.get('name')),'Participante adicionado. Ele cria o PIN no primeiro acesso.')},
+ rules:async fd=>{const g=k=>Math.floor(num(fd,k));await res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
+ catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=await A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
+ adjust:async fd=>{await res(A.adjust(UI.me,fd.get('uid'),num(fd,'delta'),fd.get('reason'),fd.get('pid')),'Ajuste registrado')},
+ cat:async(fd,f)=>{await res(A.saveCategory(UI.me,{id:f.dataset.id||null,name:fd.get('name'),icon:fd.get('icon')}),'Categoria salva')},
  restore:async fd=>{const t=fd.get('txt');if(!t){toast('Cole o backup ou escolha o arquivo.','err');return}
-   confirmModal('Restaurar backup?','Isto substitui todos os dados atuais pelos do backup.','Restaurar',async()=>{const r=await importBackup(UI.me,t);if(res(r,'Backup restaurado')){if(!actor(UI.me))H.logout()}},true)},
+   confirmModal('Restaurar backup?','Isto substitui todos os dados atuais pelos do backup.','Restaurar',async()=>{const r=await importBackup(UI.me,t);if(await res(r,'Backup restaurado')){if(!actor(UI.me))H.logout()}},true)},
  reset:async fd=>{if(fd.get('c')!=='APAGAR'){toast('Digite APAGAR para confirmar.','err');return}if(!isAdmin(UI.me))return;resetAll();H.logout();UI.obStep=0;render()}
 };
 
 /* ===== eventos globais ===== */
-document.addEventListener('click',e=>{
+document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-a]');if(!el)return;
   if(el.dataset.a==='ov'){if(e.target===el)closeModal();return}
-  const fn=H[el.dataset.a];if(fn)fn(el.dataset,el,e);
+  const fn=H[el.dataset.a];if(!fn||UI.act)return;
+  const r=fn(el.dataset,el,e);
+  if(r&&typeof r.then==='function'){UI.act=true;try{await r}catch(err){toast('Algo deu errado. Tente de novo.','err');console.error(err)}finally{UI.act=false}}
 });
 document.addEventListener('submit',async e=>{
   const f=e.target.closest('form[data-f]');if(!f)return;e.preventDefault();
-  const fn=F[f.dataset.f];if(fn)await fn(new FormData(f),f);
+  const fn=F[f.dataset.f];if(!fn||UI.formBusy)return;
+  UI.formBusy=true;try{await fn(new FormData(f),f)}catch(err){toast('Algo deu errado. Tente de novo.','err');console.error(err)}finally{UI.formBusy=false}
 });
 document.addEventListener('change',async e=>{
   const t=e.target;
@@ -1247,13 +1296,238 @@ function loadPhoto(file){
   img.onerror=()=>{toast('Não foi possível ler essa imagem.','err');URL.revokeObjectURL(url)};img.src=url;
 }
 
+/* ===== modo Supabase (ativo quando config.js traz url e anonKey) =====
+   O app só LÊ as tabelas e chama funções (RPC). Quem decide pontos, permissões e regras é o servidor. */
+const Remote=REMOTE?(()=>{
+  const sb=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  const R={sb,me:null,sig:'',houseCode:'',status:null,booting:true,timer:null,dirty:false,q:Promise.resolve()};
+  const msg=e=>{
+    const m=(e&&e.message)||String(e||'Erro');
+    if(/Invalid login credentials/i.test(m))return 'E-mail ou senha incorretos.';
+    if(/already registered|already been registered/i.test(m))return 'Este e-mail já tem cadastro. Use "Entrar".';
+    if(/Password should be at least|at least 6/i.test(m))return 'A senha precisa ter ao menos 6 caracteres.';
+    if(/Email not confirmed/i.test(m))return 'Confirme o seu e-mail pelo link que enviamos e tente de novo.';
+    if(/rate limit|too many/i.test(m))return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+    if(/Database error saving new user/i.test(m))return 'Não foi possível criar o cadastro. Confira o código da casa e tente de novo.';
+    if(/Failed to fetch|NetworkError|Load failed/i.test(m))return 'Sem conexão com o servidor. Verifique a internet.';
+    if(/JWT|not authenticated/i.test(m))return 'Sua sessão expirou. Entre de novo.';
+    return m;
+  };
+  const D=x=>x?String(x).slice(0,10):null;
+  const lg=l=>(l||[]).map(x=>({at:x.at,by:x.by,text:x.text}));
+  const TABLES=['settings','profiles','categories','catalog','periods','tasks','occurrences','evidence','score_tx','wallet_tx','rewards','redemptions','achievements_unlocked','rest_days','spins','audit_log'];
+  async function all(t){
+    const out=[];
+    for(let from=0;;from+=1000){
+      const {data,error}=await sb.from(t).select('*').order('id',{ascending:true}).range(from,from+999);
+      if(error)throw error;out.push(...data);if(data.length<1000)break;
+    }
+    return out;
+  }
+  function build(r){
+    const st=r.settings[0]||{};
+    const settings={appName:st.app_name||'Rei da Faxina',prize:+st.prize||0,restDays:st.rest_days||0,shop:st.shop_enabled!==false,coinRate:st.coin_rate||0,openSignup:st.open_signup!==false,startDate:today(),
+      penalty:st.penalty||{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:st.challenges||[],houseCode:r._house||''};
+    const num_=a=>parseInt(String(a).replace(/\D/g,''),10)||0;
+    return {v:1,setupDone:true,settings,
+      users:r.profiles.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,role:p.role,plays:p.plays,active:p.active,title:p.title||'',avatars:p.unlocked_avatars||[],createdAt:p.created_at,pinHash:'x'})),
+      categories:r.categories.map(c=>({id:c.id,name:c.name,icon:c.icon})),
+      catalog:r.catalog.map(m=>({id:m.id,title:m.title,points:m.points,categoryId:m.category_id,freq:m.freq})).sort((a,b)=>num_(a.id)-num_(b.id)),
+      tasks:r.tasks.map(t=>({id:t.id,title:t.title,desc:t.description||'',categoryId:t.category_id,frequency:t.frequency,interval:t.interval_days,points:t.points,assignedTo:t.assigned_to,nextDue:D(t.next_due),anchorDay:t.anchor_day,active:t.active,createdAt:t.created_at,log:lg(t.log)})),
+      occurrences:r.occurrences.map(o=>({id:o.id,taskId:o.task_id,title:o.title,desc:o.description||'',categoryId:o.category_id,points:o.points,assignedTo:o.assigned_to,periodId:o.period_id,dueDate:D(o.due_date),status:o.status,recurring:o.recurring,latePen:o.late_pen,missPen:o.miss_pen,createdAt:o.created_at,completedAt:o.completed_at,submittedBy:o.submitted_by,submittedAt:o.submitted_at,reviewedBy:o.reviewed_by,reviewedAt:o.reviewed_at,rejectionReason:o.rejection_reason||'',photoId:o.photo_path,log:lg(o.log)})),
+      evidences:r.evidence.map(e=>({id:e.id,occId:e.occurrence_id,submittedBy:e.submitted_by,photoId:e.image_path,submittedAt:e.submitted_at,reviewStatus:e.review_status,reviewedBy:e.reviewed_by,reviewedAt:e.reviewed_at,rejectionReason:e.rejection_reason||''})),
+      scoreTx:r.score_tx.map(t=>({id:t.id,userId:t.user_id,occId:t.occurrence_id,periodId:t.period_id,type:t.type,points:t.points,reason:t.reason||'',refTx:t.ref_tx,reversedBy:t.reversed_by,postClose:t.post_close,day:D(t.day),createdBy:t.created_by,createdAt:t.created_at,contest:t.contest||undefined})),
+      periods:r.periods.map(p=>({id:p.id,start:D(p.start_date),end:D(p.end_date),status:p.status,winnerId:p.winner_id,prizeAmount:+p.prize_amount||0,prizePaid:p.prize_paid,tieResolution:p.tie_resolution,closedAt:p.closed_at,closedBy:p.closed_by,final:p.final||[]})).sort((a,b)=>a.start.localeCompare(b.start)||(a.status==='closed'?-1:1)),
+      unlocked:r.achievements_unlocked.map(x=>({id:x.id,userId:x.user_id,achId:x.achievement_id,at:x.unlocked_at})).sort((a,b)=>a.at.localeCompare(b.at)),
+      walletTx:r.wallet_tx.map(w=>({id:w.id,userId:w.user_id,type:w.type,amount:w.amount,ref:w.ref,reason:w.reason||'',createdAt:w.created_at})),
+      rewards:r.rewards.map(w=>({id:w.id,name:w.name,desc:w.description||'',cost:w.cost,stock:w.stock,kind:w.kind,limit:w.per_user_limit,active:w.active,emoji:(w.payload||{}).emoji,title:(w.payload||{}).title})).sort((a,b)=>a.cost-b.cost||a.name.localeCompare(b.name)),
+      redemptions:r.redemptions.map(x=>({id:x.id,reqId:x.request_key,rewardId:x.reward_id,name:x.name,userId:x.user_id,cost:x.cost,status:x.status,periodId:x.period_id,createdAt:x.created_at,refunded:x.refunded})).sort((a,b)=>a.createdAt.localeCompare(b.createdAt)),
+      restDays:r.rest_days.map(x=>({id:x.id,userId:x.user_id,periodId:x.period_id,date:D(x.date),status:x.status})),
+      spins:r.spins.map(x=>({id:x.id,mode:x.mode,options:x.options,result:x.result,resultId:x.result_id,by:x.by_user,at:x.created_at})).sort((a,b)=>a.at.localeCompare(b.at)),
+      audit:r.audit_log.map(a=>({id:a.id,actorId:a.actor_id||'system',action:a.action,entity:a.entity_type,entityId:a.entity_id,reason:a.reason||'',at:a.created_at})).reverse()};
+  }
+  R.load=async()=>{
+    const rs=await Promise.all(TABLES.map(all));const raw={};TABLES.forEach((t,i)=>raw[t]=rs[i]);
+    const mine=raw.profiles.find(p=>p.id===R.me);
+    raw._house=(mine&&mine.role==='admin')?((await sb.rpc('get_house_code')).data||''):'';
+    return raw;
+  };
+  R.apply=raw=>{const sig=JSON.stringify(raw);if(sig===R.sig)return false;R.sig=sig;S=build(raw);return true};
+  // Não redesenha a tela enquanto a pessoa digita ou a roleta gira (a não ser após uma ação dela mesma)
+  R.draw=force=>{
+    const a=document.activeElement;
+    const typing=a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest('#app');
+    if(!force&&(typing||UI.spin.stage==='spin')){R.dirty=true;return}
+    R.dirty=false;render();
+  };
+  R.refresh=force=>{R.q=R.q.then(async()=>{
+    if(!R.me)return;
+    try{const raw=await R.load();const ch=R.apply(raw);if(ch||force)R.draw(force)}
+    catch(e){if(!R.warned){R.warned=true;toast(msg(e),'err');setTimeout(()=>{R.warned=false},60000)}}
+  });return R.q};
+  R.rpc=async(fn,args,before)=>{
+    try{
+      const {data,error}=await sb.rpc(fn,args||{});
+      if(error)return fail(msg(error));
+      const d=(data&&typeof data==='object'&&!Array.isArray(data))?data:{};
+      if(before)before(d);
+      await R.refresh(true);
+      return ok(d);
+    }catch(e){return fail(msg(e))}
+  };
+  R.fetchStatus=async()=>{try{const {data}=await sb.rpc('public_status');R.status=data||null}catch(e){R.status=null}};
+  R.startPolling=()=>{R.stopPolling();R.timer=setInterval(()=>{if(!document.hidden)R.refresh(false)},20000)};
+  R.stopPolling=()=>{if(R.timer){clearInterval(R.timer);R.timer=null}};
+  R.enter=async id=>{
+    R.me=id;R.sig='';
+    try{R.apply(await R.load())}catch(e){R.me=null;return fail(msg(e))}
+    const u=user(id);
+    if(!u||!u.active){try{await sb.auth.signOut()}catch(e){}R.me=null;S=remoteSkeleton();return fail('Sua conta não tem acesso ao jogo (desativada ou sem cadastro). Fale com o administrador.')}
+    UI.me=id;UI.view='home';R.startPolling();
+    sb.rpc('sweep').then(()=>R.refresh(false),()=>{});   // gera as tarefas recorrentes e aplica penalidades vencidas
+    return ok();
+  };
+  R.signIn=async(email,password)=>{
+    const {data,error}=await sb.auth.signInWithPassword({email,password});
+    if(error)return fail(msg(error));
+    return R.enter(data.user.id);
+  };
+  R.signUp=async d=>{
+    const pre=await sb.rpc('signup_problem',{p_name:d.name||'',p_code:d.code||'',p_email:d.email});
+    if(pre.error)return fail(msg(pre.error));
+    if(pre.data)return fail(pre.data);
+    const {data,error}=await sb.auth.signUp({email:d.email,password:d.password,options:{data:{name:d.name,avatar:d.avatar,color:d.color,house_code:d.code||''}}});
+    if(error)return fail(msg(error));
+    if(!data.session)return fail('Cadastro criado! Confirme o seu e-mail pelo link que enviamos e depois entre.');
+    return R.enter(data.user.id);
+  };
+  R.signOut=async()=>{
+    R.stopPolling();R.me=null;UI.me=null;R.sig='';S=remoteSkeleton();UI.login={sel:null,err:'',mode:'in'};
+    try{await sb.auth.signOut()}catch(e){}
+    await R.fetchStatus();render();
+  };
+  R.start=async()=>{
+    await R.fetchStatus();
+    try{const {data}=await sb.auth.getSession();
+      if(data&&data.session){const r=await R.enter(data.session.user.id);if(!r.ok)UI.login={sel:null,err:r.err,mode:'in'}}}catch(e){}
+    R.booting=false;render();
+  };
+  sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&R.me){R.stopPolling();R.me=null;UI.me=null;S=remoteSkeleton();render()}});
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R.me)R.refresh(false)});
+  document.addEventListener('focusout',()=>{if(R.dirty)setTimeout(()=>{if(R.dirty)R.draw(false)},250)});
+
+  // Fotos: bucket privado "evidence"; só quem está logado e ativo consegue baixar
+  Adapter.save=()=>{};Adapter.load=()=>null;
+  Adapter.getPhoto=async path=>{
+    if(!path)return null;if(Adapter.mem.has(path))return Adapter.mem.get(path);
+    const {data,error}=await sb.storage.from('evidence').download(path);if(error||!data)return null;
+    const url=await new Promise(res=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>res(null);fr.readAsDataURL(data)});
+    if(url)Adapter.mem.set(path,url);return url;
+  };
+
+  // Ações: cada uma vira uma função do servidor. O parâmetro "by" é ignorado: o servidor usa a sessão de quem chamou.
+  const rpc=R.rpc;
+  A.createTask=(by,d)=>rpc('create_task',{p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate}});
+  A.updateDef=(by,id,d)=>rpc('update_task_def',{p_id:id,p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate,active:d.active}});
+  A.deleteDef=(by,id)=>rpc('delete_task_def',{p_id:id});
+  A.updateOcc=(by,id,d)=>rpc('update_occurrence',{p_id:id,p:{points:d.points,dueDate:d.dueDate,assignedTo:d.assignedTo,desc:d.desc}});
+  A.cancelOcc=(by,id,reason)=>rpc('cancel_occurrence',{p_id:id,p_reason:reason||''});
+  A.claim=(by,id)=>rpc('claim_occurrence',{p_id:id});
+  A.assign=(by,id,to)=>rpc('assign_occurrence',{p_id:id,p_to:to});
+  A.start=(by,id)=>rpc('start_occurrence',{p_id:id});
+  A.submit=async(by,id,photo)=>{
+    if(typeof photo!=='string'||!IMG_RE.test(photo))return fail('Envie uma foto JPEG, PNG ou WebP.');
+    const o=occ(id);if(!o||o.assignedTo!==by)return fail('Só o responsável pode enviar a comprovação.');
+    try{
+      const blob=await (await fetch(photo)).blob();
+      const path=by+'/'+id+'-'+Date.now()+'.jpg';
+      const up=await sb.storage.from('evidence').upload(path,blob,{contentType:blob.type||'image/jpeg',upsert:false});
+      if(up.error)return fail(msg(up.error));
+      Adapter.mem.set(path,photo);
+      return await rpc('submit_evidence',{p_occ:id,p_path:path});
+    }catch(e){return fail(msg(e))}
+  };
+  A.review=(by,id,approve,reason)=>rpc('review_occurrence',{p_occ:id,p_approve:!!approve,p_reason:reason||null},d=>{
+    (d.achievements||[]).forEach(a=>{const x=ACH.find(k=>k.id===a);if(x)celebrations.push({type:'ach',userId:d.userId,ach:x})});
+  });
+  A.adjust=(by,userId,delta,reason,periodId)=>rpc('adjust_points',{p_user:userId,p_delta:Number.isFinite(delta)?delta:null,p_reason:reason||'',p_period:periodId||null});
+  A.reverse=(by,tx,reason)=>rpc('reverse_score',{p_tx:tx,p_reason:reason||''});
+  A.contest=(by,tx,text)=>rpc('contest_penalty',{p_tx:tx,p_text:text||''});
+  A.resolveContest=(by,tx,accept,reason)=>rpc('resolve_contest',{p_tx:tx,p_accept:!!accept,p_reason:reason||''});
+  A.closePeriod=(by,opt)=>{opt=opt||{};return rpc('close_period',{p_winner:opt.winnerId||null,p_tie_note:opt.tieNote||null},d=>{if(!d.tie)celebrations.push({type:'winner',periodId:d.periodId})})};
+  A.rest=(by,id,date,status)=>rpc('set_rest_day',{p_id:id,p_date:date||null,p_status:status});
+  A.prizePaid=(by,pid,paid)=>rpc('set_prize_paid',{p_period:pid,p_paid:!!paid});
+  A.redeem=(by,rid,reqId)=>rpc('redeem_reward',{p_reward:rid,p_key:reqId});
+  A.redemption=(by,id,action)=>rpc('update_redemption',{p_id:id,p_action:action});
+  A.saveReward=(by,d)=>rpc('save_reward',{p:{id:d.id||null,name:d.name,desc:d.desc,cost:Number.isFinite(d.cost)?d.cost:null,stock:d.stock==null?null:d.stock,limit:d.limit||0,active:d.active!==false}});
+  A.spin=async(by,mode,o)=>{o=o||{};return rpc('spin_wheel',{p_mode:mode,p_category:o.categoryId||null,p_exclude:o.exclude||[]})};
+  A.saveUser=async(by,d)=>{
+    const u=user(d.id);
+    let r=await rpc('save_profile',{p:{id:d.id,name:d.name,avatar:d.avatar,color:d.color,plays:d.plays}});
+    if(r.ok&&d.active!=null&&u&&!!d.active!==u.active)r=await rpc('admin_set_user',{p_user:d.id,p_active:!!d.active});
+    return r;
+  };
+  A.addUser=()=>fail('Cada jogador faz o próprio cadastro na tela de entrada.');
+  A.saveSettings=(by,d)=>rpc('save_settings',{p:d});
+  A.saveCategory=(by,d)=>rpc('save_category',{p:{id:d.id||null,name:d.name,icon:d.icon}});
+  A.saveCatalog=(by,id,points)=>rpc('save_catalog_points',{p_id:id,p_points:Number.isFinite(points)?points:null});
+  sweep=async()=>{try{await sb.rpc('sweep')}catch(e){}await R.refresh(false)};
+
+  H.lmode=d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()};
+  H.logout=()=>R.signOut();
+  H.changepass=()=>passModal();
+  Object.assign(F,{
+    auth:async(fd,f)=>{
+      const mode=f.dataset.mode,email=String(fd.get('email')||'').trim(),pw=String(fd.get('password')||'');
+      const dr={name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),code:fd.get('code'),email};
+      const bad=m=>{UI.login={sel:null,err:m,mode,draft:dr};render()};
+      const r=mode==='up'?await R.signUp(Object.assign({},dr,{password:pw})):await R.signIn(email,pw);
+      if(!r.ok)return bad(r.err);
+      UI.login={sel:null,err:'',mode:'in'};render();toast(mode==='up'?'Cadastro criado! Bem-vindo(a).':'Bem-vindo(a)!','star');
+    },
+    pass:async fd=>{
+      const p1=String(fd.get('p1')||'');if(p1!==fd.get('p2')){toast('As senhas não são iguais.','err');return}
+      const {error}=await sb.auth.updateUser({password:p1});if(error){toast(msg(error),'err');return}
+      closeModal();toast('Senha alterada','ok');
+    },
+    housecode:async fd=>{await res(A.saveSettings(UI.me,{houseCode:fd.get('code')}),'Código da casa salvo')}
+  });
+  return R;
+})():null;
+function passModal(){openModal('<h2>Trocar senha</h2><form class="col" data-f="pass"><label class="f">Nova senha<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label><div class="row"><button class="btn primary" type="submit">Salvar senha</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')}
+function vLoginRemote(){
+  const L=UI.login||{},st=Remote.status||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
+  let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(st.appName||'Rei da Faxina')+'</div>';
+  if(Remote.booting)return h+'<div class="card empty"><div class="big-e" aria-hidden="true">⏳</div><h3>Carregando…</h3></div></div>';
+  h+='<div class="tabs" role="tablist"><button class="tab" role="tab" data-a="lmode" data-m="in" aria-selected="'+(mode==='in')+'">Entrar</button><button class="tab" role="tab" data-a="lmode" data-m="up" aria-selected="'+(mode==='up')+'">Criar meu cadastro</button></div>';
+  if(Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';
+  else if(mode==='up'&&st.openSignup===false)h+='<div class="banner red">Os cadastros estão fechados pelo administrador.</div>';
+  else if(mode==='up'&&st.players>=4)h+='<div class="banner red">O jogo já tem 4 jogadores.</div>';
+  h+='<form class="card col" data-f="auth" data-mode="'+mode+'"><h2>'+(mode==='up'?'Criar meu cadastro':'Entrar')+'</h2>';
+  if(mode==='up'){
+    const av=dr.avatar||AVATARS[0],co=dr.color||COLORS[0];
+    h+='<label class="f">Seu nome<input class="in" name="name" maxlength="20" value="'+esc(dr.name||'')+'" autocomplete="given-name"></label>'+
+     '<div class="form"><label class="f">Personagem<select class="in" name="avatar">'+AVATARS.map(a=>'<option '+(a===av?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===co?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>';
+  }
+  h+='<label class="f">E-mail<input class="in" name="email" type="email" autocomplete="email" value="'+esc(dr.email||'')+'" required></label>'+
+   '<label class="f">Senha'+(mode==='up'?' (mínimo 6 caracteres)':'')+'<input class="in" name="password" type="password" autocomplete="'+(mode==='up'?'new-password':'current-password')+'" minlength="6" required></label>';
+  if(mode==='up')h+='<label class="f">Código da casa<input class="in" name="code" autocomplete="off" value="'+esc(dr.code||'')+'" placeholder="Peça ao administrador" style="text-transform:uppercase"></label>';
+  if(L.err)h+='<div class="banner red" role="alert">'+esc(L.err)+'</div>';
+  return h+'<button class="btn primary" type="submit">'+(mode==='up'?'Criar cadastro e entrar':'Entrar')+'</button></form></div>';
+}
+function remoteSkeleton(){const s=seed();s.setupDone=true;s.users=[];s.categories=[];s.catalog=[];s.rewards=[];s.periods=[];s.settings.challenges=[];return s}
+
 /* ===== início ===== */
 onChange(render);
-try{const m=sessionStorage.getItem('cj:me');if(m&&S.setupDone&&actor(m))UI.me=m}catch(e){}
-if(S.setupDone&&openPeriod())sweep();
-render();
+if(WANT_REMOTE&&!REMOTE){$('#app').innerHTML='<div class="login"><div class="card empty"><div class="big-e" aria-hidden="true">📡</div><h3>Não foi possível carregar o Supabase</h3><p>Verifique a internet e recarregue a página.</p></div></div>'}
+else if(REMOTE){render();Remote.start()}
+else{
+  try{const m=sessionStorage.getItem('cj:me');if(m&&S.setupDone&&actor(m))UI.me=m}catch(e){}
+  if(S.setupDone&&openPeriod())sweep();
+  render();
+}
 setInterval(()=>{if(UI.me&&!UI.modal&&openPeriod())sweep()},300000);
-window.__cj={get S(){return S},set S(v){S=v},A,Auth,UI,sweep,standings,verifyIntegrity,exportBackup,importBackup,resetAll,effStatus,balance,score,streak,openPeriod,setClock:f=>{clock=f},seed,H,F,render};
+window.__cj={get S(){return S},set S(v){S=v},A,Auth,UI,Remote,sweep,standings,verifyIntegrity,exportBackup,importBackup,resetAll,effStatus,balance,score,streak,openPeriod,setClock:f=>{clock=f},seed,H,F,render};
 
 if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
