@@ -3,18 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#FFC93C">
+<meta name="theme-color" content="#150F2E">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Rei da Faxina">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Rei da Faxina</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
 <style>
 /* Layout: sidebar + conteúdo no desktop, barra inferior no celular. Visual cartoon com contorno grosso e sombra dura. */
 :root{
@@ -172,6 +172,91 @@ textarea.in{min-height:84px;resize:vertical}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
+<style id="pixel">
+/* ===== Tema 8 bits: paleta de console, bordas retas, sombras duras, fonte pixelada ===== */
+:root:root:root{
+  --bg:#150F2E; --surface:#241A4D; --surface2:#32266B; --fg:#F4F0FF; --muted:#B7ABE6; --line:#050312;
+  --yellow:#FFD93B; --blue:#3B8BFF; --green:#39E06E; --orange:#FF8A2B; --red:#FF4B5C;
+  --yellow-s:#4D3F12; --blue-s:#1F3A7A; --green-s:#14502E; --orange-s:#5A3212; --red-s:#5E1F2B;
+  --on-blue:#050312; --on-yellow:#050312; --on-green:#050312; --on-red:#050312;
+  --font-d:'Press Start 2P','Courier New',monospace; --font-b:'VT323','Courier New',monospace;
+  --r:0px; --sh:4px 4px 0 var(--line); color-scheme:dark}
+html{image-rendering:pixelated}
+body{font:400 21px/1.15 var(--font-b);letter-spacing:.01em;background-color:var(--bg);
+  background-image:linear-gradient(rgba(255,255,255,.035) 2px,transparent 2px),linear-gradient(90deg,rgba(255,255,255,.035) 2px,transparent 2px);background-size:32px 32px}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:200;background:repeating-linear-gradient(to bottom,rgba(0,0,0,.16) 0 1px,transparent 1px 3px)}
+h1,h2,h3,h4{font-weight:400;line-height:1.4;text-shadow:2px 2px 0 var(--line)}
+h1{font-size:17px;color:var(--yellow)}h2{font-size:14px}h3{font-size:12px}h4{font-size:11px}
+.big{font:400 24px/1 var(--font-d);text-shadow:3px 3px 0 var(--line)}
+.sm{font-size:18px}.muted{color:var(--muted)}
+.brand{font:400 14px/1.3 var(--font-d);text-shadow:2px 2px 0 var(--line)}
+.logo{background:#1A1238 url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 11 9%27 shape-rendering=%27crispEdges%27%3E%3Crect x=%270%27 y=%270%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%275%27 y=%270%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%2710%27 y=%270%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%274%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%275%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%279%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%2710%27 y=%271%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%272%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%274%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%275%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%278%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%279%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%2710%27 y=%272%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%272%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%273%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%274%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%275%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%277%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%278%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%279%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%2710%27 y=%273%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%272%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%273%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%274%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%275%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%277%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%278%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%279%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%2710%27 y=%274%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%272%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%273%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%274%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FF4B5C%27/%3E%3Crect x=%275%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%277%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%278%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%233B8BFF%27/%3E%3Crect x=%279%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%2710%27 y=%275%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%272%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%273%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%274%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%275%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%276%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%277%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%278%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%279%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%23FF8A2B%27/%3E%3Crect x=%2710%27 y=%276%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%272%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%273%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%274%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%275%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%276%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%277%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%278%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%279%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%23FFD93B%27/%3E%3Crect x=%2710%27 y=%277%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%270%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%271%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%272%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%273%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%274%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%275%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%276%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%277%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%278%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%279%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3Crect x=%2710%27 y=%278%27 width=%271%27 height=%271%27 fill=%27%230B0820%27/%3E%3C/svg%3E") center/26px 22px no-repeat;font-size:0;border-radius:0;border-width:4px;width:46px;height:46px;image-rendering:pixelated;animation:bob 1s steps(2) infinite}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.card,.btn,.in,select.in,textarea.in,.tab,.pill,.av,.toast,.banner,.sheet,.proof,.task .ic,.ach .ic,.bar,.bar i,.picker button,.who button,.nav,.bottom button,.steps i,.drop label{border-radius:0!important}
+.card,.banner,.toast{border-width:4px;box-shadow:4px 4px 0 var(--line)}
+.card{background:var(--surface)}
+.nav{font:400 11px/1.3 var(--font-d);border-width:4px;padding:12px 12px}
+.nav[aria-current="page"]{background:var(--yellow);box-shadow:4px 4px 0 var(--line)}
+.nav:hover{background:var(--surface2)}
+.bottom{border-top:4px solid var(--line)}
+.bottom button{font:400 8px/1.3 var(--font-d);color:var(--muted)}
+.bottom button[aria-current="page"]{color:var(--yellow);background:var(--surface2)}
+.btn{font:400 11px/1.3 var(--font-d);border-width:4px;box-shadow:0 4px 0 var(--line);min-height:46px;padding:8px 14px;text-transform:uppercase;letter-spacing:0}
+.btn.sm{font-size:9px;min-height:40px;padding:4px 10px}
+.btn:hover{transform:none;filter:brightness(1.12)}
+.btn:active{transform:translateY(4px);box-shadow:none}
+.btn.ghost{background:transparent;color:var(--fg)}
+.tab{font:400 10px/1.3 var(--font-d);border-width:4px;padding:9px 11px;background:var(--surface2)}
+.tab[aria-selected="true"]{background:var(--yellow);color:var(--on-yellow)}
+.pill{font:400 17px/1 var(--font-b);border-width:3px;padding:2px 8px}
+.pill.pts{background:var(--yellow);color:var(--on-yellow)}
+.pill.lv{background:var(--green);color:var(--on-green);font:400 9px/1.4 var(--font-d);padding:4px 6px}
+.av{border-width:4px;background:var(--surface2)!important}
+.av.sm{border-width:3px}
+.in,select.in,textarea.in{border-width:4px;background:#0F0A26;color:var(--fg);font:400 21px var(--font-b)}
+.in:focus{outline:4px solid var(--yellow);outline-offset:0}
+:focus-visible{outline:4px solid var(--yellow);outline-offset:2px;border-radius:0}
+label.f{font:400 9px/1.5 var(--font-d);text-transform:uppercase;color:var(--muted)}
+label.f .in,label.f select{font-size:21px;text-transform:none}
+.chk{font:400 21px var(--font-b)}.chk input{accent-color:var(--green);border-radius:0}
+.stat .lbl{font:400 9px/1.4 var(--font-d);letter-spacing:0}
+.bar{height:20px;border-width:4px;background:#0F0A26;position:relative}
+.bar i{border-radius:0;transition:width .4s steps(10)}
+.bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 6px,rgba(5,3,18,.55) 6px 8px);pointer-events:none}
+.rank{grid-template-columns:40px 44px 1fr auto}
+.pos{font:400 14px var(--font-d)}
+.rank + .rank,.ev,.ev:first-child{border-top:3px dotted var(--surface2)}
+.task .ic,.ach .ic{border-width:4px;background:var(--surface2)}
+.ach .ic{background:var(--yellow)}
+.meta{font:400 18px var(--font-b);color:var(--muted)}
+.ov{background:rgba(5,3,18,.75)}
+.sheet{border-width:4px;border-bottom:0;background:var(--surface)}
+@media(min-width:700px){.sheet{border-bottom:4px solid var(--line)}}
+.toast{font:400 10px/1.6 var(--font-d);animation:up .2s steps(4)}
+.pointer{border-top-color:var(--yellow)}
+.banner{background:var(--yellow-s)}.banner.red{background:var(--red-s)}.banner.blue{background:var(--blue-s)}
+.empty .big-e{filter:none;image-rendering:pixelated}
+.tbl th{font:400 9px var(--font-d)}
+.proof{border-width:4px;image-rendering:auto}
+.pop{animation:pop .4s steps(5)}
+@keyframes pop{from{transform:scale(.5);opacity:0}to{transform:none;opacity:1}}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+.steps i{border-width:3px;height:12px}
+.who button{font:400 12px var(--font-d);border-width:4px}
+.picker button{border-width:4px}
+.pinin{font:400 22px var(--font-d)}
+.top small{font:400 18px var(--font-b);color:var(--muted)}
+.pickg{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.pickg h4{color:var(--yellow)}
+.pickrow{display:grid;grid-template-columns:1fr 92px;gap:10px;align-items:center;padding:6px 0;border-top:3px dotted var(--surface2)}
+.pickrow .in{min-height:40px;padding:4px 8px;text-align:center}
+.pickrow .chk{min-width:0}.pickrow .chk span{overflow-wrap:anywhere}
+.mute{min-width:46px}
+.card[style*="var(--yellow)"] h2{text-shadow:none}
+.confetti span{font-size:22px;image-rendering:pixelated}
+@media(max-width:420px){h1{font-size:14px}.btn{font-size:10px}}
+</style>
+
 </head>
 <body>
 <div id="app"></div>
@@ -222,12 +307,14 @@ const Adapter={
 
 /* ===== dados iniciais ===== */
 const CATS=[['cozinha','Cozinha','🍳'],['banheiro','Banheiro','🚿'],['quarto','Quarto','🛏️'],['sala','Sala','🛋️'],['lavanderia','Lavanderia','🧺'],['organizacao','Organização','🗂️'],['limpeza','Limpeza geral','🧽'],['animais','Cuidados com animais','🐈'],['outras','Outras tarefas','✨']];
-const CATALOG=[['Arrumar a cama',5,'quarto','daily'],['Lavar a louça',10,'cozinha','daily'],['Limpar a bancada da cozinha',5,'cozinha','daily'],['Varrer um cômodo',10,'limpeza','weekly'],['Passar aspirador',10,'limpeza','weekly'],['Tirar o lixo',5,'cozinha','daily'],['Organizar a sala',10,'sala','weekly'],['Limpar o banheiro',20,'banheiro','weekly'],['Limpar a geladeira',20,'cozinha','monthly'],['Trocar roupa de cama',10,'quarto','weekly'],['Lavar roupas',10,'lavanderia','weekly'],['Estender ou recolher roupas',10,'lavanderia','weekly'],['Dobrar e guardar roupas',10,'lavanderia','weekly'],['Limpeza geral da casa',25,'limpeza','monthly'],['Organizar um armário',20,'organizacao','monthly'],['Regar plantas',5,'outras','weekly'],['Limpar caixas de areia dos gatos',10,'animais','daily']];
+const CATALOG=[['Arrumar a cama',5,'quarto','daily'],['Lavar a louça',10,'cozinha','daily'],['Limpar a bancada e o fogão',5,'cozinha','daily'],['Tirar o lixo',5,'cozinha','daily'],['Varrer a cozinha',8,'cozinha','daily'],['Dar comida e água aos pets',5,'animais','daily'],['Limpar a caixa de areia dos gatos',8,'animais','daily'],['Recolher o que está fora do lugar',5,'sala','daily'],['Varrer e passar pano na casa',20,'limpeza','weekly'],['Passar aspirador',15,'limpeza','weekly'],['Limpar o banheiro',25,'banheiro','weekly'],['Trocar a roupa de cama',15,'quarto','weekly'],['Lavar roupas',15,'lavanderia','weekly'],['Estender ou recolher roupas',10,'lavanderia','weekly'],['Dobrar e guardar roupas',10,'lavanderia','weekly'],['Passar roupas',15,'lavanderia','weekly'],['Organizar a sala',10,'sala','weekly'],['Limpar espelhos e vidros',10,'limpeza','weekly'],['Regar as plantas',10,'outras','weekly'],['Levar o lixo reciclável',10,'outras','weekly'],['Fazer as compras da casa',25,'outras','weekly'],['Limpar o box e o rejunte',35,'banheiro','biweekly'],['Limpar forno e micro-ondas',30,'cozinha','biweekly'],['Lavar as lixeiras',25,'limpeza','biweekly'],['Lavar toalhas e panos de prato',25,'lavanderia','biweekly'],['Organizar a despensa',30,'organizacao','biweekly'],['Limpar as janelas',35,'limpeza','biweekly'],['Banho nos pets',40,'animais','biweekly'],['Limpar atrás e embaixo dos móveis',45,'sala','biweekly'],['Limpar a geladeira',60,'cozinha','monthly'],['Limpeza geral da casa',100,'limpeza','monthly'],['Organizar um armário',50,'organizacao','monthly'],['Lavar cortinas e tapetes',80,'lavanderia','monthly'],['Lavar cobertores e edredom',70,'lavanderia','monthly'],['Limpar o ar-condicionado ou ventilador',50,'limpeza','monthly'],['Faxina da varanda ou quintal',70,'outras','monthly'],['Limpar ralos e filtros',50,'limpeza','monthly'],['Descongelar e limpar o freezer',60,'cozinha','monthly'],['Limpar o armário da cozinha por dentro',55,'cozinha','monthly']];
 const AVATARS=['🦊','🐙','🐸','🦉','🐼','🐯','🐱','🦄','🐻','🐧','🦖','🐳'];
 const COLORS=['#2B63E8','#F2761F','#8B5CF6','#17A06A','#EC4899','#0EA5A4'];
 const DEFAULT_CHALLENGES=['Arrume 5 coisas fora do lugar em 5 minutos','Deixe a pia da cozinha vazia hoje','Limpe uma superfície que ninguém lembra de limpar','Organize uma gaveta','Passe um pano na porta da geladeira','Recolha tudo o que está fora do lugar na sala'];
 const STAT={available:'Disponível',in_progress:'Em andamento',awaiting_proof:'Aguardando comprovação',awaiting_approval:'Aguardando aprovação',done:'Concluída',rejected:'Rejeitada',late:'Atrasada',cancelled:'Cancelada'};
-const FREQ={once:'Única',daily:'Diária',weekly:'Semanal',monthly:'Mensal',custom:'Personalizada'};
+const FREQ={once:'Única',daily:'Diária',weekly:'Semanal',biweekly:'Quinzenal',monthly:'Mensal',custom:'Personalizada'};
+const frLabel=d=>d.frequency==='custom'&&d.interval===14?'Quinzenal':FREQ[d.frequency]+(d.frequency==='custom'?' ('+d.interval+' dias)':'');
+const PICK_G=[['daily','Diárias'],['weekly','Semanais'],['biweekly','Quinzenais'],['monthly','Mensais']];
 const ACH=[
  {id:'first',name:'Primeira Missão',icon:'🚀',desc:'Ter a primeira tarefa aprovada.',coins:5,p:s=>[s.n,1]},
  {id:'ten',name:'Casa em Movimento',icon:'🏃',desc:'Ter dez tarefas aprovadas.',coins:10,p:s=>[s.n,10]},
@@ -621,6 +708,19 @@ A.saveCategory=(by,d)=>{
   if(!actor(by,true))return NOAUTH;const n=String(d.name||'').trim();if(n.length<2||n.length>30)return fail('Nome de categoria inválido.');
   let c=d.id&&S.categories.find(x=>x.id===d.id);if(!c){c={id:uid('c')};S.categories.push(c)}c.name=n;c.icon=String(d.icon||'✨').slice(0,4);audit(by,'category','category',c.id,n);commit();return ok();
 };
+A.applyPicks=(by,picks)=>{
+  if(!actor(by,true))return NOAUTH;let nw=0,on=0,off=0;
+  for(const it of picks){const m=S.catalog.find(x=>x.id===it.id);if(!m)return fail('Modelo não encontrado.');if(!POINTS_OK(it.points))return fail('Pontuação inválida em "'+m.title+'" (1 a 500).')}
+  for(const it of picks){const m=S.catalog.find(x=>x.id===it.id);m.points=it.points;
+    const bw=m.freq==='biweekly',fr=bw?'custom':m.freq,itv=bw?14:null;
+    const defs=S.tasks.filter(d=>d.frequency!=='once'&&normT(d.title)===normT(m.title));const d=defs.find(x=>x.active)||defs[0];
+    if(it.on){
+      if(d){d.points=it.points;if(!d.active){d.active=true;d.nextDue=today();on++}}
+      else{S.tasks.push({id:uid('t'),title:m.title,desc:'',categoryId:m.categoryId,frequency:fr,interval:itv,points:it.points,assignedTo:null,nextDue:today(),anchorDay:+today().slice(8),active:true,createdAt:nowIso(),updatedAt:nowIso(),log:[{at:nowIso(),by,text:'Criada'}]});nw++}
+    }else if(d&&d.active){d.active=false;off++}
+  }
+  genOccurrences();audit(by,'picks','task','',nw+' novas, '+on+' reativadas, '+off+' pausadas');commit();return ok({created:nw,enabled:on,paused:off});
+};
 A.saveCatalog=(by,id,points)=>{if(!actor(by,true))return NOAUTH;const m=S.catalog.find(x=>x.id===id);if(!m||!POINTS_OK(points))return fail('Pontuação inválida (1 a 500).');m.points=points;audit(by,'catalog','catalog',id,String(points));commit();return ok()};
 
 /* ===== acesso individual (PIN) ===== */
@@ -685,7 +785,13 @@ const avHtml=(u,c)=>'<span class="av '+(c||'')+'" style="background:'+esc(u.colo
 const nameOf=id=>id==='system'?'Sistema':(user(id)?user(id).name:'—');
 const uname=u=>esc(u.name)+(u.title?' <span class="muted sm">· '+esc(u.title)+'</span>':'');
 
-function toast(m,t){const el=document.createElement('div');el.className='toast '+(t||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),t==='err'?4800:3000)}
+const SFX=(()=>{let ctx=null;const muted=()=>{try{return localStorage.getItem('rdf:mute')==='1'}catch(e){return false}};
+  const seq={ok:[[660,.07],[880,.1]],err:[[220,.12],[160,.18]],win:[[523,.08],[659,.08],[784,.08],[1047,.22]]};
+  return {muted,toggle(){try{localStorage.setItem('rdf:mute',muted()?'0':'1')}catch(e){}},
+    play(k){if(muted()||!seq[k])return;try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();let t=ctx.currentTime;for(const [f,d] of seq[k]){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.05,t);g.gain.setValueAtTime(.0001,t+d);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+d);t+=d}}catch(e){}}}})();
+const sfx=k=>SFX.play(k);
+const levelOf=id=>{const xp=taskTx(id).reduce((a,t)=>a+t.points,0);return Math.floor(Math.sqrt(Math.max(0,xp)/20))+1};
+function toast(m,t){sfx(t==='err'?'err':t==='star'?'win':t==='ok'?'ok':'');const el=document.createElement('div');el.className='toast '+(t||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),t==='err'?4800:3000)}
 function confetti(n){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const w=document.createElement('div');w.className='confetti';const em=['🎉','⭐','✨','🟡','🟢','🔵','🟠'];
@@ -781,7 +887,7 @@ function vShell(inner){
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
   return '<div class="app"><aside class="side"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
-   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'')+'<button class="btn sm" data-a="logout">Sair</button></div></header>'+
+   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
    inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
 }
@@ -846,6 +952,7 @@ function vHome(){
   const feature=[...late,...unassigned.filter(o=>!late.includes(o)),...mine.filter(o=>!late.includes(o))].slice(0,5);
   let h='';
   if(isAdmin(me)&&(REMOTE?actives().length<4&&S.settings.openSignup!==false:!actives().length))h+='<div class="banner blue"><span><strong>'+(actives().length?actives().length+' de 4 jogadores cadastrados.':'Nenhum jogador cadastrado ainda.')+'</strong> Cada pessoa toca em "Criar meu cadastro" na tela de entrada'+(REMOTE&&S.settings.houseCode?' e digita o código da casa: <strong>'+esc(S.settings.houseCode)+'</strong>':'')+'.</span></div>';
+  if(isAdmin(me)&&!S.tasks.some(d=>d.frequency!=='once'&&d.active))h+='<div class="banner blue"><span><strong>Nenhuma tarefa recorrente ativa.</strong> As 39 tarefas já estão cadastradas. Escolha quais valem no jogo.</span><button class="btn sm yellow" data-a="gopick">Escolher tarefas</button></div>';
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
   if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
   h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
@@ -879,7 +986,7 @@ function vTasks(){
   const f=UI.filters,adm=isAdmin(UI.me);
   let h='<div class="row sp"><div class="tabs" role="tablist"><button class="tab" role="tab" data-a="tab" data-t="occ" aria-selected="'+(UI.tab==='occ')+'">Tarefas</button><button class="tab" role="tab" data-a="tab" data-t="defs" aria-selected="'+(UI.tab==='defs')+'">Recorrentes</button></div>'+(adm?'<button class="btn yellow" data-a="newtask">Nova tarefa</button>':'')+'</div>';
   if(UI.tab==='defs'){
-    h+='<div class="col">'+(S.tasks.filter(d=>d.frequency!=='once').map(d=>'<div class="card row sp"><div class="row"><div class="task"><div class="ic">'+cat(d.categoryId).icon+'</div></div><div><strong>'+esc(d.title)+'</strong><div class="meta"><span>'+FREQ[d.frequency]+(d.frequency==='custom'?' ('+d.interval+' dias)':'')+'</span><span>'+d.points+' pts</span><span>'+(d.assignedTo?esc(nameOf(d.assignedTo)):'Sem responsável')+'</span><span>'+(d.active?'Próxima: '+brDate(d.nextDue):'Pausada')+'</span></div></div></div>'+(adm?'<div class="row"><button class="btn sm" data-a="editdef" data-id="'+d.id+'">Editar</button><button class="btn sm ghost" data-a="deldef" data-id="'+d.id+'">Remover</button></div>':'')+'</div>').join('')||empty('🔁','Nenhuma tarefa recorrente','Crie uma tarefa diária, semanal ou mensal para ela se repetir sozinha.'))+'</div>';
+    h+='<div class="col">'+(S.tasks.filter(d=>d.frequency!=='once').map(d=>'<div class="card row sp"><div class="row"><div class="task"><div class="ic">'+cat(d.categoryId).icon+'</div></div><div><strong>'+esc(d.title)+'</strong><div class="meta"><span>'+frLabel(d)+'</span><span>'+d.points+' pts</span><span>'+(d.assignedTo?esc(nameOf(d.assignedTo)):'Sem responsável')+'</span><span>'+(d.active?'Próxima: '+brDate(d.nextDue):'Pausada')+'</span></div></div></div>'+(adm?'<div class="row"><button class="btn sm" data-a="editdef" data-id="'+d.id+'">Editar</button><button class="btn sm ghost" data-a="deldef" data-id="'+d.id+'">Remover</button></div>':'')+'</div>').join('')||empty('🔁','Nenhuma tarefa recorrente','Crie uma tarefa diária, semanal ou mensal para ela se repetir sozinha.'))+'</div>';
     return h;
   }
   const opt=(v,l,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+l+'</option>';
@@ -1029,10 +1136,22 @@ const tc_=t=>{const o=occ(t.occId);return o?o.categoryId:'outras'};
 
 /* ===== Ajustes ===== */
 function vSet(){
-  const me=user(UI.me),adm=me.role==='admin';const tabs=[['me','Meu perfil'],...(adm?[['people','Participantes'],['rules','Regras'],['cats','Categorias']]:[]),['data','Dados']];
+  const me=user(UI.me),adm=me.role==='admin';const tabs=[...(adm?[['pick','Tarefas da casa']]:[]),['me','Meu perfil'],...(adm?[['people','Participantes'],['rules','Regras'],['cats','Categorias']]:[]),['data','Dados']];
   if(!tabs.some(t=>t[0]===UI.setTab))UI.setTab='me';
   let h='<div class="tabs" role="tablist">'+tabs.map(t=>'<button class="tab" role="tab" data-a="settab" data-t="'+t[0]+'" aria-selected="'+(UI.setTab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
   const t=UI.setTab,s=S.settings;
+  if(t==='pick'&&adm){
+    const recur=S.tasks.filter(d=>d.frequency!=='once'),defOf=m=>{const l=recur.filter(d=>normT(d.title)===normT(m.title));return l.find(d=>d.active)||l[0]},first=!recur.length;
+    h+='<form class="card col" data-f="pick"><h3>Escolha as tarefas da casa</h3><p class="sm muted">Marque as que valem no jogo e ajuste os pontos de cada uma. Quanto maior a frequência, menor o peso: diárias valem menos, mensais valem mais. As tarefas marcadas aparecem sozinhas para todos assumirem.</p>'+
+      '<div class="row"><button type="button" class="btn sm" data-a="pickset" data-g="all" data-v="1">Marcar todas</button><button type="button" class="btn sm ghost" data-a="pickset" data-g="all" data-v="0">Desmarcar todas</button></div>';
+    for(const [g,gl] of PICK_G){
+      const ms=S.catalog.filter(m=>m.freq===g);if(!ms.length)continue;const ps=ms.map(m=>m.points);
+      h+='<div class="pickg"><div class="row sp"><h4>'+gl+' <span class="muted sm">'+Math.min(...ps)+' a '+Math.max(...ps)+' pts</span></h4><span class="row"><button type="button" class="btn sm" data-a="pickset" data-g="'+g+'" data-v="1">Todas</button><button type="button" class="btn sm ghost" data-a="pickset" data-g="'+g+'" data-v="0">Nenhuma</button></span></div>'+
+      ms.map(m=>{const d=defOf(m),on=first||(d&&d.active);return '<div class="pickrow"><label class="chk"><input type="checkbox" name="on_'+m.id+'" data-fr="'+g+'" '+(on?'checked':'')+'> <span>'+esc(cat(m.categoryId).icon+' '+m.title)+'</span></label><label class="sr" for="p_'+m.id+'">Pontos de '+esc(m.title)+'</label><input class="in num" id="p_'+m.id+'" type="number" min="1" max="500" step="1" name="p_'+m.id+'" value="'+(d?d.points:m.points)+'" required></div>'}).join('')+'</div>';
+    }
+    h+='<button class="btn primary" type="submit">Salvar escolha</button></form>';
+    return h;
+  }
   if(t==='me'){
     const av=[...new Set([me.avatar].concat(AVATARS,me.avatars))];
     h+='<form class="card col" data-f="profile" data-id="'+me.id+'"><h3>Meu perfil</h3><div class="row">'+avHtml(me,'lg')+'<div><strong>'+esc(me.name)+'</strong><div class="muted sm">'+(me.role==='admin'?'Administrador':'Participante')+(me.title?' · '+esc(me.title):'')+'</div></div></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(me.name)+'" maxlength="20" required></label>'+
@@ -1098,7 +1217,7 @@ function taskForm(def){
    (isNew?'<label class="f">Modelo da tabela de pontos<select class="in" data-tpl="1"><option value="">Personalizada</option>'+S.catalog.map(m=>'<option value="'+m.id+'">'+esc(m.title)+' ('+m.points+' pts)</option>').join('')+'</select></label>':'')+
    '<div class="form"><label class="f full">Nome<input class="in" name="title" value="'+esc(d.title)+'" maxlength="80" required></label><label class="f full">Descrição<input class="in" name="desc" value="'+esc(d.desc||'')+'" maxlength="300"></label>'+
    '<label class="f">Categoria<select class="in" name="categoryId">'+S.categories.map(c=>o(c.id,esc(c.icon+' '+c.name),d.categoryId)).join('')+'</select></label>'+
-   '<label class="f">Frequência<select class="in" name="frequency">'+Object.entries(FREQ).map(([k,v])=>o(k,v,d.frequency)).join('')+'</select></label>'+
+   '<label class="f">Frequência<select class="in" name="frequency">'+Object.entries(FREQ).map(([k,v])=>o(k,v,(d.frequency==='custom'&&d.interval===14)?'biweekly':d.frequency)).join('')+'</select></label>'+
    '<label class="f">Intervalo em dias (personalizada)<input class="in" type="number" name="interval" min="2" max="365" value="'+(d.interval||2)+'"></label>'+
    '<label class="f">Pontos (fixos)<input class="in" type="number" name="points" min="1" max="500" step="1" value="'+d.points+'" required></label>'+
    '<label class="f">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>o(u.id,esc(u.name),d.assignedTo)).join('')+'</select></label>'+
@@ -1143,6 +1262,9 @@ function tieModal(ids){
 const H={
  close:async ()=>closeModal(),
  yes:async ()=>{const f=UI.cb;closeModal();if(f)await f()},
+ mute:()=>{SFX.toggle();render()},
+ pickset:(d,el)=>{const f=el.closest('form');f.querySelectorAll('input[type=checkbox][data-fr]').forEach(c=>{if(d.g==='all'||c.dataset.fr===d.g)c.checked=d.v==='1'})},
+ gopick:()=>{UI.view='set';UI.setTab='pick';closeModal();render()},
  go:async d=>{UI.view=d.v;if(d.st)UI.filters.st=d.st;closeModal();render()},
  more:async ()=>moreModal(),
  logout:async ()=>{try{sessionStorage.removeItem('cj:me')}catch(e){}UI.me=null;UI.login={sel:null,err:''};render()},
@@ -1238,7 +1360,7 @@ const F={
    UI.obStep=Math.min(OBN-1,st+1);commit();
  },
  task:async(fd,f)=>{
-   const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency'),interval:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate')};
+   const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency')==='biweekly'?'custom':fd.get('frequency'),interval:fd.get('frequency')==='biweekly'?14:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate')};
    const id=f.dataset.id;const r=id?await A.updateDef(UI.me,id,Object.assign(d,{nextDue:d.dueDate,active:fd.get('active')==='on'})):await A.createTask(UI.me,d);
    if(await res(r,id?'Tarefa atualizada':'Tarefa criada'))closeModal();
  },
@@ -1253,6 +1375,7 @@ const F={
  person:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),active:fd.get('active')==null?null:fd.get('active')==='1'}),'Participante salvo')},
  adduser:async fd=>{await res(A.addUser(UI.me,fd.get('name')),'Participante adicionado. Ele cria o PIN no primeiro acesso.')},
  rules:async fd=>{const g=k=>Math.floor(num(fd,k));await res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
+ pick:async fd=>{const picks=S.catalog.map(m=>({id:m.id,on:fd.get('on_'+m.id)==='on',points:num(fd,'p_'+m.id)}));const r=await A.applyPicks(UI.me,picks);if(!r.ok){toast(r.err,'err');return}const n=picks.filter(x=>x.on).length;toast(n+' tarefas valendo. Bom jogo!','star');},
  catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=await A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
  adjust:async fd=>{await res(A.adjust(UI.me,fd.get('uid'),num(fd,'delta'),fd.get('reason'),fd.get('pid')),'Ajuste registrado')},
  cat:async(fd,f)=>{await res(A.saveCategory(UI.me,{id:f.dataset.id||null,name:fd.get('name'),icon:fd.get('icon')}),'Categoria salva')},
@@ -1470,6 +1593,7 @@ const Remote=REMOTE?(()=>{
   A.addUser=()=>fail('Cada jogador faz o próprio cadastro na tela de entrada.');
   A.saveSettings=(by,d)=>rpc('save_settings',{p:d});
   A.saveCategory=(by,d)=>rpc('save_category',{p:{id:d.id||null,name:d.name,icon:d.icon}});
+  A.applyPicks=(by,picks)=>rpc('apply_task_picks',{p:picks.map(x=>({id:x.id,on:!!x.on,points:x.points}))});
   A.saveCatalog=(by,id,points)=>rpc('save_catalog_points',{p_id:id,p_points:Number.isFinite(points)?points:null});
   sweep=async()=>{try{await sb.rpc('sweep')}catch(e){}await R.refresh(false)};
 

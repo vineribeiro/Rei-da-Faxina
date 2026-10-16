@@ -6,6 +6,11 @@ App gamificado de tarefas domésticas: ranking mensal, comprovação por foto, a
 Abra o `index.html` no navegador, ou ative o GitHub Pages (Settings, Pages, branch `main`, pasta raiz).
 Na primeira abertura, siga a configuração inicial. Cada participante tem o próprio PIN.
 
+## Visual e tarefas
+- Visual 8 bits (fontes Press Start 2P e VT323, bordas retas, barras segmentadas), níveis (NV) e sons de chiptune (botão de som no topo).
+- 39 tarefas já cadastradas: 8 diárias (5 a 10 pts), 13 semanais (10 a 25), 8 quinzenais (25 a 45) e 10 mensais (50 a 100).
+- O admin escolhe quais valem em Ajustes, "Tarefas da casa": marca, desmarca e ajusta os pontos de cada uma.
+
 ## Dados
 - **Modo local** (`config.js` vazio): tudo no aparelho, sem sincronização. Perfil admin com PIN e jogadores com cadastro próprio.
 - **Modo Supabase** (`config.js` preenchido): login por e-mail e senha, dados compartilhados entre todos, fotos em bucket privado. Guia completo em [SUPABASE.md](SUPABASE.md).

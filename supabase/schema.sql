@@ -184,15 +184,45 @@ insert into public.categories values ('cozinha','Cozinha','🍳'),('banheiro','B
  ('sala','Sala','🛋️'),('lavanderia','Lavanderia','🧺'),('organizacao','Organização','🗂️'),('limpeza','Limpeza geral','🧽'),
  ('animais','Cuidados com animais','🐈'),('outras','Outras tarefas','✨');
 insert into public.catalog (id,title,points,category_id,freq) values
- ('m0','Arrumar a cama',5,'quarto','daily'),('m1','Lavar a louça',10,'cozinha','daily'),
- ('m2','Limpar a bancada da cozinha',5,'cozinha','daily'),('m3','Varrer um cômodo',10,'limpeza','weekly'),
- ('m4','Passar aspirador',10,'limpeza','weekly'),('m5','Tirar o lixo',5,'cozinha','daily'),
- ('m6','Organizar a sala',10,'sala','weekly'),('m7','Limpar o banheiro',20,'banheiro','weekly'),
- ('m8','Limpar a geladeira',20,'cozinha','monthly'),('m9','Trocar roupa de cama',10,'quarto','weekly'),
- ('m10','Lavar roupas',10,'lavanderia','weekly'),('m11','Estender ou recolher roupas',10,'lavanderia','weekly'),
- ('m12','Dobrar e guardar roupas',10,'lavanderia','weekly'),('m13','Limpeza geral da casa',25,'limpeza','monthly'),
- ('m14','Organizar um armário',20,'organizacao','monthly'),('m15','Regar plantas',5,'outras','weekly'),
- ('m16','Limpar caixas de areia dos gatos',10,'animais','daily');
+ ('m0','Arrumar a cama',5,'quarto','daily'),
+ ('m1','Lavar a louça',10,'cozinha','daily'),
+ ('m2','Limpar a bancada e o fogão',5,'cozinha','daily'),
+ ('m3','Tirar o lixo',5,'cozinha','daily'),
+ ('m4','Varrer a cozinha',8,'cozinha','daily'),
+ ('m5','Dar comida e água aos pets',5,'animais','daily'),
+ ('m6','Limpar a caixa de areia dos gatos',8,'animais','daily'),
+ ('m7','Recolher o que está fora do lugar',5,'sala','daily'),
+ ('m8','Varrer e passar pano na casa',20,'limpeza','weekly'),
+ ('m9','Passar aspirador',15,'limpeza','weekly'),
+ ('m10','Limpar o banheiro',25,'banheiro','weekly'),
+ ('m11','Trocar a roupa de cama',15,'quarto','weekly'),
+ ('m12','Lavar roupas',15,'lavanderia','weekly'),
+ ('m13','Estender ou recolher roupas',10,'lavanderia','weekly'),
+ ('m14','Dobrar e guardar roupas',10,'lavanderia','weekly'),
+ ('m15','Passar roupas',15,'lavanderia','weekly'),
+ ('m16','Organizar a sala',10,'sala','weekly'),
+ ('m17','Limpar espelhos e vidros',10,'limpeza','weekly'),
+ ('m18','Regar as plantas',10,'outras','weekly'),
+ ('m19','Levar o lixo reciclável',10,'outras','weekly'),
+ ('m20','Fazer as compras da casa',25,'outras','weekly'),
+ ('m21','Limpar o box e o rejunte',35,'banheiro','biweekly'),
+ ('m22','Limpar forno e micro-ondas',30,'cozinha','biweekly'),
+ ('m23','Lavar as lixeiras',25,'limpeza','biweekly'),
+ ('m24','Lavar toalhas e panos de prato',25,'lavanderia','biweekly'),
+ ('m25','Organizar a despensa',30,'organizacao','biweekly'),
+ ('m26','Limpar as janelas',35,'limpeza','biweekly'),
+ ('m27','Banho nos pets',40,'animais','biweekly'),
+ ('m28','Limpar atrás e embaixo dos móveis',45,'sala','biweekly'),
+ ('m29','Limpar a geladeira',60,'cozinha','monthly'),
+ ('m30','Limpeza geral da casa',100,'limpeza','monthly'),
+ ('m31','Organizar um armário',50,'organizacao','monthly'),
+ ('m32','Lavar cortinas e tapetes',80,'lavanderia','monthly'),
+ ('m33','Lavar cobertores e edredom',70,'lavanderia','monthly'),
+ ('m34','Limpar o ar-condicionado ou ventilador',50,'limpeza','monthly'),
+ ('m35','Faxina da varanda ou quintal',70,'outras','monthly'),
+ ('m36','Limpar ralos e filtros',50,'limpeza','monthly'),
+ ('m37','Descongelar e limpar o freezer',60,'cozinha','monthly'),
+ ('m38','Limpar o armário da cozinha por dentro',55,'cozinha','monthly');
 insert into public.rewards (name,description,cost,kind,payload,per_user_limit) values
  ('Escolher o filme da noite','Você escolhe o filme.',30,'normal','{}',0),
  ('Escolher o jantar','Você escolhe o que será o jantar.',40,'normal','{}',0),
@@ -840,6 +870,41 @@ begin
   perform aud('category', 'category', coalesce(cid, ''), nm); return jsonb_build_object('ok', true);
 end $$;
 
+-- Admin escolhe quais tarefas do catálogo valem (liga, desliga e ajusta pontos de uma vez). p = [{id, on, points}]
+create or replace function public.apply_task_picks(p jsonb) returns jsonb language plpgsql security definer set search_path = public as $$
+declare it jsonb; m catalog; tk tasks; has boolean; pts int; fr text; itv int; td date := today_br(); n_new int := 0; n_on int := 0; n_off int := 0;
+begin
+  perform need_admin();
+  if p is null or jsonb_typeof(p) <> 'array' then raise exception 'Seleção inválida.'; end if;
+  perform pg_advisory_xact_lock(7001);
+  if not exists (select 1 from periods where status = 'open') then raise exception 'Nenhum período aberto.'; end if;
+  for it in select * from jsonb_array_elements(p) loop
+    select * into m from catalog where id = it->>'id'; if not found then raise exception 'Modelo não encontrado.'; end if;
+    pts := case when coalesce(it->>'points','') ~ '^[0-9]+$' then (it->>'points')::int end;
+    if pts is null or pts not between 1 and 500 then raise exception 'Pontuação inválida em "%" (1 a 500).', m.title; end if;
+    update catalog set points = pts where id = m.id and points <> pts;
+    select * into tk from tasks where frequency <> 'once' and lower(btrim(title)) = lower(btrim(m.title)) order by active desc, created_at limit 1;
+    has := found;
+    fr := case when m.freq = 'biweekly' then 'custom' else m.freq end; itv := case when m.freq = 'biweekly' then 14 end;
+    if coalesce((it->>'on')::boolean, false) then
+      if has then
+        update tasks set points = pts, active = true, next_due = case when tk.active then tk.next_due else td end, updated_at = now(),
+          log = log || log_item(case when tk.active then 'Pontos ajustados' else 'Reativada' end) where id = tk.id;
+        if not tk.active then n_on := n_on + 1; end if;
+      else
+        insert into tasks (title, description, category_id, frequency, interval_days, points, assigned_to, next_due, anchor_day, active, log)
+          values (m.title, '', m.category_id, fr, itv, pts, null, td, extract(day from td)::int, true, log_item('Criada'));
+        n_new := n_new + 1;
+      end if;
+    elsif has and tk.active then
+      update tasks set active = false, updated_at = now(), log = log || log_item('Pausada') where id = tk.id; n_off := n_off + 1;
+    end if;
+  end loop;
+  perform gen_occurrences();
+  perform aud('picks', 'task', '', n_new || ' novas, ' || n_on || ' reativadas, ' || n_off || ' pausadas');
+  return jsonb_build_object('ok', true, 'created', n_new, 'enabled', n_on, 'paused', n_off);
+end $$;
+
 create or replace function public.save_catalog_points(p_id text, p_points int) returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   perform need_admin(); if p_points is null or p_points not between 1 and 500 then raise exception 'Pontuação inválida (1 a 500).'; end if;
@@ -860,7 +925,7 @@ grant execute on function
   public.set_rest_day(uuid, date, text), public.set_prize_paid(uuid, boolean), public.redeem_reward(uuid, uuid),
   public.update_redemption(uuid, text), public.save_reward(jsonb), public.spin_wheel(text, text, uuid[]),
   public.save_profile(jsonb), public.admin_set_user(uuid, boolean), public.get_house_code(), public.save_settings(jsonb),
-  public.save_category(jsonb), public.save_catalog_points(text, int)
+  public.save_category(jsonb), public.save_catalog_points(text, int), public.apply_task_picks(jsonb)
   to authenticated;
 -- As políticas de RLS chamam is_member()/is_admin() e today_br() com o papel do usuário logado:
 grant execute on function public.is_member(), public.is_admin(), public.today_br() to anon, authenticated;
