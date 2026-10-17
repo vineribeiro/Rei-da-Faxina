@@ -6,6 +6,9 @@ App gamificado de tarefas domésticas: ranking mensal, comprovação por foto, a
 Abra o `index.html` no navegador, ou ative o GitHub Pages (Settings, Pages, branch `main`, pasta raiz).
 Na primeira abertura, siga a configuração inicial. Cada participante tem o próprio PIN.
 
+## Tela inicial e app
+O jogo abre numa tela com a coroa e o botão INICIAR. É um app instalável (PWA): botão "Instalar app" na tela inicial, atalho para Tarefas e funcionamento offline do visual.
+
 ## Visual e tarefas
 - Visual 8 bits (fontes Press Start 2P e VT323, bordas retas, barras segmentadas), níveis (NV) e sons de chiptune (botão de som no topo).
 - 39 tarefas já cadastradas: 8 diárias (5 a 10 pts), 13 semanais (10 a 25), 8 quinzenais (25 a 45) e 10 mensais (50 a 100).
