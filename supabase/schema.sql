@@ -10,7 +10,7 @@
 -- =====================================================================
 
 -- >>> TROQUE AQUI <<< pelo e-mail do administrador (o mesmo que você vai usar para criar a conta no app).
-create temp table _cfg as select lower('COLOQUE_SEU_EMAIL_AQUI@exemplo.com') as admin_email;
+create temp table _cfg as select lower('viniciusribeiroo@hotmail.com') as admin_email;
 do $$ begin
   if (select admin_email from _cfg) like '%@exemplo.com' then
     raise exception 'Antes de rodar, troque COLOQUE_SEU_EMAIL_AQUI@exemplo.com pelo e-mail do administrador (linha ">>> TROQUE AQUI <<<").';
