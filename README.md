@@ -4,7 +4,7 @@ App gamificado de tarefas domésticas: ranking mensal, comprovação por foto, a
 
 ## Como usar
 Abra o `index.html` no navegador, ou ative o GitHub Pages (Settings, Pages, branch `main`, pasta raiz).
-Na primeira abertura, siga a configuração inicial. Cada participante tem o próprio PIN.
+Na primeira abertura, siga a configuração inicial. Cada participante entra com o próprio e-mail e senha.
 
 ## Tela inicial e app
 O jogo abre numa tela com a coroa e o botão INICIAR. É um app instalável (PWA): botão "Instalar app" na tela inicial, atalho para Tarefas e funcionamento offline do visual.
