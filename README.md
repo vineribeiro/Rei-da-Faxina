@@ -15,7 +15,7 @@ O jogo abre numa tela com a coroa e o botão INICIAR. É um app instalável (PWA
 - O admin escolhe quais valem em Ajustes, "Tarefas da casa": marca, desmarca e ajusta os pontos de cada uma.
 
 ## Dados
-- **Modo local** (`config.js` vazio): tudo no aparelho, sem sincronização. Perfil admin com PIN e jogadores com cadastro próprio.
+- **Modo local** (`config.js` vazio): tudo no aparelho, sem sincronização. O administrador cria o próprio e-mail e senha na configuração inicial; cada jogador faz o cadastro com e-mail e senha. Ninguém entra automático: sempre pede login.
 - **Modo Supabase** (`config.js` preenchido): login por e-mail e senha, dados compartilhados entre todos, fotos em bucket privado. Guia completo em [SUPABASE.md](SUPABASE.md).
 
 ## Instalar como app (PWA)

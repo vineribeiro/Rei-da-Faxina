@@ -346,7 +346,7 @@ const REWARDS0=[['Escolher o filme da noite','Você escolhe o filme.',30,'normal
 
 function seed(){
   const t=nowIso();
-  const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
+  const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,email:null,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
   const users=[Object.assign(mk('Administrador','🛡️',COLORS[0],'admin'),{plays:false})];
   return {v:1,setupDone:false,
     settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),
@@ -694,7 +694,7 @@ A.addUser=(by,name)=>{
   if(!actor(by,true))return NOAUTH;if(actives().length>=4)return fail('O limite é de 4 participantes ativos.');
   name=String(name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');if(S.users.some(x=>x.active&&normT(x.name)===normT(name)))return fail('Já existe um participante com esse nome.');
   const used=new Set(S.users.map(x=>x.avatar)),usedC=new Set(S.users.map(x=>x.color));
-  const u={id:uid('u'),name,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!usedC.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
+  const u={id:uid('u'),name,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!usedC.has(c))||COLORS[0],role:'user',active:true,email:null,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
   S.users.push(u);audit(by,'create','user',u.id,name);commit();return ok({id:u.id});
 };
 A.signup=d=>{
@@ -702,8 +702,9 @@ A.signup=d=>{
   if(S.settings.openSignup===false)return fail('Os cadastros estão fechados. Peça ao administrador.');
   if(actives().length>=4)return fail('O jogo já tem 4 jogadores.');
   const name=String(d.name||'').trim();if(name.length<2||name.length>20)return fail('O nome deve ter de 2 a 20 caracteres.');
+  const em=normE(d.email);if(!EMAIL_OK(em))return fail('Informe um e-mail válido.');if(S.users.some(x=>x.email&&normE(x.email)===em))return fail('Este e-mail já tem cadastro. Use "Entrar".');
   if(S.users.some(x=>x.active&&normT(x.name)===normT(name)))return fail('Já existe alguém com esse nome.');
-  const u={id:uid('u'),name,avatar:AVATARS.includes(d.avatar)?d.avatar:AVATARS[0],color:COLORS.includes(d.color)?d.color:COLORS[0],role:'user',plays:true,active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
+  const u={id:uid('u'),name,avatar:AVATARS.includes(d.avatar)?d.avatar:AVATARS[0],color:COLORS.includes(d.color)?d.color:COLORS[0],role:'user',plays:true,active:true,email:em,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
   S.users.push(u);audit(u.id,'signup','user',u.id,name);commit();return ok({id:u.id});
 };
 A.saveSettings=(by,d)=>{
@@ -740,21 +741,26 @@ A.applyPicks=(by,picks)=>{
 A.saveCatalog=(by,id,points)=>{if(!actor(by,true))return NOAUTH;const m=S.catalog.find(x=>x.id===id);if(!m||!POINTS_OK(points))return fail('Pontuação inválida (1 a 500).');m.points=points;audit(by,'catalog','catalog',id,String(points));commit();return ok()};
 
 /* ===== acesso individual (PIN) ===== */
+const normE=e=>String(e||'').trim().toLowerCase();
+const EMAIL_OK=e=>/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
 const Auth={fails:{},
   async hash(pin,salt){const s=salt+':'+pin;try{if(crypto.subtle){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}}catch(e){}let h=5381;for(const c of s)h=((h<<5)+h+c.charCodeAt(0))>>>0;return 'f'+h.toString(16)},
-  valid:p=>/^\d{4,6}$/.test(p),
-  async setPin(userId,pin,current){
-    const u=user(userId);if(!u||!u.active)return fail('Participante inexistente.');if(!Auth.valid(pin))return fail('O PIN deve ter de 4 a 6 números.');
-    if(u.pinHash){if(!(await Auth.check(userId,current||'')).ok)return fail('PIN atual incorreto.')}
-    u.salt=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(x=>x.toString(16).padStart(2,'0')).join('');u.pinHash=await Auth.hash(pin,u.salt);audit(userId,'pin','user',userId,'');commit();return ok();
+  valid:p=>typeof p==='string'&&p.length>=6&&p.length<=72,
+  byEmail:e=>{e=normE(e);return S.users.find(u=>u.active&&u.email&&normE(u.email)===e)},
+  async force(userId,pw){const u=user(userId);u.salt=Array.from(crypto.getRandomValues(new Uint8Array(8))).map(x=>x.toString(16).padStart(2,'0')).join('');u.pinHash=await Auth.hash(pw,u.salt)},
+  async setPin(userId,pw,current){
+    const u=user(userId);if(!u||!u.active)return fail('Participante inexistente.');if(!Auth.valid(pw))return fail('A senha deve ter pelo menos 6 caracteres.');
+    if(u.pinHash){if(!(await Auth.check(userId,current||'')).ok)return fail('Senha atual incorreta.')}
+    await Auth.force(userId,pw);audit(userId,'password','user',userId,'');commit();return ok();
   },
-  async check(userId,pin){
-    const u=user(userId);if(!u||!u.active||!u.pinHash)return fail('Acesso inválido.');
+  async check(userId,pw){
+    const bad='E-mail ou senha incorretos.';
+    const u=user(userId);if(!u||!u.active||!u.pinHash)return fail(bad);
     const f=Auth.fails[userId]||(Auth.fails[userId]={n:0,until:0});if(Date.now()<f.until)return fail('Muitas tentativas. Aguarde '+Math.ceil((f.until-Date.now())/1000)+'s.');
-    if(await Auth.hash(pin,u.salt)===u.pinHash){f.n=0;return ok()}
-    f.n++;if(f.n>=5){f.n=0;f.until=Date.now()+30000;return fail('PIN incorreto. Acesso bloqueado por 30s.')}return fail('PIN incorreto.');
+    if(await Auth.hash(pw,u.salt)===u.pinHash){f.n=0;return ok()}
+    f.n++;if(f.n>=5){f.n=0;f.until=Date.now()+30000;return fail('Senha incorreta. Acesso bloqueado por 30s.')}return fail(bad);
   },
-  resetPin(by,userId){if(!actor(by,true))return NOAUTH;const u=user(userId);if(!u)return fail('Participante inexistente.');u.pinHash=null;u.salt=null;audit(by,'reset_pin','user',userId,'');commit();return ok()}
+  async adminSet(by,userId,pw){if(!actor(by,true))return NOAUTH;const u=user(userId);if(!u)return fail('Participante inexistente.');if(!Auth.valid(pw))return fail('A senha deve ter pelo menos 6 caracteres.');await Auth.force(userId,pw);audit(by,'reset_password','user',userId,'');commit();return ok()}
 };
 
 /* ===== backup e integridade ===== */
@@ -826,49 +832,29 @@ const MSGS={late:['A cozinha não vai se limpar sozinha!','Tem missão esperando
 function dailyMsg(k){const l=MSGS[k];const d=today();let h=0;for(const c of d)h+=c.charCodeAt(0);return l[(h+(UI.me?UI.me.length:0))%l.length]}
 function pill(st){return '<span class="pill '+st+'">'+STAT[st]+'</span>'}
 
-/* ===== modais de PIN ===== */
+/* ===== modal de senha ===== */
 function pinModal(userId,opts){
-  opts=opts||{};const u=user(userId),has=!!u.pinHash;
-  openModal('<h2>'+(has?'Trocar PIN':'Criar PIN de '+esc(u.name))+'</h2><p class="muted">O PIN é pessoal e dá acesso só à conta de '+esc(u.name)+'. Use de 4 a 6 números.</p>'+
-   '<form class="col" data-f="pin" data-id="'+userId+'" data-after="'+(opts.after||'')+'">'+(has?'<label class="f">PIN atual<input class="in" name="cur" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" required></label>':'')+
-   '<label class="f">Novo PIN<input class="in" name="p1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
-   '<label class="f">Repita o PIN<input class="in" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
-   '<div class="row"><button class="btn primary" type="submit">Salvar PIN</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>');
+  opts=opts||{};const u=user(userId);
+  openModal('<h2>Trocar senha</h2><p class="muted">A senha é pessoal e dá acesso só à conta de '+esc(u.name)+'. Mínimo de 6 caracteres.</p>'+
+   '<form class="col" data-f="pin" data-id="'+userId+'"><label class="f">Senha atual<input class="in" name="cur" type="password" autocomplete="current-password" required></label>'+
+   '<label class="f">Nova senha<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label>'+
+   '<label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label>'+
+   '<div class="row"><button class="btn primary" type="submit">Salvar senha</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>');
 }
 
 /* ===== login ===== */
 function vLogin(){
   if(REMOTE)return vLoginRemote();
-  const L=UI.login,list=actives(),adm=S.users.filter(u=>u.active&&u.role==='admin'&&u.plays===false);
-  const open=S.settings.openSignup!==false&&list.length<4;
-  let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>';
-  if(L.mode==='signup'){
-    const dr=L.draft||{},usedA=new Set(S.users.map(u=>u.avatar)),usedC=new Set(S.users.map(u=>u.color));
-    const av=dr.avatar||AVATARS.find(a=>!usedA.has(a))||AVATARS[0],co=dr.color||COLORS.find(c=>!usedC.has(c))||COLORS[0];
-    h+='<div class="card col"><h2>Criar meu cadastro</h2><p class="muted">Escolha seu nome, personagem e PIN. O PIN é só seu e dá acesso só à sua conta.</p>'+
-      '<form class="col" data-f="signup"><label class="f">Seu nome<input class="in" name="name" maxlength="20" value="'+esc(dr.name||'')+'" autocomplete="given-name" required autofocus></label>'+
-      '<div class="form"><label class="f">Personagem<select class="in" name="avatar">'+AVATARS.map(a=>'<option '+(a===av?'selected':'')+'>'+a+'</option>').join('')+'</select></label>'+
-      '<label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===co?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+
-      '<label class="f">PIN (4 a 6 números)<input class="in pinin" name="p1" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
-      '<label class="f">Repita o PIN<input class="in pinin" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>'+
-      (L.err?'<div class="banner red" role="alert">'+esc(L.err)+'</div>':'')+
-      '<button class="btn primary" type="submit">Criar cadastro e entrar</button><button class="btn ghost" type="button" data-a="unpick">Voltar</button></form></div>';
-  }else if(!L.sel){
-    h+='<div class="card"><h2>Quem vai jogar?</h2><p class="muted" style="margin-top:6px">Cada pessoa entra com o próprio PIN. Ainda não tem cadastro? Crie o seu.</p></div>';
-    if(list.length)h+='<div class="who">'+list.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span>'+(u.pinHash?'':'<span class="pill">primeiro acesso</span>')+'</button>').join('')+'</div>';
-    else h+='<div class="card empty"><div class="big-e" aria-hidden="true">🎮</div><h3>Nenhum jogador ainda</h3><p>Seja o primeiro: crie o seu cadastro.</p></div>';
-    h+=open?'<button class="btn yellow" data-a="signup">Criar meu cadastro</button>':'<p class="muted sm" style="text-align:center">'+(list.length>=4?'O jogo já tem 4 jogadores.':'Os cadastros estão fechados pelo administrador.')+'</p>';
-    if(adm.length)h+='<h3 style="margin-top:6px">Administração</h3><div class="who">'+adm.map(u=>'<button data-a="pick" data-id="'+u.id+'">'+avHtml(u,'lg')+'<span>'+esc(u.name)+'</span><span class="pill">'+(u.pinHash?'administrador':'primeiro acesso')+'</span></button>').join('')+'</div>';
-  }else{
-    const u=user(L.sel),first=!u.pinHash;
-    h+='<div class="card col" style="align-items:center;text-align:center">'+avHtml(u,'lg')+'<h2>'+(first?'Olá, '+esc(u.name)+'! Crie o seu PIN':'Entrar como '+esc(u.name))+'</h2>'+
-      '<form class="col" style="width:100%" data-f="login" data-id="'+u.id+'">'+
-      '<label class="f" style="text-align:left">'+(first?'Novo PIN (4 a 6 números)':'PIN')+'<input class="in pinin" name="p1" type="password" inputmode="numeric" autocomplete="'+(first?'new-password':'current-password')+'" maxlength="6" required autofocus></label>'+
-      (first?'<label class="f" style="text-align:left">Repita o PIN<input class="in pinin" name="p2" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required></label>':'')+
-      (L.err?'<div class="banner red" role="alert">'+esc(L.err)+'</div>':'')+
-      '<button class="btn primary" type="submit">'+(first?'Criar PIN e entrar':'Entrar')+'</button><button class="btn ghost" type="button" data-a="unpick">Voltar</button></form></div>';
-  }
-  return h+'</div>';
+  return vAuthForm({appName:S.settings.appName,hasAdmin:true,openSignup:S.settings.openSignup!==false,players:actives().length},false,false);
+}
+function needMigrate(){if(REMOTE||!S.setupDone)return false;const a=S.users.find(u=>u.role==='admin');return !!a&&!a.email}
+function vMigrate(){
+  const a=S.users.find(u=>u.role==='admin'),L=UI.login||{};
+  return '<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div><form class="card col" data-f="migrate"><h2>Atualizar o acesso do administrador</h2><p class="muted">Agora todos entram com e-mail e senha. Crie o e-mail e a senha do administrador.</p>'+
+   '<label class="f">Nome<input class="in" name="name" maxlength="20" value="'+esc(a.name)+'" required></label>'+
+   (a.pinHash?'<label class="f">PIN antigo do administrador<input class="in" name="old" type="password" autocomplete="current-password" required></label>':'')+
+   '<label class="f">E-mail<input class="in" name="email" type="email" autocomplete="email" required></label><label class="f">Senha (mínimo 6 caracteres)<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label>'+
+   (L.err?'<div class="banner red" role="alert">'+esc(L.err)+'</div>':'')+'<button class="btn primary" type="submit">Salvar e entrar</button></form></div>';
 }
 
 /* ===== primeiro acesso (onboarding) ===== */
@@ -880,9 +866,11 @@ function vOnboard(){
   if(st===0)h+='<h2>Bem-vindos!</h2><p class="muted">Vamos ajustar o jogo em poucos passos. Tudo pode ser alterado depois em Ajustes.</p><label class="f">Nome do aplicativo<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label>';
   if(st===1){
     const ad=S.users.find(u=>u.role==='admin');
-    h+='<h2>Perfil do administrador</h2><p class="muted">Este perfil só administra: cria tarefas, define regras, corrige erros e encerra o mês. Ele não joga e não aparece no ranking. É o único perfil criado por você.</p>'+
-     '<div class="card flat col"><div class="row">'+avHtml(ad)+'<label class="f grow">Nome do administrador<input class="in" name="n_'+ad.id+'" value="'+esc(ad.name)+'" maxlength="20" required></label></div><div class="row"><span class="pill">Administrador</span><span class="pill">'+(ad.pinHash?'PIN definido':'PIN pendente')+'</span><button class="btn sm" type="button" data-a="ob-pin" data-id="'+ad.id+'">'+(ad.pinHash?'Trocar PIN':'Definir PIN')+'</button></div></div>'+
-     '<h3>Jogadores</h3><p class="muted">Até 4 pessoas. Cada uma faz o próprio cadastro (nome, personagem e PIN) na tela de entrada. Você não precisa cadastrar ninguém.</p>'+
+    h+='<h2>Perfil do administrador</h2><p class="muted">Este perfil só administra: cria tarefas, define regras, corrige erros e encerra o mês. Ele não joga e não aparece no ranking. É o único perfil criado por você, com e-mail e senha.</p>'+
+     '<div class="card flat col"><div class="row">'+avHtml(ad)+'<label class="f grow">Nome do administrador<input class="in" name="n_'+ad.id+'" value="'+esc(ad.name)+'" maxlength="20" required></label></div>'+
+     '<label class="f">E-mail do administrador<input class="in" name="adm_email" type="email" autocomplete="email" value="'+esc(ad.email||'')+'" required></label>'+
+     '<div class="form"><label class="f">Senha (mínimo 6 caracteres)<input class="in" name="adm_pw1" type="password" autocomplete="new-password" minlength="6" '+(ad.pinHash?'':'required')+'></label><label class="f">Repita a senha<input class="in" name="adm_pw2" type="password" autocomplete="new-password" minlength="6" '+(ad.pinHash?'':'required')+'></label></div>'+(ad.pinHash?'<p class="sm muted">Senha já definida. Deixe em branco para manter.</p>':'')+'</div>'+
+     '<h3>Jogadores</h3><p class="muted">Até 4 pessoas. Cada uma faz o próprio cadastro (nome, personagem, e-mail e senha) na tela de entrada. Você não precisa cadastrar ninguém.</p>'+
      '<label class="chk"><input type="checkbox" name="openSignup" '+(s.openSignup!==false?'checked':'')+'> Permitir que novos jogadores se cadastrem (dá para fechar depois em Ajustes)</label>';
   }
   if(st===2)h+='<h2>Tabela de pontos</h2><p class="muted">Pontuação fixa por tarefa. Ajuste se quiser; cada ocorrência também pode ser editada antes de ser feita.</p><div class="form">'+S.catalog.map(m=>'<label class="f">'+esc(cat(m.categoryId).icon+' '+m.title)+'<input class="in num" type="number" min="1" max="500" step="1" name="m_'+m.id+'" value="'+m.points+'" required></label>').join('')+'</div>';
@@ -890,7 +878,7 @@ function vOnboard(){
     '<label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Usar a loja de recompensas (moedas separadas dos pontos)</label><label class="f">Moedas ganhas por ponto aprovado<input class="in" type="number" min="0" max="10" step="1" name="coinRate" value="'+s.coinRate+'"></label><p class="muted sm">Pontos do ranking, moedas, prêmio em dinheiro e descanso são registrados separadamente. A loja nunca altera o ranking.</p>';
   if(st===4)h+='<h2>Penalidades</h2><label class="chk"><input type="checkbox" name="pen" '+(s.penalty.enabled?'checked':'')+'> Ativar penalidades (desativadas por padrão)</label><div class="form"><label class="f">Pontos por atraso<input class="in" type="number" min="0" max="100" name="late" value="'+s.penalty.latePoints+'"></label><label class="f">Pontos por tarefa não executada<input class="in" type="number" min="0" max="100" name="miss" value="'+s.penalty.missPoints+'"></label><label class="f">Dias de tolerância após o prazo<input class="in" type="number" min="0" max="30" name="grace" value="'+s.penalty.grace+'"></label><label class="f">Máximo por tarefa<input class="in" type="number" min="0" max="100" name="max" value="'+s.penalty.maxPerOcc+'"></label></div><p class="muted sm">Cada penalidade é aplicada uma única vez por tarefa, nunca deixa a pontuação do mês abaixo de zero e pode ser contestada. Não há desconto em dinheiro.</p>';
   if(st===5)h+='<h2>Início da competição</h2><label class="f">Primeiro dia do período<input class="in" type="date" name="start" value="'+s.startDate+'" required></label><p class="muted sm">O primeiro período vai até o fim do mês. Depois, cada mês é encerrado pelo administrador.</p>';
-  if(st===6){const pe=s.penalty;h+='<h2>Resumo das regras</h2><ul class="col" style="margin:0;padding-left:20px"><li>Vence o mês quem tiver mais pontos aprovados.</li><li>Desempate: mais tarefas aprovadas; depois mais pontos de tarefas recorrentes; persistindo, decisão manual registrada.</li><li>Prêmio: R$ '+s.prize+' e '+s.restDays+' dias de descanso total.</li><li>Todo ponto exige foto e aprovação de outra pessoa. Ninguém aprova a própria tarefa.</li><li>Cada tarefa pontua uma única vez.</li><li>Penalidades: '+(pe.enabled?'ativas (atraso '+pe.latePoints+', não executada '+pe.missPoints+', máximo '+pe.maxPerOcc+')':'desativadas')+'.</li><li>Loja: '+(s.shop?'ativada':'desativada')+'. Moedas não entram no ranking.</li><li>Cada jogador faz o próprio cadastro e tem o próprio PIN. O administrador não joga.</li></ul>'+(S.users.find(u=>u.role==='admin').pinHash?'':'<div class="banner red">O administrador ('+esc(S.users.find(u=>u.role==='admin').name)+') precisa definir o PIN antes de iniciar. Volte à etapa de participantes.</div>');}
+  if(st===6){const pe=s.penalty;h+='<h2>Resumo das regras</h2><ul class="col" style="margin:0;padding-left:20px"><li>Vence o mês quem tiver mais pontos aprovados.</li><li>Desempate: mais tarefas aprovadas; depois mais pontos de tarefas recorrentes; persistindo, decisão manual registrada.</li><li>Prêmio: R$ '+s.prize+' e '+s.restDays+' dias de descanso total.</li><li>Todo ponto exige foto e aprovação de outra pessoa. Ninguém aprova a própria tarefa.</li><li>Cada tarefa pontua uma única vez.</li><li>Penalidades: '+(pe.enabled?'ativas (atraso '+pe.latePoints+', não executada '+pe.missPoints+', máximo '+pe.maxPerOcc+')':'desativadas')+'.</li><li>Loja: '+(s.shop?'ativada':'desativada')+'. Moedas não entram no ranking.</li><li>Cada jogador faz o próprio cadastro entra com o próprio e-mail e senha. O administrador não joga.</li></ul>'+(S.users.find(u=>u.role==='admin').pinHash?'':'<div class="banner red">O administrador ('+esc(S.users.find(u=>u.role==='admin').name)+') precisa definir e-mail e senha antes de iniciar. Volte à etapa de participantes.</div>');}
   h+=nav(st===OBN-1)+'</form></div>';return h;
 }
 
@@ -1171,13 +1159,13 @@ function vSet(){
   if(t==='me'){
     const av=[...new Set([me.avatar].concat(AVATARS,me.avatars))];
     h+='<form class="card col" data-f="profile" data-id="'+me.id+'"><h3>Meu perfil</h3><div class="row">'+avHtml(me,'lg')+'<div><strong>'+esc(me.name)+'</strong><div class="muted sm">'+(me.role==='admin'?'Administrador':'Participante')+(me.title?' · '+esc(me.title):'')+'</div></div></div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(me.name)+'" maxlength="20" required></label>'+
-     '<label class="f">Avatar<select class="in" name="avatar">'+av.map(a=>'<option '+(a===me.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===me.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+(me.role==='admin'?'<label class="chk"><input type="checkbox" name="plays" '+(plays(me)?'checked':'')+'> Também jogar com este perfil (aparece no ranking)</label>':'')+'<div class="row"><button class="btn primary" type="submit">Salvar</button>'+(REMOTE?'<button class="btn" type="button" data-a="changepass">Trocar minha senha</button>':'<button class="btn" type="button" data-a="changepin">Trocar meu PIN</button>')+'</div></form>';
+     '<label class="f">Avatar<select class="in" name="avatar">'+av.map(a=>'<option '+(a===me.avatar?'selected':'')+'>'+a+'</option>').join('')+'</select></label><label class="f">Cor<select class="in" name="color">'+COLORS.map((c,k)=>'<option value="'+c+'" '+(c===me.color?'selected':'')+'>'+['Azul','Laranja','Roxo','Verde','Rosa','Turquesa'][k]+'</option>').join('')+'</select></label></div>'+(me.role==='admin'?'<label class="chk"><input type="checkbox" name="plays" '+(plays(me)?'checked':'')+'> Também jogar com este perfil (aparece no ranking)</label>':'')+'<div class="row"><button class="btn primary" type="submit">Salvar</button>'+(REMOTE?'<button class="btn" type="button" data-a="changepass">Trocar minha senha</button>':'<button class="btn" type="button" data-a="changepin">Trocar minha senha</button>')+'</div></form>';
   }
   if(t==='people'&&adm){
     h+='<section class="card col"><h3>Participantes</h3><p class="muted sm">Cada jogador faz o próprio cadastro (até 4). Desativar mantém todo o histórico. Há um único administrador.</p>'+
      '<form class="row" data-f="signupset"><label class="chk grow"><input type="checkbox" name="open" '+(s.openSignup!==false?'checked':'')+'> Permitir novos cadastros de jogadores</label><button class="btn sm primary" type="submit">Salvar</button></form>'+
      (REMOTE?'<form class="card flat col" data-f="housecode"><h4>Código da casa</h4><p class="sm muted">Quem for se cadastrar precisa digitar este código. Passe só para quem vai jogar e troque se vazar.</p><div class="row"><input class="in grow" name="code" value="'+esc(s.houseCode||'')+'" minlength="4" maxlength="20" required aria-label="Código da casa" style="text-transform:uppercase"><button class="btn sm primary" type="submit">Salvar código</button></div></form>':'')+
-     S.users.map(u=>'<form class="card flat col" data-f="person" data-id="'+u.id+'"><div class="row">'+avHtml(u,'sm')+'<strong>'+esc(u.name)+'</strong>'+(u.role==='admin'?'<span class="pill">Administrador</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+(REMOTE?'':'<span class="pill">'+(u.pinHash?'PIN definido':'PIN pendente')+'</span>')+'</div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(u.name)+'" maxlength="20" required></label>'+(u.role==='admin'?'':'<label class="f">Situação<select class="in" name="active"><option value="1" '+(u.active?'selected':'')+'>Ativo</option><option value="0" '+(!u.active?'selected':'')+'>Inativo</option></select></label>')+'</div><div class="row"><button class="btn sm primary" type="submit">Salvar</button>'+(!REMOTE&&u.id!==UI.me?'<button class="btn sm" type="button" data-a="resetpin" data-id="'+u.id+'">Pedir novo PIN</button>':'')+'</div></form>').join('')+'</section>';
+     S.users.map(u=>'<form class="card flat col" data-f="person" data-id="'+u.id+'"><div class="row">'+avHtml(u,'sm')+'<strong>'+esc(u.name)+'</strong>'+(u.role==='admin'?'<span class="pill">Administrador</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+(REMOTE?'':'<span class="pill">'+esc(u.email||'sem e-mail')+'</span>')+'</div><div class="form"><label class="f">Nome<input class="in" name="name" value="'+esc(u.name)+'" maxlength="20" required></label>'+(u.role==='admin'?'':'<label class="f">Situação<select class="in" name="active"><option value="1" '+(u.active?'selected':'')+'>Ativo</option><option value="0" '+(!u.active?'selected':'')+'>Inativo</option></select></label>')+'</div><div class="row"><button class="btn sm primary" type="submit">Salvar</button>'+(!REMOTE&&u.id!==UI.me?'<button class="btn sm" type="button" data-a="resetpin" data-id="'+u.id+'">Redefinir senha</button>':'')+'</div></form>').join('')+'</section>';
   }
   if(t==='rules'&&adm){
     const pe=s.penalty,p=openPeriod();
@@ -1192,7 +1180,7 @@ function vSet(){
     h+='<section class="card col"><h3>Categorias</h3>'+S.categories.map(c=>'<form class="row" data-f="cat" data-id="'+c.id+'"><input class="in" style="width:70px" name="icon" value="'+esc(c.icon)+'" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" value="'+esc(c.name)+'" maxlength="30" aria-label="Nome" required><button class="btn sm" type="submit">Salvar</button></form>').join('')+'<form class="row" data-f="cat"><input class="in" style="width:70px" name="icon" value="✨" maxlength="4" aria-label="Ícone"><input class="in grow" name="name" placeholder="Nova categoria" maxlength="30" aria-label="Nome da nova categoria" required><button class="btn sm yellow" type="submit">Adicionar</button></form></section>';
   }
   if(t==='data'){
-    h+=REMOTE?'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Tudo fica no <strong>Supabase</strong> (banco de dados na nuvem), compartilhado entre todos os aparelhos. Pontos, aprovações, moedas e resgates só mudam por funções do servidor, que conferem quem está pedindo. As fotos ficam num armazenamento privado: só quem está logado vê. Para backup do banco, use o painel do Supabase.</p></section>':'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Nesta versão tudo fica <strong>neste navegador e neste aparelho</strong>: pontos e histórico em armazenamento local, fotos no IndexedDB (reduzidas para economizar espaço). Não há sincronização entre moradores. Limpar os dados do navegador apaga tudo, então faça backup. O PIN protege o acesso dentro do app, mas não impede alguém com acesso técnico ao aparelho de alterar os dados. A proteção real vem com o Supabase (login individual e regras no servidor).</p></section>';
+    h+=REMOTE?'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Tudo fica no <strong>Supabase</strong> (banco de dados na nuvem), compartilhado entre todos os aparelhos. Pontos, aprovações, moedas e resgates só mudam por funções do servidor, que conferem quem está pedindo. As fotos ficam num armazenamento privado: só quem está logado vê. Para backup do banco, use o painel do Supabase.</p></section>':'<section class="card col"><h3>Onde ficam os dados</h3><p class="sm">Nesta versão tudo fica <strong>neste navegador e neste aparelho</strong>: pontos e histórico em armazenamento local, fotos no IndexedDB (reduzidas para economizar espaço). Não há sincronização entre moradores. Limpar os dados do navegador apaga tudo, então faça backup. A senha protege o acesso dentro do app, mas não impede alguém com acesso técnico ao aparelho de alterar os dados. A proteção real vem com o Supabase (login individual e regras no servidor).</p></section>';
     if(adm){
       if(!REMOTE)h+='<section class="card col"><h3>Backup e restauração</h3><div class="row"><button class="btn primary" data-a="backup">Copiar backup</button><button class="btn" data-a="integrity">Verificar integridade</button></div><form class="col" data-f="restore"><label class="f">Restaurar: cole aqui o backup ou escolha o arquivo<textarea class="in" name="txt" id="restoretxt" placeholder="Conteúdo do backup"></textarea></label><input type="file" id="restorefile" accept=".json,application/json" class="in"><button class="btn danger" type="submit">Restaurar backup (substitui os dados atuais)</button></form></section>';
       h+='<section class="card"><h3>Auditoria</h3><p class="sm muted">Últimas 40 ações.</p><div class="scroll"><table class="tbl"><thead><tr><th>Quando</th><th>Quem</th><th>Ação</th><th>Detalhe</th></tr></thead><tbody>'+S.audit.slice(0,40).map(a=>'<tr><td>'+brTime(a.at)+'</td><td>'+esc(nameOf(a.actorId))+'</td><td>'+esc(a.action+' '+a.entity)+'</td><td style="white-space:normal">'+esc(a.reason)+'</td></tr>').join('')+'</tbody></table></div></section>';
@@ -1221,6 +1209,7 @@ function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
   if(!UI.started){app.innerHTML=vTitle();document.title=(S.settings&&S.settings.appName)||'Rei da Faxina';const b=$('#startbtn');if(b&&!UI.autof){UI.autof=1;b.focus()}return}
   if(!S.setupDone)app.innerHTML=vOnboard();
+  else if(needMigrate()){UI.me=null;app.innerHTML=vMigrate()}
   else if(!UI.me||!actor(UI.me)){UI.me=null;app.innerHTML=vLogin()}
   else if(!openPeriod()){app.innerHTML='<div class="login"><div class="card empty"><div class="big-e" aria-hidden="true">⚠️</div><h3>Nenhum período aberto</h3><p>O banco não tem um período em andamento. Avise o administrador.</p></div></div>'}
   else{if(UI.view==='shop'&&!S.settings.shop)UI.view='home';app.innerHTML=vShell(VIEWS[UI.view]())}
@@ -1294,13 +1283,14 @@ const H={
  close:async ()=>closeModal(),
  yes:async ()=>{const f=UI.cb;closeModal();if(f)await f()},
  mute:()=>{SFX.toggle();render()},
+ lmode:d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()},
  begin:()=>{UI.started=true;sfx('win');render()},
  install:async()=>{const d=deferredInstall;if(!d)return;deferredInstall=null;d.prompt();try{await d.userChoice}catch(e){}render()},
  pickset:(d,el)=>{const f=el.closest('form');f.querySelectorAll('input[type=checkbox][data-fr]').forEach(c=>{if(d.g==='all'||c.dataset.fr===d.g)c.checked=d.v==='1'})},
  gopick:()=>{UI.view='set';UI.setTab='pick';closeModal();render()},
  go:async d=>{UI.view=d.v;if(d.st)UI.filters.st=d.st;closeModal();render()},
  more:async ()=>moreModal(),
- logout:async ()=>{try{sessionStorage.removeItem('cj:me')}catch(e){}UI.me=null;UI.login={sel:null,err:''};render()},
+ logout:async ()=>{UI.me=null;UI.login={sel:null,err:'',mode:'in'};render()},
  tab:async d=>{UI.tab=d.t;render()},settab:d=>{UI.setTab=d.t;render()},shoptab:d=>{UI.shopTab=d.t;render()},achwho:d=>{UI.achWho=d.id;render()},
  pick:async d=>{UI.login={sel:d.id,err:'',mode:''};render()},unpick:()=>{UI.login={sel:null,err:'',mode:''};render()},signup:()=>{UI.login={sel:null,err:'',mode:'signup'};render()},
  start:async d=>{await res(A.start(UI.me,d.id))},
@@ -1342,10 +1332,9 @@ const H={
  backup:async()=>{const t=await exportBackup();openModal('<h2>Backup</h2><p class="sm muted">Copie e guarde em um lugar seguro. Inclui dados e fotos. Para restaurar, cole em Ajustes, Dados.</p><textarea class="in" id="bk" readonly>'+esc(t)+'</textarea><div class="row"><button class="btn primary" data-a="copybk">Copiar</button><button class="btn ghost" data-a="close">Fechar</button></div>');const x=$('#bk');x.focus();x.select()},
  copybk:async()=>{const x=$('#bk');try{await navigator.clipboard.writeText(x.value);toast('Backup copiado','ok')}catch(e){x.focus();x.select();toast('Selecionamos o texto. Copie com Ctrl+C.')}},
  integrity:async ()=>{const p=verifyIntegrity(S);openModal('<h2>Integridade dos dados</h2>'+(p.length?'<ul>'+p.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p>Tudo certo: relações, pontuação única por tarefa e saldos consistentes.</p>')+'<button class="btn" data-a="close">Fechar</button>')},
- resetpin:async d=>confirmModal('Pedir novo PIN?',esc(nameOf(d.id))+' vai criar um PIN novo no próximo acesso.','Confirmar',async ()=>await res(Auth.resetPin(UI.me,d.id),'PIN liberado para redefinição')),
+ resetpin:async d=>askText('Nova senha de '+nameOf(d.id),'Senha provisória (mínimo 6 caracteres). Passe para a pessoa e peça para trocar.','Salvar senha',async t=>{await res(Auth.adminSet(UI.me,d.id,String(t||'').trim()),'Senha redefinida')}),
  changepin:async ()=>pinModal(UI.me),
  'ob-back':async ()=>{UI.obStep=Math.max(0,UI.obStep-1);render()},
- 'ob-pin':async d=>{obRead();pinModal(d.id)},
  'ob-add':async ()=>{obRead();const n=['Participante 4','Quarto jogador'].find(x=>!S.users.some(u=>u.name===x));const used=new Set(S.users.map(x=>x.avatar)),uc=new Set(S.users.map(x=>x.color));S.users.push({id:uid('u'),name:n,avatar:AVATARS.find(a=>!used.has(a))||AVATARS[0],color:COLORS.find(c=>!uc.has(c))||COLORS[0],role:'user',active:true,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()});commit()},
  'ob-rm':async d=>{obRead();S.users=S.users.filter(u=>u.id!==d.id);commit()}
 };
@@ -1358,37 +1347,50 @@ function obRead(){
 const num=(fd,k)=>{const v=fd.get(k);return v===''||v==null?NaN:Number(v)};
 const F={
  ask:async fd=>{const f=UI.askCb;const t=fd.get('t');closeModal();if(f)await f(t)},
- pin:async(fd,f)=>{const id=f.dataset.id,p1=fd.get('p1'),p2=fd.get('p2');if(p1!==p2){toast('Os PINs não são iguais.','err');return}
-   const r=await Auth.setPin(id,p1,fd.get('cur'));if(await res(r,'PIN salvo')){closeModal();render()}},
- signup:async fd=>{
-   const dr={name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color')},p1=fd.get('p1'),p2=fd.get('p2');
-   const bad=m=>{UI.login={sel:null,err:m,mode:'signup',draft:dr};render()};
-   if(!Auth.valid(p1))return bad('O PIN deve ter de 4 a 6 números.');
-   if(p1!==p2)return bad('Os PINs não são iguais.');
-   const r=await A.signup(dr);if(!r.ok)return bad(r.err);
-   const sp=await Auth.setPin(r.id,p1);
-   if(!sp.ok){S.users=S.users.filter(u=>u.id!==r.id);commit();return bad(sp.err)}
-   UI.me=r.id;UI.login={sel:null,err:'',mode:''};UI.view='home';try{sessionStorage.setItem('cj:me',r.id)}catch(e){}sweep();toast('Cadastro criado! Bem-vindo(a).','star');render();
+ pin:async(fd,f)=>{const id=f.dataset.id,p1=fd.get('p1'),p2=fd.get('p2');if(p1!==p2){toast('As senhas não são iguais.','err');return}
+   const r=await Auth.setPin(id,p1,fd.get('cur'));if(await res(r,'Senha alterada')){closeModal();render()}},
+ auth:async(fd,f)=>{
+   const mode=f.dataset.mode,email=normE(fd.get('email')),pw=String(fd.get('password')||'');
+   const dr={name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),email};
+   const bad=m=>{UI.login={sel:null,err:m,mode,draft:dr};render()};
+   if(!EMAIL_OK(email))return bad('Informe um e-mail válido.');
+   let id;
+   if(mode==='up'){
+     if(!Auth.valid(pw))return bad('A senha deve ter pelo menos 6 caracteres.');
+     const r=A.signup(dr);if(!r.ok)return bad(r.err);
+     const sp=await Auth.setPin(r.id,pw);if(!sp.ok){S.users=S.users.filter(u=>u.id!==r.id);commit();return bad(sp.err)}
+     id=r.id;
+   }else{
+     const u=Auth.byEmail(email);const r=u?await Auth.check(u.id,pw):fail('E-mail ou senha incorretos.');
+     if(!r.ok)return bad(r.err);id=u.id;
+   }
+   UI.me=id;UI.login={sel:null,err:'',mode:'in'};UI.view='home';sweep();toast(mode==='up'?'Cadastro criado! Bem-vindo(a).':'Bem-vindo(a)!','star');render();
+ },
+ migrate:async fd=>{
+   const a=S.users.find(u=>u.role==='admin'),em=normE(fd.get('email')),p1=String(fd.get('p1')||''),name=String(fd.get('name')||'').trim();
+   const bad=m=>{UI.login={sel:null,err:m,mode:'in'};render()};
+   if(a.pinHash){const r=await Auth.check(a.id,String(fd.get('old')||''));if(!r.ok)return bad('PIN antigo incorreto.')}
+   if(name.length<2)return bad('Informe o nome.');if(!EMAIL_OK(em))return bad('Informe um e-mail válido.');
+   if(!Auth.valid(p1))return bad('A senha deve ter pelo menos 6 caracteres.');if(p1!==fd.get('p2'))return bad('As senhas não são iguais.');
+   a.name=name;a.email=em;await Auth.force(a.id,p1);audit(a.id,'migrate','user',a.id,'');commit();
+   UI.me=a.id;UI.login={sel:null,err:'',mode:'in'};UI.view='home';toast('Acesso atualizado!','star');render();
  },
  signupset:async fd=>{await res(A.saveSettings(UI.me,{openSignup:fd.get('open')==='on'}),'Cadastros atualizados')},
- login:async(fd,f)=>{
-   const id=f.dataset.id,u=user(id),p1=fd.get('p1');let r;
-   if(!u.pinHash){if(p1!==fd.get('p2')){UI.login.err='Os PINs não são iguais.';render();return}r=await Auth.setPin(id,p1)}else r=await Auth.check(id,p1);
-   if(!r.ok){UI.login.err=r.err;render();return}
-   UI.me=id;UI.login={sel:null,err:''};UI.view='home';try{sessionStorage.setItem('cj:me',id)}catch(e){}sweep();render();
- },
  ob:async(fd,f)=>{
    const st=+f.dataset.step,s=S.settings;
    if(st===0){const n=String(fd.get('appName')).trim();if(n.length<2){toast('Informe o nome do app.','err');return}s.appName=n}
-   if(st===1){obRead();s.openSignup=fd.get('openSignup')==='on';if(!S.users.find(u=>u.role==='admin').pinHash){toast('Defina o PIN do administrador.','err');return}}
+   if(st===1){obRead();s.openSignup=fd.get('openSignup')==='on';const ad=S.users.find(u=>u.role==='admin'),em=normE(fd.get('adm_email')),p1=String(fd.get('adm_pw1')||''),p2=String(fd.get('adm_pw2')||'');
+    if(!EMAIL_OK(em)){toast('Informe o e-mail do administrador.','err');return}
+    if(p1||!ad.pinHash){if(!Auth.valid(p1)){toast('A senha deve ter pelo menos 6 caracteres.','err');return}if(p1!==p2){toast('As senhas não são iguais.','err');return}await Auth.force(ad.id,p1)}
+    ad.email=em}
    if(st===2){for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(!POINTS_OK(v)){toast('Pontos inválidos em "'+m.title+'".','err');return}m.points=v}}
    if(st===3){const p=num(fd,'prize'),r=num(fd,'restDays');if(!(p>=0)||!(r>=0&&r<=10)){toast('Confira a premiação.','err');return}s.prize=p;s.restDays=Math.floor(r);s.shop=fd.get('shop')==='on';s.coinRate=Math.max(0,Math.min(10,Math.floor(num(fd,'coinRate')||0)))}
    if(st===4){const g=k=>Math.max(0,Math.min(100,Math.floor(num(fd,k)||0)));s.penalty={enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')}}
    if(st===5){const d=fd.get('start');if(!validDate(d)){toast('Informe uma data válida.','err');return}s.startDate=d}
    if(st===6){
-     if(!S.users.find(u=>u.role==='admin').pinHash){toast('O administrador precisa definir o PIN.','err');return}
+     {const ad=S.users.find(u=>u.role==='admin');if(!ad.pinHash||!ad.email){toast('Defina o e-mail e a senha do administrador.','err');return}}
      const ns=s.startDate;S.periods=[{id:'p-'+ns,start:ns,end:monthEnd(ns),status:'open',winnerId:null,prizeAmount:0,tieResolution:null}];S.setupDone=true;audit('system','setup','app','','Configuração inicial');
-     UI.me=S.users.find(u=>u.role==='admin').id;try{sessionStorage.setItem('cj:me',UI.me)}catch(e){}UI.view='home';commit();toast('Jogo iniciado! Agora cada jogador cria o próprio cadastro.','star');confetti(40);return;
+     const ad=S.users.find(u=>u.role==='admin');UI.me=null;UI.login={sel:null,err:'',mode:'in',draft:{email:ad.email}};UI.view='home';commit();toast('Jogo pronto! Entre com o e-mail e a senha do administrador.','star');return;
    }
    UI.obStep=Math.min(OBN-1,st+1);commit();
  },
@@ -1406,7 +1408,7 @@ const F={
  assign2:async(fd,f)=>{if(await res(A.assign(UI.me,fd.get('oid'),f.dataset.uid),'Tarefa atribuída'))closeModal()},
  profile:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),plays:isAdmin(UI.me)?fd.get('plays')==='on':null}),'Perfil salvo')},
  person:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),active:fd.get('active')==null?null:fd.get('active')==='1'}),'Participante salvo')},
- adduser:async fd=>{await res(A.addUser(UI.me,fd.get('name')),'Participante adicionado. Ele cria o PIN no primeiro acesso.')},
+ adduser:async fd=>{await res(A.addUser(UI.me,fd.get('name')),'Participante adicionado.')},
  rules:async fd=>{const g=k=>Math.floor(num(fd,k));await res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
  pick:async fd=>{const picks=S.catalog.map(m=>({id:m.id,on:fd.get('on_'+m.id)==='on',points:num(fd,'p_'+m.id)}));const r=await A.applyPicks(UI.me,picks);if(!r.ok){toast(r.err,'err');return}const n=picks.filter(x=>x.on).length;toast(n+' tarefas valendo. Bom jogo!','star');},
  catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=await A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
@@ -1652,12 +1654,13 @@ const Remote=REMOTE?(()=>{
   return R;
 })():null;
 function passModal(){openModal('<h2>Trocar senha</h2><form class="col" data-f="pass"><label class="f">Nova senha<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label><div class="row"><button class="btn primary" type="submit">Salvar senha</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')}
-function vLoginRemote(){
-  const L=UI.login||{},st=Remote.status||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
+function vLoginRemote(){return vAuthForm(Remote.status||{},Remote.booting,true)}
+function vAuthForm(st,booting,remote){
+  const L=UI.login||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
   let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(st.appName||'Rei da Faxina')+'</div>';
-  if(Remote.booting)return h+'<div class="card empty"><div class="big-e" aria-hidden="true">⏳</div><h3>Carregando…</h3></div></div>';
+  if(booting)return h+'<div class="card empty"><div class="big-e" aria-hidden="true">⏳</div><h3>Carregando…</h3></div></div>';
   h+='<div class="tabs" role="tablist"><button class="tab" role="tab" data-a="lmode" data-m="in" aria-selected="'+(mode==='in')+'">Entrar</button><button class="tab" role="tab" data-a="lmode" data-m="up" aria-selected="'+(mode==='up')+'">Criar meu cadastro</button></div>';
-  if(Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';
+  if(remote&&Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';
   else if(mode==='up'&&st.openSignup===false)h+='<div class="banner red">Os cadastros estão fechados pelo administrador.</div>';
   else if(mode==='up'&&st.players>=4)h+='<div class="banner red">O jogo já tem 4 jogadores.</div>';
   h+='<form class="card col" data-f="auth" data-mode="'+mode+'"><h2>'+(mode==='up'?'Criar meu cadastro':'Entrar')+'</h2>';
@@ -1668,7 +1671,7 @@ function vLoginRemote(){
   }
   h+='<label class="f">E-mail<input class="in" name="email" type="email" autocomplete="email" value="'+esc(dr.email||'')+'" required></label>'+
    '<label class="f">Senha'+(mode==='up'?' (mínimo 6 caracteres)':'')+'<input class="in" name="password" type="password" autocomplete="'+(mode==='up'?'new-password':'current-password')+'" minlength="6" required></label>';
-  if(mode==='up')h+='<label class="f">Código da casa<input class="in" name="code" autocomplete="off" value="'+esc(dr.code||'')+'" placeholder="Peça ao administrador" style="text-transform:uppercase"></label>';
+  if(mode==='up'&&remote)h+='<label class="f">Código da casa<input class="in" name="code" autocomplete="off" value="'+esc(dr.code||'')+'" placeholder="Peça ao administrador" style="text-transform:uppercase"></label>';
   if(L.err)h+='<div class="banner red" role="alert">'+esc(L.err)+'</div>';
   return h+'<button class="btn primary" type="submit">'+(mode==='up'?'Criar cadastro e entrar':'Entrar')+'</button></form></div>';
 }
@@ -1680,7 +1683,6 @@ onChange(render);
 if(WANT_REMOTE&&!REMOTE){$('#app').innerHTML='<div class="login"><div class="card empty"><div class="big-e" aria-hidden="true">📡</div><h3>Não foi possível carregar o Supabase</h3><p>Verifique a internet e recarregue a página.</p></div></div>'}
 else if(REMOTE){render();Remote.start()}
 else{
-  try{const m=sessionStorage.getItem('cj:me');if(m&&S.setupDone&&actor(m))UI.me=m}catch(e){}
   if(S.setupDone&&openPeriod())sweep();
   render();
 }
