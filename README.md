@@ -6,6 +6,9 @@ App gamificado de tarefas domésticas: ranking mensal, comprovação por foto, a
 Abra o `index.html` no navegador, ou ative o GitHub Pages (Settings, Pages, branch `main`, pasta raiz).
 Na primeira abertura, siga a configuração inicial. Cada participante entra com o próprio e-mail e senha.
 
+## Identidade
+Logo, paleta e personagens estão em `img/` e `icons/`. Na criação do cadastro e em Ajustes, Meu perfil, cada pessoa escolhe um personagem: Pequeno Rei, Rainha, Rei de Óculos ou um dos emojis.
+
 ## Tela inicial e app
 O jogo abre numa tela com a coroa e o botão INICIAR. É um app instalável (PWA): botão "Instalar app" na tela inicial, atalho para Tarefas e funcionamento offline do visual.
 
