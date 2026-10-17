@@ -5,6 +5,6 @@
 // NUNCA coloque aqui a chave "service_role" nem a "secret" (sb_secret_...).
 // Deixando os dois vazios, o app roda em modo local (dados só neste aparelho).
 window.SUPABASE_CONFIG = {
-  url: '',
-  anonKey: ''
+  url: 'https://spzpbjzmyczbkeyjimdl.supabase.co',
+  anonKey: 'sb_publishable_itpZBr32H7KlHxe-lqtrTQ_x8WZ6n01'
 };
