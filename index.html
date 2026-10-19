@@ -301,6 +301,12 @@ html[data-fs="1"] body{zoom:1.15}html[data-fs="2"] body{zoom:1.3}
 .sk{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skm 1.2s linear infinite;border:4px solid var(--line);min-height:24px}
 .sk.h{min-height:84px}@keyframes skm{to{background-position:-200% 0}}
 .tut{text-align:center}.tut .big-e{font-size:48px}.tut .dots{display:flex;gap:8px;justify-content:center;margin:8px 0}.tut .dots i{width:12px;height:12px;background:var(--surface2);border:2px solid var(--line)}.tut .dots i.on{background:var(--yellow)}
+
+.ico{width:20px;height:20px;vertical-align:middle;image-rendering:pixelated}
+.castle{width:min(300px,78vw);height:auto;border:4px solid var(--line);box-shadow:0 6px 0 var(--line);image-rendering:pixelated}
+.title .tag{font:400 11px/1.6 var(--font-d);color:var(--yellow);margin:0}
+.boss{display:flex;gap:14px;align-items:center}.boss img{width:72px;height:72px;flex:none;image-rendering:pixelated}.boss .bar i{background:var(--red)}
+.tut .big-e img{image-rendering:pixelated}
 </style>
 
 </head>
@@ -857,7 +863,10 @@ function applyLook(){const d=document.documentElement,k=LS.get('rdf:skin'),f=LS.
 applyLook();
 function levelUp(lv){vibrate([120,60,120,60,240]);sfx('win');confetti(36);const el=document.createElement('div');el.className='lvup';el.setAttribute('role','status');el.innerHTML='<b>LEVEL UP!</b><span>Você chegou ao nível '+lv+'</span>';document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function skeleton(){return '<div class="col" aria-busy="true" aria-label="Carregando"><div class="sk h"></div><div class="grid stats"><div class="sk h"></div><div class="sk h"></div><div class="sk h"></div></div><div class="sk h"></div><div class="sk h"></div></div>'}
-const TUT=[['🎯','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['📸','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['👑','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
+const BOSS=[['golem','Golem de Pó Real'],['verme','Verme de Mofo'],['aranha','Aranha de Teia de Aranha'],['serpente','Serpente de Graxa']];
+function bossCard(p){const l=S.occurrences.filter(o=>o.periodId===p.id&&o.status!=='cancelled'),tot=l.length;if(!tot)return '';const open=l.filter(o=>o.status!=='done').length,pct=Math.round(open/tot*100),b=BOSS[Math.floor(Date.now()/864e5)%BOSS.length];
+  return '<section class="card boss" aria-label="Monstro da vez"><img src="img/i-'+b[0]+'.png" alt="" width="72" height="72"><div class="col grow"><div class="row sp"><strong>'+b[1]+'</strong><span class="sm muted">'+(open?open+' de '+tot+' missões':'Derrotado!')+'</span></div><div class="bar" role="progressbar" aria-label="Vida do monstro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div><span class="sm muted">'+(open?'Cumpra as missões do mês para derrotar o monstro.':'A casa venceu a sujeira deste mês.')+'</span></div></section>'}
+const TUT=[['<img src="img/i-vassoura.png" alt="" width="72" height="72">','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['<img src="img/i-spray.png" alt="" width="72" height="72">','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['<img src="img/i-mop.png" alt="" width="72" height="72">','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
 function tutorial(i){const t=TUT[i],last=i===TUT.length-1;openModal('<div class="tut col"><div class="big-e" aria-hidden="true">'+t[0]+'</div><h2>'+t[1]+'</h2><p>'+t[2]+'</p><div class="dots">'+TUT.map((_,k)=>'<i class="'+(k===i?'on':'')+'"></i>').join('')+'</div><div class="row" style="justify-content:center">'+(last?'':'<button class="btn ghost" data-a="close">Pular</button>')+'<button class="btn primary" data-a="'+(last?'close':'tutnext')+'" data-i="'+(i+1)+'">'+(last?'Vamos jogar!':'Próximo')+'</button></div></div>')}
 function freqKey(o){const d=S.tasks.find(x=>x.id===o.taskId);if(!d||d.frequency==='once')return 'once';if(d.frequency==='custom')return d.interval===14?'biweekly':'other';return d.frequency}
 const BOARD=[['all','Todas'],['daily','Diárias'],['weekly','Semanais'],['biweekly','Quinzenais'],['monthly','Mensais'],['once','Avulsas']];
@@ -1010,7 +1019,8 @@ function vHome(){
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
   if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
   h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
-  if(plays(user(me))){const x=xpInfo(me);h+='<section class="card xp" aria-label="Experiência"><div class="row sp"><strong>NV '+x.lv+'</strong><span class="sm muted">'+x.xp+' / '+x.hi+' XP</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'"><i style="width:'+x.pct+'%"></i></div><span class="sm muted">Faltam '+(x.hi-x.xp)+' XP para o nível '+(x.lv+1)+'</span></section>'}
+  if(plays(user(me))){const x=xpInfo(me);h+='<section class="card xp" aria-label="Experiência"><div class="row sp"><strong><img class="ico" src="img/i-raio.png" alt="" width="20" height="20"> NV '+x.lv+'</strong><span class="sm muted">'+x.xp+' / '+x.hi+' XP</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'"><i style="width:'+x.pct+'%"></i></div><span class="sm muted">Faltam '+(x.hi-x.xp)+' XP para o nível '+(x.lv+1)+'</span></section>'}
+  h+=bossCard(p);
   h+='<div class="grid stats">'+
    '<div class="card stat"><span class="lbl">Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
    '<div class="card stat"><span class="lbl">Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
@@ -1260,7 +1270,7 @@ function vTitle(){
     if(deferredInstall)inst='<button class="inst" data-a="install">Instalar app</button>';
     else if(ios)inst='<p class="hint">No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início".</p>';
   }
-  return '<main class="title">'+sp+'<h1 class="sr">'+esc(name)+'</h1><img class="hero" src="img/logo.webp" alt="'+esc(name)+': limpeza também é uma missão" width="1000" height="586"><button class="start" id="startbtn" data-a="begin">INICIAR</button>'+inst+'<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div></main>';
+  return '<main class="title">'+sp+'<h1 class="sr">'+esc(name)+'</h1><img class="hero" src="img/logo.webp" alt="'+esc(name)+': limpeza também é uma missão" width="1000" height="586"><img class="castle" src="img/castelo.webp" alt="O castelo do caos e da ordem" width="478" height="514"><p class="tag">Limpeza também é uma missão.</p><button class="start" id="startbtn" data-a="begin">INICIAR</button>'+inst+'<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div></main>';
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;

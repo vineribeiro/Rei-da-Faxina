@@ -33,3 +33,9 @@ Com o GitHub Pages ativo, abra o endereço do site no Chrome do celular e use o 
 - Contadores nos ícones do menu (ex.: "2 para aprovar").
 - Temas Game Boy, Noturno e Alto contraste, e texto maior (Ajustes, Aparência).
 - Telas de carregamento (esqueleto) enquanto o banco sincroniza.
+
+## Identidade visual (folha "Rei da Faxina")
+
+- Tela de título com o castelo isométrico e o slogan "Limpeza também é uma missão".
+- Chefão do dia na tela inicial (Golem de Pó, Verme de Mofo, Aranha, Serpente de Graxa): a vida dele é a fatia de missões do mês ainda abertas.
+- Ícones do arsenal real (vassoura, spray, mop) no tutorial e raio de XP na barra de nível.
