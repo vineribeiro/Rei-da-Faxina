@@ -282,6 +282,25 @@ label.f .in,label.f select{font-size:21px;text-transform:none}
 
 .confetti span{font-size:22px;image-rendering:pixelated}
 @media(max-width:420px){h1{font-size:14px}.btn{font-size:10px}}
+
+/* ===== melhorias de interface ===== */
+html[data-skin="gb"]:root:root:root{--bg:#0F380F;--surface:#306230;--surface2:#8BAC0F;--fg:#E0F8D0;--muted:#B5D58A;--line:#0F380F;--yellow:#9BBC0F;--blue:#8BAC0F;--green:#9BBC0F;--orange:#8BAC0F;--red:#E0F8D0;--yellow-s:#306230;--blue-s:#306230;--green-s:#306230;--orange-s:#306230;--red-s:#306230;--on-blue:#0F380F;--on-yellow:#0F380F;--on-green:#0F380F;--on-red:#0F380F}
+html[data-skin="night"]:root:root:root{--bg:#000000;--surface:#0B0B14;--surface2:#16162A;--fg:#C9CDE8;--muted:#7C82A8;--line:#000000;--yellow:#C79A1B;--blue:#2B7FB8;--green:#2DA853;--orange:#C0541A;--red:#B02A32;--yellow-s:#2A2208;--blue-s:#0C2238;--green-s:#0C2E1A;--orange-s:#33190A;--red-s:#34101A}
+html[data-skin="hc"]:root:root:root{--bg:#000000;--surface:#000000;--surface2:#1A1A1A;--fg:#FFFFFF;--muted:#E6E6E6;--line:#FFFFFF;--yellow:#FFFF00;--blue:#00E5FF;--green:#00FF66;--orange:#FF9500;--red:#FF4D4D;--yellow-s:#000000;--blue-s:#000000;--green-s:#000000;--orange-s:#000000;--red-s:#000000;--on-blue:#000000;--on-yellow:#000000;--on-green:#000000;--on-red:#000000}
+html[data-skin="hc"] .card,html[data-skin="hc"] .btn,html[data-skin="hc"] .in{border-color:#fff!important}
+html[data-fs="1"] body{zoom:1.15}html[data-fs="2"] body{zoom:1.3}
+.xp{display:flex;flex-direction:column;gap:8px}.xp .row{align-items:center}
+.xp .bar i{background:var(--green)}
+.badge{display:inline-block;min-width:18px;padding:2px 6px;margin-left:auto;background:var(--red);color:#fff;font-size:10px;line-height:1.2;text-align:center;border:2px solid var(--line)}
+.bottom button{position:relative}.bottom .badge{position:absolute;top:2px;right:8px;margin:0;padding:1px 4px;min-width:0}
+.bchips{display:flex;flex-wrap:wrap;gap:6px}.bchips .tab{flex:0 0 auto}
+.lvup{position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(3,7,18,.82);pointer-events:none;animation:lvin .3s ease-out}
+.lvup b{font:400 28px var(--font-d);color:var(--yellow);text-shadow:4px 4px 0 var(--line);animation:lvpop .8s steps(6) infinite alternate;text-align:center}
+.lvup span{font:400 16px var(--font-d);color:var(--fg)}
+@keyframes lvin{from{opacity:0}to{opacity:1}}@keyframes lvpop{from{transform:scale(1)}to{transform:scale(1.12)}}
+.sk{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:skm 1.2s linear infinite;border:4px solid var(--line);min-height:24px}
+.sk.h{min-height:84px}@keyframes skm{to{background-position:-200% 0}}
+.tut{text-align:center}.tut .big-e{font-size:48px}.tut .dots{display:flex;gap:8px;justify-content:center;margin:8px 0}.tut .dots i{width:12px;height:12px;background:var(--surface2);border:2px solid var(--line)}.tut .dots i.on{background:var(--yellow)}
 </style>
 
 </head>
@@ -830,7 +849,21 @@ const SFX=(()=>{let ctx=null;const muted=()=>{try{return localStorage.getItem('r
     play(k){if(muted()||!seq[k])return;try{ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();let t=ctx.currentTime;for(const [f,d] of seq[k]){const o=ctx.createOscillator(),g=ctx.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(.05,t);g.gain.setValueAtTime(.0001,t+d);o.connect(g);g.connect(ctx.destination);o.start(t);o.stop(t+d);t+=d}}catch(e){}}}})();
 const sfx=k=>SFX.play(k);
 const levelOf=id=>{const xp=taskTx(id).reduce((a,t)=>a+t.points,0);return Math.floor(Math.sqrt(Math.max(0,xp)/20))+1};
-function toast(m,t){sfx(t==='err'?'err':t==='star'?'win':t==='ok'?'ok':'');const el=document.createElement('div');el.className='toast '+(t||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),t==='err'?4800:3000)}
+
+const xpInfo=id=>{const xp=Math.max(0,taskTx(id).reduce((a,t)=>a+t.points,0)),lv=Math.floor(Math.sqrt(xp/20))+1,lo=20*(lv-1)*(lv-1),hi=20*lv*lv;return {xp,lv,lo,hi,pct:Math.round((xp-lo)/(hi-lo)*100)}};
+const vibrate=p=>{try{if(navigator.vibrate)navigator.vibrate(p)}catch(e){}};
+const LS={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+function applyLook(){const d=document.documentElement,k=LS.get('rdf:skin'),f=LS.get('rdf:fs');if(k)d.dataset.skin=k;else delete d.dataset.skin;if(f&&f!=='0')d.dataset.fs=f;else delete d.dataset.fs}
+applyLook();
+function levelUp(lv){vibrate([120,60,120,60,240]);sfx('win');confetti(36);const el=document.createElement('div');el.className='lvup';el.setAttribute('role','status');el.innerHTML='<b>LEVEL UP!</b><span>Você chegou ao nível '+lv+'</span>';document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
+function skeleton(){return '<div class="col" aria-busy="true" aria-label="Carregando"><div class="sk h"></div><div class="grid stats"><div class="sk h"></div><div class="sk h"></div><div class="sk h"></div></div><div class="sk h"></div><div class="sk h"></div></div>'}
+const TUT=[['🎯','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['📸','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['👑','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
+function tutorial(i){const t=TUT[i],last=i===TUT.length-1;openModal('<div class="tut col"><div class="big-e" aria-hidden="true">'+t[0]+'</div><h2>'+t[1]+'</h2><p>'+t[2]+'</p><div class="dots">'+TUT.map((_,k)=>'<i class="'+(k===i?'on':'')+'"></i>').join('')+'</div><div class="row" style="justify-content:center">'+(last?'':'<button class="btn ghost" data-a="close">Pular</button>')+'<button class="btn primary" data-a="'+(last?'close':'tutnext')+'" data-i="'+(i+1)+'">'+(last?'Vamos jogar!':'Próximo')+'</button></div></div>')}
+function freqKey(o){const d=S.tasks.find(x=>x.id===o.taskId);if(!d||d.frequency==='once')return 'once';if(d.frequency==='custom')return d.interval===14?'biweekly':'other';return d.frequency}
+const BOARD=[['all','Todas'],['daily','Diárias'],['weekly','Semanais'],['biweekly','Quinzenais'],['monthly','Mensais'],['once','Avulsas']];
+function navBadge(k){const me=UI.me;if(k==='tasks'){const n=S.occurrences.filter(canReview).length;return n?{n,t:n+' para aprovar'}:null}
+  if(k==='shop'&&S.settings.shop){const n=(S.redemptions||[]).filter(r=>r.status==='pending'&&r.userId!==me).length;return n?{n,t:n+' resgate(s) para aprovar'}:null}return null}
+function toast(m,t){vibrate(t==='err'?[80,40,80]:t==='star'?[60,40,60,40,120]:t==='ok'?40:0);sfx(t==='err'?'err':t==='star'?'win':t==='ok'?'ok':'');const el=document.createElement('div');el.className='toast '+(t||'');el.textContent=m;$('#toasts').appendChild(el);setTimeout(()=>el.remove(),t==='err'?4800:3000)}
 function confetti(n){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const w=document.createElement('div');w.className='confetti';const em=['🎉','⭐','✨','🟡','🟢','🔵','🟠'];
@@ -903,8 +936,8 @@ function vOnboard(){
 const NAV=[['home','Início'],['tasks','Tarefas'],['rank','Ranking'],['wheel','Roleta'],['ach','Conquistas'],['shop','Loja'],['hist','Histórico'],['set','Ajustes']];
 function vShell(inner){
   const me=user(UI.me),p=openPeriod();const items=NAV.filter(n=>n[0]!=='shop'||S.settings.shop);
-  const side=items.map(n=>'<button class="nav" data-a="go" data-v="'+n[0]+'" '+(UI.view===n[0]?'aria-current="page"':'')+'>'+ic(n[0])+n[1]+'</button>').join('');
-  const mob=['home','tasks','rank','wheel'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+'</button>'}).join('')+'<button data-a="more" '+(['ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais</button>';
+  const side=items.map(n=>'<button class="nav" data-a="go" data-v="'+n[0]+'" '+(UI.view===n[0]?'aria-current="page"':'')+'>'+ic(n[0])+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+(b.n>0?' <small>para aprovar</small>':'')+'</span>':'')(navBadge(n[0]))+'</button>').join('');
+  const mob=['home','tasks','rank','wheel'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+'</span>':'')(navBadge(k))+'</button>'}).join('')+'<button data-a="more" '+(['ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais'+(navBadge('shop')?'<span class="badge" aria-label="'+navBadge('shop').t+'">'+navBadge('shop').n+'</span>':'')+'</button>';
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
   return '<div class="app"><aside class="side"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
@@ -977,6 +1010,7 @@ function vHome(){
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
   if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
   h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
+  if(plays(user(me))){const x=xpInfo(me);h+='<section class="card xp" aria-label="Experiência"><div class="row sp"><strong>NV '+x.lv+'</strong><span class="sm muted">'+x.xp+' / '+x.hi+' XP</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'"><i style="width:'+x.pct+'%"></i></div><span class="sm muted">Faltam '+(x.hi-x.xp)+' XP para o nível '+(x.lv+1)+'</span></section>'}
   h+='<div class="grid stats">'+
    '<div class="card stat"><span class="lbl">Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
    '<div class="card stat"><span class="lbl">Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
@@ -1000,6 +1034,7 @@ function filterOccs(){
     if(f.st==='open'){if(!OPEN_ST.includes(o.status)&&o.status!=='awaiting_approval')return false}
     else if(f.st==='late'){if(st!=='late')return false}
     else if(f.st!=='all'&&o.status!==f.st)return false;
+    if(UI.board&&UI.board!=='all'&&freqKey(o)!==UI.board)return false;
     if(q&&!normT(o.title).includes(q))return false;return true;
   }).sort((a,b)=>(a.status==='done')-(b.status==='done')||a.dueDate.localeCompare(b.dueDate)||b.createdAt.localeCompare(a.createdAt));
 }
@@ -1011,6 +1046,8 @@ function vTasks(){
     return h;
   }
   const opt=(v,l,cur)=>'<option value="'+v+'" '+(cur===v?'selected':'')+'>'+l+'</option>';
+  const cnt=k=>S.occurrences.filter(o=>(k==='all'||freqKey(o)===k)&&(OPEN_ST.includes(o.status)||o.status==='awaiting_approval')).length;
+  h+='<div class="bchips" role="tablist" aria-label="Quadro de missões">'+BOARD.map(b=>'<button class="tab" role="tab" data-a="board" data-b="'+b[0]+'" aria-selected="'+((UI.board||'all')===b[0])+'">'+b[1]+' ('+cnt(b[0])+')</button>').join('')+'</div>';
   h+='<div class="card form" style="box-shadow:none">'+
    '<label class="f">Responsável<select class="in" data-filter="who">'+opt('all','Todos',f.who)+opt('none','Sem responsável',f.who)+actives().map(u=>opt(u.id,esc(u.name),f.who)).join('')+'</select></label>'+
    '<label class="f">Categoria<select class="in" data-filter="cat">'+opt('all','Todas',f.cat)+S.categories.map(c=>opt(c.id,esc(c.icon+' '+c.name),f.cat)).join('')+'</select></label>'+
@@ -1157,7 +1194,7 @@ const tc_=t=>{const o=occ(t.occId);return o?o.categoryId:'outras'};
 
 /* ===== Ajustes ===== */
 function vSet(){
-  const me=user(UI.me),adm=me.role==='admin';const tabs=[...(adm?[['pick','Tarefas da casa']]:[]),['me','Meu perfil'],...(adm?[['people','Participantes'],['rules','Regras'],['cats','Categorias']]:[]),['data','Dados']];
+  const me=user(UI.me),adm=me.role==='admin';const tabs=[...(adm?[['pick','Tarefas da casa']]:[]),['me','Meu perfil'],...(adm?[['people','Participantes'],['rules','Regras'],['cats','Categorias']]:[]),['look','Aparência'],['data','Dados']];
   if(!tabs.some(t=>t[0]===UI.setTab))UI.setTab='me';
   let h='<div class="tabs" role="tablist">'+tabs.map(t=>'<button class="tab" role="tab" data-a="settab" data-t="'+t[0]+'" aria-selected="'+(UI.setTab===t[0])+'">'+t[1]+'</button>').join('')+'</div>';
   const t=UI.setTab,s=S.settings;
@@ -1172,6 +1209,9 @@ function vSet(){
     }
     h+='<button class="btn primary" type="submit">Salvar escolha</button></form>';
     return h;
+  }
+  if(t==='look'){const k=LS.get('rdf:skin')||'',f=LS.get('rdf:fs')||'0';
+    h+='<section class="card col"><h3>Tema</h3><div class="row" style="flex-wrap:wrap">'+[['','Padrão'],['gb','Game Boy'],['night','Noturno'],['hc','Alto contraste']].map(x=>'<button class="btn '+(k===x[0]?'yellow':'')+'" data-a="skin" data-k="'+x[0]+'" aria-pressed="'+(k===x[0])+'">'+x[1]+'</button>').join('')+'</div><h3>Tamanho do texto</h3><div class="row" style="flex-wrap:wrap">'+[['0','Normal'],['1','Grande'],['2','Maior']].map(x=>'<button class="btn '+(f===x[0]?'yellow':'')+'" data-a="fs" data-k="'+x[0]+'" aria-pressed="'+(f===x[0])+'">'+x[1]+'</button>').join('')+'</div><div class="row"><button class="btn ghost" data-a="tutshow">Rever tutorial</button></div></section>';
   }
   if(t==='me'){
     const av=[...new Set([me.avatar].concat(AVATARS,me.avatars))];
@@ -1240,6 +1280,12 @@ function flush(){
     if(x.type==='ach'){toast('Conquista desbloqueada: '+x.ach.name+' ('+nameOf(x.userId)+')','star');confetti(24)}
     if(x.type==='winner')winnerModal(x.periodId);
   });
+  const me=UI.me&&user(UI.me);
+  if(me&&S.setupDone&&openPeriod()){
+    UI.lv=UI.lv||{};
+    if(plays(me)){const lv=levelOf(me.id);if(UI.lv[me.id]!==undefined&&lv>UI.lv[me.id])levelUp(lv);UI.lv[me.id]=lv}
+    if(!UI.modal&&!LS.get('rdf:tut:'+me.id)){LS.set('rdf:tut:'+me.id,'1');tutorial(0)}
+  }
 }
 async function res(r,msg){r=await r;if(!r.ok){toast(r.err,'err');return false}if(msg)toast(msg,'ok');return true}
 const me_=()=>UI.me;
@@ -1300,6 +1346,8 @@ const H={
  close:async ()=>closeModal(),
  yes:async ()=>{const f=UI.cb;closeModal();if(f)await f()},
  mute:()=>{SFX.toggle();render()},
+ board:d=>{UI.board=d.b;render()},skin:d=>{LS.set('rdf:skin',d.k);applyLook();render()},fs:d=>{LS.set('rdf:fs',d.k);applyLook();render()},
+ tutnext:d=>{tutorial(+d.i)},tutshow:()=>tutorial(0),
  lmode:d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()},
  begin:()=>{UI.started=true;sfx('win');render()},
  install:async()=>{const d=deferredInstall;if(!d)return;deferredInstall=null;d.prompt();try{await d.userChoice}catch(e){}render()},
@@ -1675,7 +1723,7 @@ function vLoginRemote(){return vAuthForm(Remote.status||{},Remote.booting,true)}
 function vAuthForm(st,booting,remote){
   const L=UI.login||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
   let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(st.appName||'Rei da Faxina')+'</div>';
-  if(booting)return h+'<div class="card empty"><div class="big-e" aria-hidden="true">⏳</div><h3>Carregando…</h3></div></div>';
+  if(booting)return h+skeleton()+'</div>';
   h+='<div class="tabs" role="tablist"><button class="tab" role="tab" data-a="lmode" data-m="in" aria-selected="'+(mode==='in')+'">Entrar</button><button class="tab" role="tab" data-a="lmode" data-m="up" aria-selected="'+(mode==='up')+'">Criar meu cadastro</button></div>';
   if(remote&&Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';
   else if(mode==='up'&&st.openSignup===false)h+='<div class="banner red">Os cadastros estão fechados pelo administrador.</div>';
