@@ -23,3 +23,13 @@ O jogo abre numa tela com a coroa e o botão INICIAR. É um app instalável (PWA
 
 ## Instalar como app (PWA)
 Com o GitHub Pages ativo, abra o endereço do site no Chrome do celular e use o menu, "Instalar app" (ou "Adicionar à tela inicial"). No computador, o ícone de instalar aparece na barra de endereço. O app abre em tela cheia e funciona offline.
+
+## Novidades de interface
+
+- Barra de XP na tela inicial e animação de LEVEL UP.
+- Quadro de missões com abas: Diárias, Semanais, Quinzenais, Mensais e Avulsas.
+- Vibração no celular ao concluir, aprovar e subir de nível.
+- Tutorial de 3 telas no primeiro acesso (dá para rever em Ajustes, Aparência).
+- Contadores nos ícones do menu (ex.: "2 para aprovar").
+- Temas Game Boy, Noturno e Alto contraste, e texto maior (Ajustes, Aparência).
+- Telas de carregamento (esqueleto) enquanto o banco sincroniza.
