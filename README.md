@@ -39,3 +39,12 @@ Com o GitHub Pages ativo, abra o endereço do site no Chrome do celular e use o 
 - Tela de título com o castelo isométrico e o slogan "Limpeza também é uma missão".
 - Chefão do dia na tela inicial (Golem de Pó, Verme de Mofo, Aranha, Serpente de Graxa): a vida dele é a fatia de missões do mês ainda abertas.
 - Ícones do arsenal real (vassoura, spray, mop) no tutorial e raio de XP na barra de nível.
+
+## Faxinho (bichinho estilo Tamagotchi)
+
+- Cada jogador choca um ovo misterioso (10 animais, 3 raridades) e cuida dele com as moedas ganhas nas tarefas.
+- Sente fome, sede, tédio, frio, calor, sono, sujeira, carência e doença. O tempo passa de verdade, mesmo com o app fechado.
+- Ciclo de vida de 62 dias em 6 fases; quem cuida bem evolui para a forma radiante. Ao fim ele vira estrela e deixa um ovo com mais chance de raridade.
+- Loja do Faxinho (casinha, bola, caminha, enfeites) e Álbum de Faxinhos.
+- Avisos: ligue em Faxinho, Avisos. Chegam com o app aberto ou instalado e ativo em segundo plano. Aviso com o app totalmente fechado exige um servidor de push (Edge Function + chaves VAPID), que não está incluído.
+- **Supabase:** rode `supabase/pets.sql` uma vez no SQL Editor (instalações novas já recebem pelo `schema.sql`). Sem isso a aba mostra um aviso, e o resto do app funciona normalmente.
