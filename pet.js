@@ -208,7 +208,7 @@ function vPet(){
   const sg=PET_STAGES.find(x=>x[0]===st.stage),age=st.hatchedAt?Math.min(PET_LIFE_DAYS,Math.floor((st.t-st.hatchedAt)/DAY)+1):0;
   h+='<section class="card col pet">'+petSprite(st,P,now)+
    '<div class="row sp"><div><h3>'+esc(st.name||sp.n)+'</h3><div class="sm muted">'+sp.e+' '+esc(sp.n)+'</div></div><div class="col" style="align-items:flex-end;gap:4px"><span class="pill">'+(sg?sg[2]+' '+sg[1]:'Despedida')+'</span><span class="pill '+(sp.r==='lendário'?'lv':'')+'">'+sp.r+'</span></div></div>'+
-   '<div class="bubble" role="status">'+mood.e+' '+esc(mood.t)+'</div>'+
+   '<div class="bubble" role="status">'+mood.e+' '+esc(mood.t)+'</div>'+'<div class="hud-row" title="Saúde"><span class="hl">VIDA</span><span class="hb" aria-hidden="true">'+hearts(Math.max(0,Math.round(st.health/20)),5)+'</span></div>'+
    (!st.named&&!st.dead?'<button class="btn sm yellow" data-a="pname">Dar um nome</button>':'')+
    '<div class="sm muted">Dia '+age+' de '+PET_LIFE_DAYS+(st.form?' · forma '+st.form:'')+' · '+st.mistakes+' descuido(s)</div>';
   if(st.dead){

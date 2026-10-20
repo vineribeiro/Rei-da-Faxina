@@ -315,6 +315,7 @@ html[data-fs="1"] body{zoom:1.15}html[data-fs="2"] body{zoom:1.3}
 <div id="modal"></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
 <link rel="stylesheet" href="pet.css">
+<link rel="stylesheet" href="ui.css">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
 <script src="pet.js"></script>
@@ -869,10 +870,19 @@ function applyLook(){const d=document.documentElement,k=LS.get('rdf:skin'),f=LS.
 applyLook();
 function levelUp(lv){vibrate([120,60,120,60,240]);sfx('win');confetti(36);const el=document.createElement('div');el.className='lvup';el.setAttribute('role','status');el.innerHTML='<b>LEVEL UP!</b><span>Você chegou ao nível '+lv+'</span>';document.body.appendChild(el);setTimeout(()=>el.remove(),2400)}
 function skeleton(){return '<div class="col" aria-busy="true" aria-label="Carregando"><div class="sk h"></div><div class="grid stats"><div class="sk h"></div><div class="sk h"></div><div class="sk h"></div></div><div class="sk h"></div><div class="sk h"></div></div>'}
-const BOSS=[['golem','Golem de Pó Real'],['verme','Verme de Mofo'],['aranha','Aranha de Teia de Aranha'],['serpente','Serpente de Graxa']];
-function bossCard(p){const l=S.occurrences.filter(o=>o.periodId===p.id&&o.status!=='cancelled'),tot=l.length;if(!tot)return '';const open=l.filter(o=>o.status!=='done').length,pct=Math.round(open/tot*100),b=BOSS[Math.floor(Date.now()/864e5)%BOSS.length];
-  return '<section class="card boss" aria-label="Monstro da vez"><img src="img/i-'+b[0]+'.png" alt="" width="72" height="72"><div class="col grow"><div class="row sp"><strong>'+b[1]+'</strong><span class="sm muted">'+(open?open+' de '+tot+' missões':'Derrotado!')+'</span></div><div class="bar" role="progressbar" aria-label="Vida do monstro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div><span class="sm muted">'+(open?'Cumpra as missões do mês para derrotar o monstro.':'A casa venceu a sujeira deste mês.')+'</span></div></section>'}
-const TUT=[['<img src="img/i-vassoura.png" alt="" width="72" height="72">','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['<img src="img/i-spray.png" alt="" width="72" height="72">','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['<img src="img/i-mop.png" alt="" width="72" height="72">','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
+const BOSS=[['golem','Golem de Pó'],['verme','Verme de Mofo'],['aranha','Aranha de Teia'],['cobra','Cobra de Graxa']];
+function homeHero(me,mood){
+  const u=user(me),pl=plays(u),x=pl?xpInfo(me):null,k=pl?streak(me):0;
+  return '<section class="card hq"><div class="hq-k"><div class="king kidle sm" aria-hidden="true"></div></div><div class="hq-i">'+
+    '<div class="row"><strong class="hname">'+esc(u.name)+'</strong>'+(pl?px('crown-'+crownTier(x.lv)+'.png',30)+'<span class="pill lv">NV '+x.lv+'</span>':'<span class="pill">Administrador</span>')+'</div>'+
+    '<div class="speech" role="status">'+esc(dailyMsg(mood))+'</div>'+
+    (pl?'<div class="hud-row" title="Experiência"><span class="hl">XP</span><span class="hb" aria-hidden="true">'+bolts(Math.round(x.pct/20),5)+'</span><span class="sm muted">'+x.xp+' / '+x.hi+'</span></div>'+
+      '<div class="hud-row" title="Sequência de dias"><span class="hl">SEQ</span><span class="hb" aria-hidden="true">'+hearts(Math.min(5,k),5)+'</span><span class="sm muted">'+k+' dia(s)</span></div>':'')+
+    '</div></section>';
+}
+function bossCard(p){const l=S.occurrences.filter(o=>o.periodId===p.id&&o.status!=='cancelled'),tot=l.length;if(!tot)return '';const open=l.filter(o=>o.status!=='done').length,pct=Math.round(open/tot*100),b=BOSS[Math.floor(Date.now()/864e5)%BOSS.length],stt=!open?'death':pct<=34?'hit':pct<=67?'attack':'idle';
+  return '<section class="card boss" aria-label="Monstro da vez"><div class="boss-i">'+px('m-'+b[0]+'-'+stt+'.png',96,'mon-'+stt)+'</div><div class="col grow"><div class="row sp"><strong>'+b[1]+'</strong><span class="sm muted">'+(open?open+' de '+tot+' missões':'Derrotado!')+'</span></div><div class="bar" role="progressbar" aria-label="Vida do monstro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div><span class="sm muted">'+(open?'Cumpra as missões do mês para derrotar o monstro.':'A casa venceu a sujeira deste mês.')+'</span></div></section>'}
+const TUT=[['<img src="img/it-vassoura.png" alt="" width="72" height="72">','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['<img src="img/it-spray.png" alt="" width="72" height="72">','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['<img src="img/it-mop.png" alt="" width="72" height="72">','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
 function tutorial(i){const t=TUT[i],last=i===TUT.length-1;openModal('<div class="tut col"><div class="big-e" aria-hidden="true">'+t[0]+'</div><h2>'+t[1]+'</h2><p>'+t[2]+'</p><div class="dots">'+TUT.map((_,k)=>'<i class="'+(k===i?'on':'')+'"></i>').join('')+'</div><div class="row" style="justify-content:center">'+(last?'':'<button class="btn ghost" data-a="close">Pular</button>')+'<button class="btn primary" data-a="'+(last?'close':'tutnext')+'" data-i="'+(i+1)+'">'+(last?'Vamos jogar!':'Próximo')+'</button></div></div>')}
 function freqKey(o){const d=S.tasks.find(x=>x.id===o.taskId);if(!d||d.frequency==='once')return 'once';if(d.frequency==='custom')return d.interval===14?'biweekly':'other';return d.frequency}
 const BOARD=[['all','Todas'],['daily','Diárias'],['weekly','Semanais'],['biweekly','Quinzenais'],['monthly','Mensais'],['once','Avulsas']];
@@ -916,7 +926,7 @@ function vLogin(){
 function needMigrate(){if(REMOTE||!S.setupDone)return false;const a=S.users.find(u=>u.role==='admin');return !!a&&!a.email}
 function vMigrate(){
   const a=S.users.find(u=>u.role==='admin'),L=UI.login||{};
-  return '<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div><form class="card col" data-f="migrate"><h2>Atualizar o acesso do administrador</h2><p class="muted">Agora todos entram com e-mail e senha. Crie o e-mail e a senha do administrador.</p>'+
+  return '<div class="login"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(S.settings.appName)+'</div><form class="card col" data-f="migrate"><h2>Atualizar o acesso do administrador</h2><p class="muted">Agora todos entram com e-mail e senha. Crie o e-mail e a senha do administrador.</p>'+
    '<label class="f">Nome<input class="in" name="name" maxlength="20" value="'+esc(a.name)+'" required></label>'+
    (a.pinHash?'<label class="f">PIN antigo do administrador<input class="in" name="old" type="password" autocomplete="current-password" required></label>':'')+
    '<label class="f">E-mail<input class="in" name="email" type="email" autocomplete="email" required></label><label class="f">Senha (mínimo 6 caracteres)<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label>'+
@@ -926,7 +936,7 @@ function vMigrate(){
 /* ===== primeiro acesso (onboarding) ===== */
 const OBN=7;
 function vOnboard(){
-  const st=UI.obStep,s=S.settings;let h='<div class="login" style="max-width:720px"><div class="brand"><span class="logo">👑</span>Configuração inicial</div><div class="steps" aria-label="Etapa '+(st+1)+' de '+OBN+'">'+Array.from({length:OBN},(_,i)=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div>';
+  const st=UI.obStep,s=S.settings;let h='<div class="login" style="max-width:720px"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">Configuração inicial</div><div class="steps" aria-label="Etapa '+(st+1)+' de '+OBN+'">'+Array.from({length:OBN},(_,i)=>'<i class="'+(i<=st?'on':'')+'"></i>').join('')+'</div>';
   const nav=(last)=>'<div class="row sp">'+(st>0?'<button class="btn ghost" type="button" data-a="ob-back">Voltar</button>':'<span></span>')+'<button class="btn '+(last?'green':'primary')+'" type="submit">'+(last?'Iniciar o jogo':'Continuar')+'</button></div>';
   h+='<form class="card col" data-f="ob" data-step="'+st+'">';
   if(st===0)h+='<h2>Bem-vindos!</h2><p class="muted">Vamos ajustar o jogo em poucos passos. Tudo pode ser alterado depois em Ajustes.</p><label class="f">Nome do aplicativo<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label>';
@@ -955,9 +965,9 @@ function vShell(inner){
   const side=items.map(n=>'<button class="nav" data-a="go" data-v="'+n[0]+'" '+(UI.view===n[0]?'aria-current="page"':'')+'>'+ic(n[0])+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+' <small>'+b.l+'</small>'+'</span>':'')(navBadge(n[0]))+'</button>').join('');
   const mob=['home','tasks','pet','rank'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+'</span>':'')(navBadge(k))+'</button>'}).join('')+'<button data-a="more" '+(['wheel','ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais'+(navBadge('shop')?'<span class="badge" aria-label="'+navBadge('shop').t+'">'+navBadge('shop').n+'</span>':'')+'</button>';
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
-  return '<div class="app"><aside class="side"><div class="brand"><span class="logo">👑</span>'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
+  return '<div class="app"><aside class="side"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
-   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
+   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">'+px('crown-'+crownTier(levelOf(me.id))+'.png',20)+' NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
    inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
 }
@@ -1025,16 +1035,15 @@ function vHome(){
   if(isAdmin(me)&&!S.tasks.some(d=>d.frequency!=='once'&&d.active))h+='<div class="banner blue"><span><strong>Nenhuma tarefa recorrente ativa.</strong> As 39 tarefas já estão cadastradas. Escolha quais valem no jogo.</span><button class="btn sm yellow" data-a="gopick">Escolher tarefas</button></div>';
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
   if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
-  h+='<div class="card" style="background:var(--yellow);color:var(--on-yellow)"><h2>'+esc(dailyMsg(late.length?'late':done?'ok':'none'))+'</h2></div>';
-  if(plays(user(me))){const x=xpInfo(me);h+='<section class="card xp" aria-label="Experiência"><div class="row sp"><strong><img class="ico" src="img/i-raio.png" alt="" width="20" height="20"> NV '+x.lv+'</strong><span class="sm muted">'+x.xp+' / '+x.hi+' XP</span></div><div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'"><i style="width:'+x.pct+'%"></i></div><span class="sm muted">Faltam '+(x.hi-x.xp)+' XP para o nível '+(x.lv+1)+'</span></section>'}
+  h+=homeHero(me,late.length?'late':done?'ok':'none');
   h+=petHome();
   h+=bossCard(p);
   h+='<div class="grid stats">'+
-   '<div class="card stat"><span class="lbl">Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
-   '<div class="card stat"><span class="lbl">Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
-   '<div class="card stat"><span class="lbl">Minha posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pontos · sequência de '+streak(me)+' dia(s)':'')+'</span></div>'+
-   '<div class="card stat"><span class="lbl">Dias restantes</span><span class="big">'+days+'</span><span class="sm muted">até '+brDate(p.end)+'</span></div>'+
-   (S.settings.shop&&plays(user(me))?'<div class="card stat"><span class="lbl">Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
+   '<div class="card stat"><span class="lbl">'+px('it-vassoura.png',22)+' Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
+   '<div class="card stat"><span class="lbl">'+px('it-balde.png',22)+' Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
+   '<div class="card stat"><span class="lbl">'+px('crown-2.png',24)+' Minha posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pontos · sequência de '+streak(me)+' dia(s)':'')+'</span></div>'+
+   '<div class="card stat"><span class="lbl">'+px('it-spray.png',22)+' Dias restantes</span><span class="big">'+days+'</span><span class="sm muted">até '+brDate(p.end)+'</span></div>'+
+   (S.settings.shop&&plays(user(me))?'<div class="card stat"><span class="lbl">'+px('coin.png',16)+' Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
   h+='<div class="grid two"><section class="card"><div class="row sp"><h3>Ranking do mês</h3><button class="btn sm" data-a="go" data-v="rank">Ver tudo</button></div>'+rankRows(p.id,true)+'</section>'+
    '<section class="card"><h3>Missões em destaque</h3>'+(feature.length?'<div class="col">'+feature.map(taskCard).join('')+'</div>':empty('🎯','Nenhuma missão urgente','Veja a aba Tarefas para o que está por vir.'))+'</section></div>';
   const ua=S.unlocked.slice(-4).reverse();
@@ -1270,15 +1279,29 @@ const INSTALLED=()=>{try{return matchMedia('(display-mode: standalone)').matches
 let deferredInstall=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(!UI.started)render()});
 window.addEventListener('appinstalled',()=>{deferredInstall=null;if(!UI.started)render()});
+const px=(n,w,c)=>'<img class="px'+(c?' '+c:'')+'" src="img/'+n+'" alt="" width="'+w+'">';
+const hearts=(n,max)=>Array.from({length:max},(_,i)=>px(i<n?'ui-heart-full.png':'ui-heart-empty.png',20,'hu')).join('');
+const bolts=(n,max)=>Array.from({length:max},(_,i)=>px(i<n?'ui-bolt-full.png':'ui-bolt-empty.png',14,'hu')).join('');
+const crownTier=lv=>Math.min(5,Math.max(1,Math.ceil(lv/2)));
 function vTitle(){
   const name=(S.settings&&S.settings.appName)||'Rei da Faxina',ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
-  const sp=[[8,12],[88,18],[16,70],[80,64],[50,8],[92,86],[6,88]].map(p=>'<i class="spark" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(p[0]%5)*.3+'s"></i>').join('');
+  const sp=[[8,6],[88,10],[16,30],[80,24],[50,4],[92,40],[6,46],[34,12],[68,8]].map(p=>'<i class="spark" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(p[0]%5)*.3+'s"></i>').join('');
   let inst='';
   if(!INSTALLED()){
     if(deferredInstall)inst='<button class="inst" data-a="install">Instalar app</button>';
     else if(ios)inst='<p class="hint">No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início".</p>';
   }
-  return '<main class="title">'+sp+'<h1 class="sr">'+esc(name)+'</h1><img class="hero" src="img/logo.webp" alt="'+esc(name)+': limpeza também é uma missão" width="1000" height="586"><img class="castle" src="img/castelo.webp" alt="O castelo do caos e da ordem" width="478" height="514"><p class="tag">Limpeza também é uma missão.</p><button class="start" id="startbtn" data-a="begin">INICIAR</button>'+inst+'<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div></main>';
+  return '<main class="title2">'+sp+'<h1 class="sr">'+esc(name)+'</h1>'+
+   '<img class="tlogo" src="img/logo.webp" alt="'+esc(name)+'" width="1000" height="586">'+
+   '<div class="stage" aria-hidden="true"><div class="wall"></div><div class="ban b1">'+px('crown-3.png',30)+'</div><div class="ban b2">'+px('crown-3.png',30)+'</div>'+
+     '<div class="hud"><span>'+hearts(5,5)+'</span><span>'+bolts(5,5)+'</span></div>'+
+     px('estante.png',64,'dec estante')+px('trono.png',92,'dec trono')+
+     '<div class="floor"><div class="carpet"></div></div>'+
+     px('m-golem-idle.png',74,'mon golem')+px('m-aranha-idle.png',70,'mon aranha')+
+     '<div class="king kidle"></div></div>'+
+   '<p class="tag">Limpeza também é uma missão.</p>'+
+   '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+
+   '<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></main>';
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
@@ -1744,7 +1767,7 @@ function passModal(){openModal('<h2>Trocar senha</h2><form class="col" data-f="p
 function vLoginRemote(){return vAuthForm(Remote.status||{},Remote.booting,true)}
 function vAuthForm(st,booting,remote){
   const L=UI.login||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
-  let h='<div class="login"><div class="brand"><span class="logo">👑</span>'+esc(st.appName||'Rei da Faxina')+'</div>';
+  let h='<div class="login"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(st.appName||'Rei da Faxina')+'</div>';
   if(booting)return h+skeleton()+'</div>';
   h+='<div class="tabs" role="tablist"><button class="tab" role="tab" data-a="lmode" data-m="in" aria-selected="'+(mode==='in')+'">Entrar</button><button class="tab" role="tab" data-a="lmode" data-m="up" aria-selected="'+(mode==='up')+'">Criar meu cadastro</button></div>';
   if(remote&&Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';

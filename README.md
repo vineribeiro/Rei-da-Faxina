@@ -34,11 +34,12 @@ Com o GitHub Pages ativo, abra o endereço do site no Chrome do celular e use o 
 - Temas Game Boy, Noturno e Alto contraste, e texto maior (Ajustes, Aparência).
 - Telas de carregamento (esqueleto) enquanto o banco sincroniza.
 
-## Identidade visual (folha "Rei da Faxina")
+## Identidade visual (assets 16 bits)
 
-- Tela de título com o castelo isométrico e o slogan "Limpeza também é uma missão".
-- Chefão do dia na tela inicial (Golem de Pó, Verme de Mofo, Aranha, Serpente de Graxa): a vida dele é a fatia de missões do mês ainda abertas.
-- Ícones do arsenal real (vassoura, spray, mop) no tutorial e raio de XP na barra de nível.
+- Tela de título em formato de diorama: parede de pedra, piso de mármore, tapete real, trono, estante, banners, Rei Theron animado, inimigos do bestiário e HUD de corações e raios.
+- Painel do Rei na tela inicial: sprite animado, balão de fala, XP em raios, sequência de dias em corações e coroa que evolui com o nível.
+- Chefão do dia com 4 estados (parado, ataque, dano, derrotado) conforme as missões que faltam.
+- Ícones de itens (vassoura, balde, spray, mop, esponja), moeda e coroas recortados das folhas em `img/`; folhas CSS em `ui.css`.
 
 ## Faxinho (bichinho estilo Tamagotchi)
 
