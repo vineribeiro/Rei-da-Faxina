@@ -12,9 +12,6 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Rei da Faxina</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap">
 <style>
 /* Layout: sidebar + conteúdo no desktop, barra inferior no celular. Visual cartoon com contorno grosso e sombra dura. */
 :root{
@@ -318,6 +315,7 @@ html[data-fs="1"] body{zoom:1.15}html[data-fs="2"] body{zoom:1.3}
 <link rel="stylesheet" href="ui.css">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.0/dist/umd/supabase.js"></script>
+<script src="faxinhos.js"></script>
 <script src="pet.js"></script>
 <script>
 'use strict';
@@ -1291,17 +1289,17 @@ function vTitle(){
     if(deferredInstall)inst='<button class="inst" data-a="install">Instalar app</button>';
     else if(ios)inst='<p class="hint">No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início".</p>';
   }
-  return '<main class="title2">'+sp+'<h1 class="sr">'+esc(name)+'</h1>'+
-   '<img class="tlogo" src="img/logo.webp" alt="'+esc(name)+'" width="1000" height="586">'+
-   '<div class="stage" aria-hidden="true"><div class="wall"></div><div class="ban b1">'+px('crown-3.png',30)+'</div><div class="ban b2">'+px('crown-3.png',30)+'</div>'+
-     '<div class="hud"><span>'+hearts(5,5)+'</span><span>'+bolts(5,5)+'</span></div>'+
-     px('estante.png',64,'dec estante')+px('trono.png',92,'dec trono')+
-     '<div class="floor"><div class="carpet"></div></div>'+
-     px('m-golem-idle.png',74,'mon golem')+px('m-aranha-idle.png',70,'mon aranha')+
-     '<div class="king kidle"></div></div>'+
-   '<p class="tag">Limpeza também é uma missão.</p>'+
+  const stars=[[6,8],[14,22],[24,6],[33,16],[44,4],[52,20],[61,9],[70,26],[78,12],[88,18],[94,5],[10,36],[90,38]].map((p,i)=>'<i class="st'+(i%4==0?' b':'')+'" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i%5)*.3+'s"></i>').join('');
+  const ids=FX_IDS.slice().sort(()=>Math.random()-.5).slice(0,4);
+  const pf=(i,o)=>fxSprite(ids[i],Object.assign({mood:'happy',stage:'child',px:5},o));
+  return '<main class="t3">'+stars+'<img class="tmoon" src="img/lua.png" alt="">'+
+   '<img class="tcl" src="img/nuvem.png" alt="" style="top:14%"><img class="tcl c2" src="img/nuvem.png" alt="">'+
+   '<h1 class="sr">'+esc(name)+'</h1><img class="tlg" src="img/logo-title.png" alt="'+esc(name)+'" width="187" height="151">'+
+   '<div class="land" aria-hidden="true"><img class="tcs" src="img/castelo-noite.png" alt="">'+
+     '<div class="cast">'+pf(0,{px:4,stage:'baby'})+pf(1,{px:5})+'<div class="king kidle"></div>'+pf(2,{px:5})+pf(3,{px:4,stage:'baby'})+'</div></div>'+
+   '<div class="ground"><p class="tag">Limpeza também é uma missão.</p>'+
    '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+
-   '<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></main>';
+   '<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></div></main>';
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;

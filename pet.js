@@ -168,47 +168,74 @@ async function petCheck(){
     const P2=Object.assign({},P,{cur:s,album:Object.assign({},P.album)});
     if(hatched){const sp=spec(s.species),a=P2.album[sp.id]||{n:0,best:0};P2.album[sp.id]={n:a.n+1,best:a.best};
       sfx('win');confetti(40);vibrate([100,50,100]);
-      openModal('<div class="tut col"><div class="big-e pet-big" aria-hidden="true">'+sp.e+'</div><h2>Chocou!</h2><p>Era um <strong>'+esc(sp.n)+'</strong>.<br><span class="pill">'+sp.r+'</span></p><p class="sm muted">'+esc(sp.bio)+'</p><div class="row" style="justify-content:center"><button class="btn primary" data-a="pname">Dar um nome</button><button class="btn ghost" data-a="close">Depois</button></div></div>')}
+      openModal('<div class="tut col"><div class="pegg-big">'+petSpr(sp.id,{px:8,mood:'happy',stage:'teen',cls:'hop'})+'</div><h2>Chocou!</h2><p>Era um <strong>'+esc(sp.n)+'</strong>.<br><span class="pill">'+sp.r+'</span></p><p class="sm muted">'+esc(sp.bio)+'</p><div class="row" style="justify-content:center"><button class="btn primary" data-a="pname">Dar um nome</button><button class="btn ghost" data-a="close">Depois</button></div></div>')}
     if(retired){const sp=spec(s.species),a=P2.album[sp.id]||{n:1,best:0};P2.album[sp.id]={n:a.n,best:Math.max(a.best,PET_LIFE_DAYS),form:s.form};P2.legacy=sp.id;
-      sfx('win');confetti(50);openModal('<div class="tut col"><div class="big-e pet-big" aria-hidden="true">🌟</div><h2>Uma vida inteira</h2><p>'+esc(s.name||sp.n)+' viveu '+PET_LIFE_DAYS+' dias com você e seguiu para o Jardim das Estrelas.</p><p class="sm muted">Ele deixou um ovo de presente, com mais chance de raridade.</p><button class="btn primary" data-a="close">Receber o ovo</button></div>');
+      sfx('win');confetti(50);openModal('<div class="tut col"><div class="pegg-big">'+petSpr(sp.id,{px:8,mood:'happy',stage:'teen',cls:'hop'})+'</div><h2>Uma vida inteira</h2><p>'+esc(s.name||sp.n)+' viveu '+PET_LIFE_DAYS+' dias com você e seguiu para o Jardim das Estrelas.</p><p class="sm muted">Ele deixou um ovo de presente, com mais chance de raridade.</p><button class="btn primary" data-a="close">Receber o ovo</button></div>');
       P2.cur=newEgg(true)}
-    if(died){sfx('err');vibrate([200,100,200]);openModal('<div class="tut col"><div class="big-e pet-big" aria-hidden="true">😵</div><h2>'+esc(s.name||'O Faxinho')+' partiu</h2><p>Faltou cuidado por muito tempo. Dá para reviver com a Poção da Fênix em até '+PET_REVIVE_H+' horas.</p><button class="btn primary" data-a="close">Entendi</button></div>')}
+    if(died){sfx('err');vibrate([200,100,200]);openModal('<div class="tut col"><div class="pegg-big">'+petSpr(s.species,{px:8,mood:'dead',stage:s.stage})+'</div><h2>'+esc(s.name||'O Faxinho')+' partiu</h2><p>Faltou cuidado por muito tempo. Dá para reviver com a Poção da Fênix em até '+PET_REVIVE_H+' horas.</p><button class="btn primary" data-a="close">Entendi</button></div>')}
     await petPersist(P2,0,'');
   }finally{UI.pbusy=false}
 }
-/* ---- tela ---- */
+/* ---- tela: sprites 8 bits de faxinhos.js ---- */
+const FX_PX={baby:5,child:6,teen:7,adult:7,senior:7,elder:6};
+const PET_ACTICON={racao:'racao',fruta:'fruta',banquete:'banquete',agua:'agua',brincar:'bola',passear:'arvore',carinho:'carinho',banho:'banho',limpar:'vassoura',cobertor:'cobertor',gelo:'gelo',remedio:'remedio'};
+function petFace(st,now){
+  const m=petMood(st,now);let mood='happy',cold=false,hot=false,icons=[];
+  if(st.dead)mood='dead';
+  else{
+    const sl=inSleep(new Date(now).getHours(),spec(st.species).sleep);
+    if(sl){mood='sleep';icons.push(['zz',18,1])}
+    else if(st.sick){mood='sick';icons.push(['plus',19,2])}
+    else switch(m.k){
+      case 'hunger':mood='hungry';break;
+      case 'thirst':mood='sad';icons.push(['drop',19,2]);break;
+      case 'temp':if(st.temp<50){cold=true;mood='sad';icons.push(['snow',18,1])}else{hot=true;mood='bored';icons.push(['drop',19,2])}break;
+      case 'hygiene':mood='sad';icons.push(['stink',18,1]);break;
+      case 'fun':case 'energy':mood='bored';break;
+      case 'love':mood='sad';icons.push(['heart',19,2]);break;
+    }
+    if(!icons.length&&st.form==='radiante')icons=[['spark',1,2],['spark',20,3],['spark',2,19]];
+  }
+  return {mood,cold,hot,icons};
+}
+const petSpr=(sid,o)=>fxSprite(sid,o);
 function petBar(icon,label,v,temp){
   const c=temp?(Math.abs(v-50)<=18?'var(--green)':Math.abs(v-50)<=30?'var(--yellow)':'var(--red)'):(v>50?'var(--green)':v>25?'var(--yellow)':'var(--red)');
   const lab=temp?(v<35?'Frio':v>65?'Calor':'Agradável'):Math.round(v)+'%';
-  return '<div class="pv"><span class="pl">'+icon+' '+label+'</span><div class="bar" role="progressbar" aria-label="'+label+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(v)+'"><i style="width:'+Math.round(v)+'%;background:'+c+'"></i></div><span class="pn">'+lab+'</span></div>';
+  return '<div class="pv"><span class="pl">'+icon+'<span>'+label+'</span></span><div class="bar" role="progressbar" aria-label="'+label+'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(v)+'"><i style="width:'+Math.round(v)+'%;background:'+c+'"></i></div><span class="pn">'+lab+'</span></div>';
 }
 function petSprite(st,P,now){
-  const hr=new Date(now).getHours(),night=hr<6||hr>=19;
-  if(st.stage==='egg')return '<div class="scene '+(night?'night':'day')+'"><div class="sprite egg'+(st.warm>=70?' crack':'')+'" style="font-size:84px">'+(st.warm>=70?'🐣':'🥚')+'</div></div>';
-  const sp=spec(st.species),size={baby:46,child:58,teen:70,adult:86,senior:86,elder:80}[st.stage]||60,sl=inSleep(hr,sp.sleep);
-  const wear=P.wear&&PET_SHOP.find(x=>x.id===P.wear),acc=wear?'<span class="acc '+wear.cos+'">'+wear.e+'</span>':'';
-  const fx=st.form==='radiante'?' glow':st.form==='rebelde'?' dull':'';
-  return '<div class="scene '+(night?'night':'day')+'">'+(night?'<i class="star s1">✦</i><i class="star s2">✦</i><i class="star s3">✦</i>':'')+
-    (!st.dead&&P.own&&P.own.includes('casinha')?'<span class="house">🏠</span>':'')+
-    '<div class="sprite'+fx+(sl?' sleep':'')+(st.dead?' dead':'')+'" style="font-size:'+size+'px"><span class="body">'+sp.e+'</span>'+acc+(sl&&!st.dead?'<span class="zz">💤</span>':'')+(st.sick?'<span class="sick">🤒</span>':'')+(st.dead?'<span class="sick">👼</span>':'')+'</div>'+
-    '<div class="poops" aria-label="'+Math.floor(st.pf)+' sujeira(s)">'+'💩'.repeat(Math.min(4,Math.floor(st.pf)))+'</div></div>';
+  const hr=new Date(now).getHours(),night=hr<6||hr>=19,own=petOwn(P);
+  const win='<div class="win"><div class="wsky">'+(night?pxi('lua',4,'moon')+'<i class="st s1"></i><i class="st s2"></i><i class="st s3"></i>':pxi('sol',4,'sun')+pxi('nuvem',3,'cl'))+'</div></div>';
+  const props=(own.includes('casinha')?'<div class="prop casa">'+pxi('casinha',5)+'</div>':'')+(own.includes('cama')?'<div class="prop cama">'+pxi('caminha',4)+'</div>':'')+(own.includes('bola')?'<div class="prop bola">'+pxi('bola',3)+'</div>':'');
+  let body,cls='';
+  if(st.stage==='egg'){body=fxEgg(st.seed,st.warm,8);cls=st.warm>=70?'shake':'bob'}
+  else{
+    const f=petFace(st,now);
+    body=petSpr(st.species,{mood:f.mood,stage:st.stage,wear:P.wear,form:st.form,cold:f.cold,hot:f.hot,icons:f.icons,px:FX_PX[st.stage]||6});
+    cls=(f.mood==='sleep'?'sleep':f.mood==='dead'?'dead':f.cold?'shiver':'bob')+(st.form==='radiante'&&!st.dead?' glow':'');
+  }
+  const hearts=st.stage!=='egg'&&!st.dead&&st.love>85&&st.hunger>40?'<span class="fh h1">'+pxi('carinho',3)+'</span><span class="fh h2">'+pxi('carinho',2)+'</span>':'';
+  const poops=st.stage==='egg'?'':'<div class="poops" aria-label="'+Math.floor(st.pf)+' sujeira(s)">'+Array.from({length:Math.min(4,Math.floor(st.pf))},()=>pxi('poop',4)).join('')+'</div>';
+  return '<div class="room '+(night?'night':'day')+'"><div class="wallp"></div>'+win+'<div class="floor2"></div><div class="rug"></div>'+props+'<div class="pet '+cls+'">'+body+hearts+'</div>'+poops+'</div>';
 }
 function vPet(){
   const me=user(UI.me);
   if(!plays(me))return '<div class="card">'+empty('🥚','Administradores não criam bichinho','Quem joga cuida do próprio Faxinho. O administrador só organiza a casa.')+'</div>';
   if(REMOTE&&Remote.petsOk===false)return '<div class="card">'+empty('🛠️','Falta atualizar o banco','O administrador precisa rodar o arquivo supabase/pets.sql no SQL Editor do Supabase. Depois é só recarregar.')+'</div>';
   const P=petGet(),now=Date.now(),coins=balance(UI.me);
-  let h='<div class="row sp"><div><strong>Faxinho</strong><div class="sm muted">O bichinho que depende das suas tarefas</div></div><span class="pill coin">🪙 '+coins+' moedas</span></div>';
-  if(!P||!P.cur)return h+'<section class="card col tut"><div class="big-e pet-big" aria-hidden="true">🥚</div><h2>Um ovo misterioso</h2><p>Existem 10 animais diferentes escondidos nos ovos. Cuide bem, porque ele vive cerca de '+PET_LIFE_DAYS+' dias.</p><button class="btn green" data-a="pget">Receber meu ovo</button></section>'+petAlbum(P)+petNotifCard();
+  let h='<div class="row sp"><div><strong>Faxinho</strong><div class="sm muted">O bichinho que depende das suas tarefas</div></div><span class="pill coin">'+px('coin.png',14)+' '+coins+' moedas</span></div>';
+  if(!P||!P.cur)return h+'<section class="card col tut"><div class="pegg-big">'+fxEgg(7,0,8).replace('class="fx egg','class="fx egg bob')+'</div><h2>Um ovo misterioso</h2><p>Existem 10 animais diferentes escondidos nos ovos. Cuide bem, porque ele vive cerca de '+PET_LIFE_DAYS+' dias.</p><button class="btn green" data-a="pget">Receber meu ovo</button></section>'+petAlbum(P)+petNotifCard();
   const st=petCur(P),mood=petMood(st,now),sp=st.species&&spec(st.species);
   if(st.stage==='egg'){
-    h+='<section class="card col pet">'+petSprite(st,P,now)+'<h3>Ovo misterioso</h3><div class="pv"><span class="pl">🔥 Calor</span><div class="bar"><i style="width:'+Math.round(st.warm)+'%;background:var(--orange)"></i></div><span class="pn">'+Math.round(st.warm)+'%</span></div><p class="sm muted">'+esc(mood.t)+' Esquente a cada 15 minutos para chocar mais rápido. Sozinho ele também esquenta, devagar.</p><button class="btn yellow" data-a="pwarm">Aquecer o ovo</button></section>';
+    h+='<section class="card col pet">'+petSprite(st,P,now)+'<h3>Ovo misterioso</h3><div class="pv"><span class="pl">'+pxi('temp',3)+'<span>Calor</span></span><div class="bar"><i style="width:'+Math.round(st.warm)+'%;background:var(--orange)"></i></div><span class="pn">'+Math.round(st.warm)+'%</span></div><p class="sm muted">'+esc(mood.t)+' Esquente a cada 15 minutos para chocar mais rápido. Sozinho ele também esquenta, devagar.</p><button class="btn yellow" data-a="pwarm">Aquecer o ovo</button></section>';
     return h+petAlbum(P)+petLife(st)+petNotifCard();
   }
   const sg=PET_STAGES.find(x=>x[0]===st.stage),age=st.hatchedAt?Math.min(PET_LIFE_DAYS,Math.floor((st.t-st.hatchedAt)/DAY)+1):0;
   h+='<section class="card col pet">'+petSprite(st,P,now)+
-   '<div class="row sp"><div><h3>'+esc(st.name||sp.n)+'</h3><div class="sm muted">'+sp.e+' '+esc(sp.n)+'</div></div><div class="col" style="align-items:flex-end;gap:4px"><span class="pill">'+(sg?sg[2]+' '+sg[1]:'Despedida')+'</span><span class="pill '+(sp.r==='lendário'?'lv':'')+'">'+sp.r+'</span></div></div>'+
-   '<div class="bubble" role="status">'+mood.e+' '+esc(mood.t)+'</div>'+'<div class="hud-row" title="Saúde"><span class="hl">VIDA</span><span class="hb" aria-hidden="true">'+hearts(Math.max(0,Math.round(st.health/20)),5)+'</span></div>'+
+   '<div class="row sp"><div><h3>'+esc(st.name||sp.n)+'</h3><div class="sm muted">'+esc(sp.n)+'</div></div><div class="col" style="align-items:flex-end;gap:4px"><span class="pill">'+(sg?sg[1]:'Despedida')+'</span><span class="pill '+(sp.r==='lendário'?'lv':'')+'">'+sp.r+'</span></div></div>'+
+   '<div class="bubble" role="status">'+esc(mood.t)+'</div>'+
+   '<div class="hud-row" title="Saúde"><span class="hl">VIDA</span><span class="hb" aria-hidden="true">'+hearts(Math.max(0,Math.round(st.health/20)),5)+'</span></div>'+
    (!st.named&&!st.dead?'<button class="btn sm yellow" data-a="pname">Dar um nome</button>':'')+
    '<div class="sm muted">Dia '+age+' de '+PET_LIFE_DAYS+(st.form?' · forma '+st.form:'')+' · '+st.mistakes+' descuido(s)</div>';
   if(st.dead){
@@ -216,27 +243,29 @@ function vPet(){
     h+=(left>0?'<p>A Poção da Fênix ainda pode trazê-lo de volta (restam '+Math.ceil(left)+'h).</p><button class="btn yellow" data-a="previve">Reviver por 40 moedas</button>':'<p>Já passou do tempo de reviver.</p>')+'<button class="btn" data-a="pegg">Chocar outro ovo (20 moedas)</button></section>';
     return h+petAlbum(P)+petLife(st)+petNotifCard();
   }
-  h+='<div class="pvs">'+petBar('🍖','Fome',st.hunger)+petBar('💧','Sede',st.thirst)+petBar('🎾','Diversão',st.fun)+petBar('⚡','Energia',st.energy)+petBar('🧼','Higiene',st.hygiene)+petBar('💗','Carinho',st.love)+petBar('🌡️','Temperatura',st.temp,true)+petBar('❤️','Saúde',st.health)+'</div></section>';
-  const b=(k,extra)=>'<button class="btn pbtn" data-a="pact" data-k="'+k+'"><span class="pe">'+PET_ICON[k]+'</span>'+PET_LABEL[k]+'<span class="sm">'+(PET_ACT[k].cost?'🪙'+PET_ACT[k].cost:'grátis')+'</span></button>';
+  const I=n=>pxi(n,3);
+  h+='<div class="pvs">'+petBar(I('racao'),'Fome',st.hunger)+petBar(I('agua'),'Sede',st.thirst)+petBar(I('bola'),'Diversão',st.fun)+petBar(px('ui-bolt-full.png',12),'Energia',st.energy)+petBar(I('banho'),'Higiene',st.hygiene)+petBar(I('carinho'),'Carinho',st.love)+petBar(I('temp'),'Clima',st.temp,true)+'</div></section>';
+  const b=k=>'<button class="btn pbtn" data-a="pact" data-k="'+k+'">'+pxi(PET_ACTICON[k],4)+'<span class="pt">'+PET_LABEL[k]+'</span><span class="sm">'+(PET_ACT[k].cost?px('coin.png',9)+' '+PET_ACT[k].cost:'grátis')+'</span></button>';
   h+='<section class="card col"><h3>Cuidar</h3><div class="pact">'+['racao','fruta','banquete','agua','brincar','passear','carinho','banho','limpar','cobertor','gelo','remedio'].map(b).join('')+'</div></section>';
   h+=petShop(P)+petAlbum(P)+petLife(st)+petNotifCard();
   return h;
 }
 function petShop(P){
   const own=petOwn(P);
+  const ico=it=>it.cos?pixSvg(FX_ACC[it.id].r,Object.assign({},FXG,FX_ACC[it.id].pal),it.id==='oculos'?3:4):it.id==='casinha'?pxi('casinha',2):it.id==='cama'?pxi('caminha',3):pxi('bola',4);
   return '<section class="card col"><h3>Loja do Faxinho</h3><div class="col pshop">'+PET_SHOP.map(it=>{const has=own.includes(it.id);
-    return '<div class="row sp"><div class="row"><span class="pe">'+it.e+'</span><div><strong>'+it.n+'</strong>'+(it.d?'<div class="sm muted">'+it.d+'</div>':'<div class="sm muted">Enfeite</div>')+'</div></div>'+
-     (has?(it.cos?'<button class="btn sm '+(P.wear===it.id?'yellow':'')+'" data-a="pwear" data-k="'+it.id+'">'+(P.wear===it.id?'Usando':'Usar')+'</button>':'<span class="pill">Comprado</span>'):'<button class="btn sm green" data-a="pbuy" data-k="'+it.id+'">🪙 '+it.cost+'</button>')+'</div>'}).join('')+'</div></section>';
+    return '<div class="row sp"><div class="row"><span class="sico">'+ico(it)+'</span><div><strong>'+it.n+'</strong>'+(it.d?'<div class="sm muted">'+it.d+'</div>':'<div class="sm muted">Enfeite</div>')+'</div></div>'+
+     (has?(it.cos?'<button class="btn sm '+(P.wear===it.id?'yellow':'')+'" data-a="pwear" data-k="'+it.id+'">'+(P.wear===it.id?'Usando':'Usar')+'</button>':'<span class="pill">Comprado</span>'):'<button class="btn sm green" data-a="pbuy" data-k="'+it.id+'">'+px('coin.png',10)+' '+it.cost+'</button>')+'</div>'}).join('')+'</div></section>';
 }
 function petAlbum(P){
   const al=(P&&P.album)||{};
   return '<section class="card col"><h3>Álbum de Faxinhos ('+Object.keys(al).length+'/10)</h3><p class="sm muted">Cada ovo esconde um animal. Quem já chocou aparece aqui.</p><div class="album">'+PET_SPECIES.map(s=>{const a=al[s.id];
-    return '<div class="slot '+(a?'got':'')+'" title="'+(a?esc(s.n):'???')+'"><span class="pe '+(a?'':'sil')+'">'+s.e+'</span><span class="sm">'+(a?esc(s.n.split(' ')[0]):'???')+'</span></div>'}).join('')+'</div></section>';
+    return '<div class="slot '+(a?'got':'')+'" title="'+(a?esc(s.n):'???')+'">'+petSpr(s.id,{px:3,mood:a?'happy':'sleep',cls:a?'':'sil'})+'<span class="sm">'+(a?esc(s.n.split(' ')[0]):'???')+'</span></div>'}).join('')+'</div></section>';
 }
 function petLife(st){
-  const age=st&&st.hatchedAt?(st.t-st.hatchedAt)/DAY:0;
+  const age=st&&st.hatchedAt?(st.t-st.hatchedAt)/DAY:0,sid=st&&st.species;
   return '<section class="card col"><h3>Ciclo de vida</h3><p class="sm muted">Cerca de '+PET_LIFE_DAYS+' dias, em 6 fases. Quem cuida bem evolui para a forma radiante.</p><ol class="life">'+PET_STAGES.map((x,i)=>{const nx=PET_STAGES[i+1]?PET_STAGES[i+1][3]:PET_LIFE_DAYS,cur=st&&st.stage===x[0];
-    return '<li class="'+(cur?'cur':age>=nx?'done':'')+'"><span class="pe">'+x[2]+'</span><div><strong>'+x[1]+'</strong><div class="sm muted">dia '+x[3]+' a '+nx+'</div></div></li>'}).join('')+'</ol></section>';
+    return '<li class="'+(cur?'cur':age>=nx?'done':'')+'"><span class="lsp">'+(sid?petSpr(sid,{px:2,stage:x[0],mood:'happy'}):fxEgg(i+2,0,2))+'</span><div><strong>'+x[1]+'</strong><div class="sm muted">dia '+x[3]+' a '+nx+'</div></div></li>'}).join('')+'</ol></section>';
 }
 function petNotifCard(){
   const sup='Notification' in window,on=sup&&Notification.permission==='granted'&&LS.get('rdf:pnon')==='1';
@@ -274,7 +303,8 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden){petWatch(
 function petHome(){
   const me=user(UI.me);if(!plays(me))return '';
   const P=petGet();if(REMOTE&&Remote.petsOk===false)return '';
-  if(!P||!P.cur)return '<section class="card row sp"><div class="row"><span class="pe">🥚</span><div><strong>Faxinho</strong><div class="sm muted">Um ovo misterioso espera por você.</div></div></div><button class="btn sm green" data-a="go" data-v="pet">Pegar ovo</button></section>';
-  const st=petCur(P),m=petMood(st,Date.now()),sp=st.species&&spec(st.species);
-  return '<section class="card row sp"><div class="row"><span class="pe pet-mini">'+(sp&&!st.dead?sp.e:st.stage==='egg'?'🥚':'😵')+'</span><div><strong>'+esc(st.name||(sp?sp.n:'Ovo misterioso'))+'</strong><div class="sm muted">'+m.e+' '+esc(m.t)+'</div></div></div><button class="btn sm '+(m.sev?'yellow':'')+'" data-a="go" data-v="pet">'+(m.sev?'Cuidar':'Ver')+'</button></section>';
+  if(!P||!P.cur)return '<section class="card row sp pmini"><div class="row"><span class="pm-s">'+fxEgg(7,0,3)+'</span><div><strong>Faxinho</strong><div class="sm muted">Um ovo misterioso espera por você.</div></div></div><button class="btn sm green" data-a="go" data-v="pet">Pegar ovo</button></section>';
+  const st=petCur(P),now=Date.now(),m=petMood(st,now),sp=st.species&&spec(st.species);
+  const spr=st.stage==='egg'?fxEgg(st.seed,st.warm,3):petSpr(st.species,{px:3,mood:petFace(st,now).mood,stage:st.stage,wear:P.wear,form:st.form});
+  return '<section class="card row sp pmini"><div class="row"><span class="pm-s">'+spr+'</span><div><strong>'+esc(st.name||(sp?sp.n:'Ovo misterioso'))+'</strong><div class="sm muted">'+esc(m.t)+'</div></div></div><button class="btn sm '+(m.sev?'yellow':'')+'" data-a="go" data-v="pet">'+(m.sev?'Cuidar':'Ver')+'</button></section>';
 }
