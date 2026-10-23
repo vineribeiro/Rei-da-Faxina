@@ -79,7 +79,7 @@ function fxFace(g,mood,sp){
   const eye=(x,lid)=>{
     for(let j=lid?2:0;j<5;j++)for(let i=0;i<4;i++){if((j===0||j===4)&&(i===0||i===3))continue;fxSet(g,x+i,Y+j,j>=3?'I':'e')}
     if(lid){for(let i=0;i<4;i++)fxSet(g,x+i,Y+1,'e');fxSet(g,x+1,Y+2,'w')}
-    else{fxSet(g,x+1,Y,'w');fxSet(g,x+1,Y+1,'w');fxSet(g,x,Y+1,'w');fxSet(g,x+2,Y+1,'w');fxSet(g,x+2,Y+3,'w')}
+    else{fxSet(g,x,Y+1,'w');fxSet(g,x+1,Y+1,'w');fxSet(g,x,Y+2,'w');fxSet(g,x+1,Y+2,'w');fxSet(g,x+2,Y+3,'w')}
   };
   const cross=x=>{[[0,1],[3,1],[1,2],[2,2],[1,3],[2,3],[0,4],[3,4]].forEach(([i,j])=>fxSet(g,x+i,Y+j,'e'))};
   const arc=x=>{fxSet(g,x,Y+2,'e');fxSet(g,x+1,Y+3,'e');fxSet(g,x+2,Y+3,'e');fxSet(g,x+3,Y+2,'e')};
@@ -154,7 +154,9 @@ function fxBuild(id,o){
 /* ícones sobrepostos: devolve grade adicional */
 function fxOverlayIcons(list){const g=fxGrid();list.forEach(([n,x,y])=>fxStamp(g,FX_ICON[n],x,y,0));return g}
 /* SVG com retângulos agrupados por linha */
-function fxSvg(grid,pal,px,cls,blink){
+function fxBox(grid,pad){let x0=99,y0=99,x1=-1,y1=-1;for(let y=0;y<FXW;y++)for(let x=0;x<FXW;x++)if(grid[y][x]){if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}if(x1<0)return[0,0,FXW,FXW];pad=pad||0;x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(FXW-1,x1+pad);y1=Math.min(FXW-1,y1+pad);return[x0,y0,x1-x0+1,y1-y0+1]}
+const fxBases={};
+function fxSvg(grid,pal,px,cls,blink,box){box=box||[0,0,FXW,FXW];
   let rects='',eyeRects='';
   for(let y=0;y<FXW;y++){
     let x=0;
@@ -166,15 +168,19 @@ function fxSvg(grid,pal,px,cls,blink){
       x=x2+1;
     }
   }
-  return '<svg class="fx '+(cls||'')+'" viewBox="0 0 '+FXW+' '+FXW+'" width="'+FXW*px+'" height="'+FXW*px+'" shape-rendering="crispEdges" aria-hidden="true">'+rects+(eyeRects?'<g class="blink">'+eyeRects+'</g>':'')+'</svg>';
+  return '<svg class="fx '+(cls||'')+'" viewBox="'+box[0]+' '+box[1]+' '+box[2]+' '+box[3]+'" width="'+box[2]*px+'" height="'+box[3]*px+'" shape-rendering="crispEdges" aria-hidden="true">'+rects+(eyeRects?'<g class="blink">'+eyeRects+'</g>':'')+'</svg>';
 }
 const fxCache={};
 function fxSprite(id,o){
   o=o||{};const key=[id,o.mood,o.stage,o.wear,o.form,o.cold?1:0,o.hot?1:0,o.px,o.cls,o.icons?o.icons.join('|'):''].join(',');
   if(fxCache[key])return fxCache[key];
   const b=fxBuild(id,o);
+  if(!fxBases[id]){const bb=fxBuild(id,{mood:'happy',stage:'adult'});fxBases[id]=fxBox(bb.g,0)}
+  const g1=fxBox(b.g,0),B=fxBases[id];
   if(o.icons)o.icons.forEach(([n,x,y])=>fxStamp(b.g,FX_ICON[n],x,y,0));
-  return fxCache[key]=fxSvg(b.g,b.pal,o.px||5,o.cls,b.eyes);
+  let x0=Math.min(B[0],g1[0]),y0=Math.min(B[1],g1[1]),x1=Math.max(B[0]+B[2],g1[0]+g1[2]),y1=Math.max(B[1]+B[3],g1[1]+g1[3]);
+  if(o.icons){const g2=fxBox(b.g,0);x0=Math.min(x0,g2[0]);y0=Math.min(y0,g2[1]);x1=Math.max(x1,g2[0]+g2[2]);y1=Math.max(y1,g2[1]+g2[3])}
+  return fxCache[key]=fxSvg(b.g,b.pal,o.px||5,o.cls,b.eyes,[x0,y0,x1-x0,y1-y0]);
 }
 /* ovo misterioso: manchas vêm da semente, sem entregar o bicho */
 function fxEgg(seed,warm,px){
