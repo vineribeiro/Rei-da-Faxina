@@ -177,7 +177,7 @@ async function petCheck(){
   }finally{UI.pbusy=false}
 }
 /* ---- tela: sprites 8 bits de faxinhos.js ---- */
-const FX_PX={baby:5,child:6,teen:7,adult:7,senior:7,elder:6};
+const FX_PX={baby:6,child:7,teen:8,adult:8,senior:8,elder:7};
 const PET_ACTICON={racao:'racao',fruta:'fruta',banquete:'banquete',agua:'agua',brincar:'bola',passear:'arvore',carinho:'carinho',banho:'banho',limpar:'vassoura',cobertor:'cobertor',gelo:'gelo',remedio:'remedio'};
 function petFace(st,now){
   const m=petMood(st,now);let mood='happy',cold=false,hot=false,icons=[];

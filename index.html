@@ -765,7 +765,7 @@ A.saveSettings=(by,d)=>{
 };
 A.saveCategory=(by,d)=>{
   if(!actor(by,true))return NOAUTH;const n=String(d.name||'').trim();if(n.length<2||n.length>30)return fail('Nome de categoria inválido.');
-  let c=d.id&&S.categories.find(x=>x.id===d.id);if(!c){c={id:uid('c')};S.categories.push(c)}c.name=n;c.icon=String(d.icon||'✨').slice(0,4);audit(by,'category','category',c.id,n);commit();return ok();
+  let c=d.id&&S.categories.find(x=>x.id===d.id);if(!c){c={id:uid('c')};S.categories.push(c)}c.name=n;c.icon=String(d.icon||'✨').slice(0,2);audit(by,'category','category',c.id,n);commit();return ok();
 };
 A.applyPicks=(by,picks)=>{
   if(!actor(by,true))return NOAUTH;let nw=0,on=0,off=0;
@@ -1290,13 +1290,13 @@ function vTitle(){
     else if(ios)inst='<p class="hint">No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início".</p>';
   }
   const stars=[[6,8],[14,22],[24,6],[33,16],[44,4],[52,20],[61,9],[70,26],[78,12],[88,18],[94,5],[10,36],[90,38]].map((p,i)=>'<i class="st'+(i%4==0?' b':'')+'" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i%5)*.3+'s"></i>').join('');
-  const ids=FX_IDS.slice().sort(()=>Math.random()-.5).slice(0,4);
+  const ids=FX_IDS.slice().sort(()=>Math.random()-.5).slice(0,2);
   const pf=(i,o)=>fxSprite(ids[i],Object.assign({mood:'happy',stage:'child',px:5},o));
   return '<main class="t3">'+stars+'<img class="tmoon" src="img/lua.png" alt="">'+
    '<img class="tcl" src="img/nuvem.png" alt="" style="top:14%"><img class="tcl c2" src="img/nuvem.png" alt="">'+
    '<h1 class="sr">'+esc(name)+'</h1><img class="tlg" src="img/logo-title.png" alt="'+esc(name)+'" width="187" height="151">'+
    '<div class="land" aria-hidden="true"><img class="tcs" src="img/castelo-noite.png" alt="">'+
-     '<div class="cast">'+pf(0,{px:4,stage:'baby'})+pf(1,{px:5})+'<div class="king kidle"></div>'+pf(2,{px:5})+pf(3,{px:4,stage:'baby'})+'</div></div>'+
+     '<div class="cast">'+pf(0,{px:6})+'<div class="king kidle"></div>'+pf(1,{px:6})+'</div></div>'+
    '<div class="ground"><p class="tag">Limpeza também é uma missão.</p>'+
    '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+
    '<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></div></main>';
