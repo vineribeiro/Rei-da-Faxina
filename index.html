@@ -367,8 +367,12 @@ const AVATARS=[...Object.keys(IMG_AV),'🦊','🐙','🐸','🦉','🐼','🐯',
 const COLORS=['#2B63E8','#F2761F','#8B5CF6','#17A06A','#EC4899','#0EA5A4'];
 const DEFAULT_CHALLENGES=['Arrume 5 coisas fora do lugar em 5 minutos','Deixe a pia da cozinha vazia hoje','Limpe uma superfície que ninguém lembra de limpar','Organize uma gaveta','Passe um pano na porta da geladeira','Recolha tudo o que está fora do lugar na sala'];
 const STAT={available:'Disponível',in_progress:'Em andamento',awaiting_proof:'Aguardando comprovação',awaiting_approval:'Aguardando aprovação',done:'Concluída',rejected:'Rejeitada',late:'Atrasada',cancelled:'Cancelada'};
-const FREQ={once:'Única',daily:'Diária',weekly:'Semanal',biweekly:'Quinzenal',monthly:'Mensal',custom:'Personalizada'};
-const frLabel=d=>d.frequency==='custom'&&d.interval===14?'Quinzenal':FREQ[d.frequency]+(d.frequency==='custom'?' ('+d.interval+' dias)':'');
+const FREQ={once:'Única',daily:'Diária',days:'Dias da semana',weekly:'Semanal',biweekly:'Quinzenal',monthly:'Mensal',custom:'Personalizada'};
+const WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const nextWd=(s,wd)=>{let d=s,g=0;while(g++<8&&!wd.includes(pd(d).getDay()))d=addDays(d,1);return d};
+const cleanWd=a=>[...new Set((a||[]).map(Number).filter(n=>Number.isInteger(n)&&n>=0&&n<=6))].sort();
+const gameStarted=()=>!S.settings.gameStart||today()>=S.settings.gameStart;
+const frLabel=d=>d.frequency==='days'?(d.weekdays||[]).map(i=>WD[i]).join(', '):d.frequency==='custom'&&d.interval===14?'Quinzenal':FREQ[d.frequency]+(d.frequency==='custom'?' ('+d.interval+' dias)':'');
 const PICK_G=[['daily','Diárias'],['weekly','Semanais'],['biweekly','Quinzenais'],['monthly','Mensais']];
 const ACH=[
  {id:'first',name:'Primeira Missão',icon:'🚀',desc:'Ter a primeira tarefa aprovada.',coins:5,p:s=>[s.n,1]},
@@ -388,7 +392,7 @@ function seed(){
   const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,email:null,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
   const users=[Object.assign(mk('Administrador','🛡️',COLORS[0],'admin'),{plays:false})];
   return {v:1,setupDone:false,
-    settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),
+    settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),gameStart:'2026-11-01',
       penalty:{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:DEFAULT_CHALLENGES.slice()},
     users,categories:CATS.map(c=>({id:c[0],name:c[1],icon:c[2]})),
     catalog:CATALOG.map((c,i)=>({id:'m'+i,title:c[0],points:c[1],categoryId:c[2],freq:c[3]})),
@@ -473,12 +477,12 @@ function mkOcc(def,due){
     dueDate:due,status:'available',recurring:def.frequency!=='once',createdAt:nowIso(),completedAt:null,submittedBy:null,submittedAt:null,reviewedBy:null,reviewedAt:null,rejectionReason:'',photoId:null,log:[{at:nowIso(),by:'system',text:'Criada'}]};
 }
 function genOccurrences(){
-  const t=today();let n=0;
+  const t=today();let n=0;if(!gameStarted())return 0;
   S.tasks.forEach(d=>{
     if(!d.active||d.frequency==='once'||!d.nextDue)return;
     if(d.nextDue>t)return;
     let due=d.nextDue,last=null,guard=0;
-    const adv=x=>d.frequency==='daily'?addDays(x,1):d.frequency==='weekly'?addDays(x,7):d.frequency==='monthly'?addMonth(x,d.anchorDay):addDays(x,d.interval||1);
+    const adv=x=>d.frequency==='days'?nextWd(addDays(x,1),d.weekdays||[0,1,2,3,4,5,6]):d.frequency==='daily'?addDays(x,1):d.frequency==='weekly'?addDays(x,7):d.frequency==='monthly'?addMonth(x,d.anchorDay):addDays(x,d.interval||1);
     while(due<=t&&guard++<800){last=due;due=adv(due)}
     if(last&&!S.occurrences.some(o=>o.taskId===d.id&&o.dueDate===last)){S.occurrences.push(mkOcc(d,last));n++}
     d.nextDue=due;
@@ -513,6 +517,7 @@ function validTaskData(d,isNew){
   if(!S.categories.some(c=>c.id===d.categoryId))return 'Categoria inválida.';
   if(!FREQ[d.frequency])return 'Frequência inválida.';
   if(d.frequency==='custom'&&!(Number.isInteger(d.interval)&&d.interval>=2&&d.interval<=365))return 'Informe o intervalo em dias (2 a 365).';
+  if(d.frequency==='days'&&!cleanWd(d.weekdays).length)return 'Escolha pelo menos um dia da semana.';
   if(!validDate(d.dueDate))return 'Informe um prazo válido.';
   if(isNew&&d.dueDate<today())return 'O prazo não pode estar no passado.';
   if(d.assignedTo&&!actor(d.assignedTo))return 'Responsável inexistente ou inativo.';
@@ -522,8 +527,8 @@ A.createTask=(by,d)=>{
   if(!actor(by,true))return NOAUTH;const e=validTaskData(d,true);if(e)return fail(e);
   const title=d.title.trim();
   if(S.occurrences.some(o=>normT(o.title)===normT(title)&&o.dueDate===d.dueDate&&o.status!=='cancelled'))return fail('Já existe uma tarefa com esse nome e esse prazo.');
-  const def={id:uid('t'),title,desc:(d.desc||'').trim().slice(0,300),categoryId:d.categoryId,frequency:d.frequency,interval:d.interval||null,points:d.points,assignedTo:d.assignedTo||null,
-    nextDue:d.dueDate,anchorDay:+d.dueDate.slice(8),active:true,createdAt:nowIso(),updatedAt:nowIso(),log:[{at:nowIso(),by,text:'Criada'}]};
+  const def={id:uid('t'),title,desc:(d.desc||'').trim().slice(0,300),categoryId:d.categoryId,frequency:d.frequency,interval:d.interval||null,weekdays:d.frequency==='days'?cleanWd(d.weekdays):null,points:d.points,assignedTo:d.assignedTo||null,
+    nextDue:d.frequency==='days'?nextWd(d.dueDate,cleanWd(d.weekdays)):d.dueDate,anchorDay:+d.dueDate.slice(8),active:true,createdAt:nowIso(),updatedAt:nowIso(),log:[{at:nowIso(),by,text:'Criada'}]};
   S.tasks.push(def);
   if(def.frequency==='once'){S.occurrences.push(mkOcc(def,d.dueDate));def.nextDue=null;def.active=false}
   else genOccurrences();
@@ -532,7 +537,8 @@ A.createTask=(by,d)=>{
 A.updateDef=(by,id,d)=>{
   if(!actor(by,true))return NOAUTH;const def=S.tasks.find(x=>x.id===id);if(!def)return fail('Tarefa não encontrada.');
   const nd=Object.assign({},def,d,{dueDate:d.nextDue||def.nextDue||today()});const e=validTaskData(nd,false);if(e)return fail(e);
-  Object.assign(def,{title:nd.title.trim(),desc:(nd.desc||'').trim().slice(0,300),categoryId:nd.categoryId,points:nd.points,assignedTo:nd.assignedTo||null,frequency:nd.frequency,interval:nd.interval||null,active:!!nd.active,updatedAt:nowIso()});
+  Object.assign(def,{title:nd.title.trim(),desc:(nd.desc||'').trim().slice(0,300),categoryId:nd.categoryId,points:nd.points,assignedTo:nd.assignedTo||null,frequency:nd.frequency,interval:nd.interval||null,weekdays:nd.frequency==='days'?cleanWd(nd.weekdays):null,active:!!nd.active,updatedAt:nowIso()});
+  if(def.frequency==='days'&&def.nextDue)def.nextDue=nextWd(def.nextDue,def.weekdays);
   def.log.push({at:nowIso(),by,text:'Editada'});audit(by,'update','task',id,'');commit();return ok();
 };
 A.deleteDef=(by,id)=>{
@@ -967,7 +973,12 @@ function vShell(inner){
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
    '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">'+px('crown-'+crownTier(levelOf(me.id))+'.png',20)+' NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
-   inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
+   startBanner()+inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
+}
+const longDate=s=>{const m=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];return (+s.slice(8))+(s.slice(8)==='01'?'º':'')+' de '+m[+s.slice(5,7)-1]};
+function startBanner(){
+  if(gameStarted())return '';const gs=S.settings.gameStart,n=diffDays(today(),gs);
+  return '<div class="banner start" role="status"><strong>O jogo começa em '+longDate(gs)+'.</strong> '+(n>0?'Faltam '+n+' dia'+(n>1?'s':'')+'. ':'')+'Até lá as tarefas ainda não valem pontos. Aproveite para conhecer o app e chocar o seu ovo.</div>';
 }
 function moreModal(){
   openModal('<h2>Mais</h2><div class="col">'+['wheel','ach','shop','hist','set'].filter(k=>k!=='shop'||S.settings.shop).map(k=>'<button class="btn" data-a="go" data-v="'+k+'">'+ic(k).replace('<svg','<svg width="22" height="22"')+NAV.find(n=>n[0]===k)[1]+'</button>').join('')+'</div>');
@@ -1299,7 +1310,7 @@ function vTitle(){
      '<div class="cast">'+pf(0,{px:6})+'<div class="king kidle"></div>'+pf(1,{px:6})+'</div></div>'+
    '<div class="ground"><p class="tag">Limpeza também é uma missão.</p>'+
    '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+
-   '<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></div></main>';
+   (gameStarted()?'':'<p class="soon">O jogo começa em '+longDate(S.settings.gameStart)+'</p>')+'<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></div></main>';
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
@@ -1342,6 +1353,7 @@ function taskForm(def){
    '<label class="f">Categoria<select class="in" name="categoryId">'+S.categories.map(c=>o(c.id,esc(c.icon+' '+c.name),d.categoryId)).join('')+'</select></label>'+
    '<label class="f">Frequência<select class="in" name="frequency">'+Object.entries(FREQ).map(([k,v])=>o(k,v,(d.frequency==='custom'&&d.interval===14)?'biweekly':d.frequency)).join('')+'</select></label>'+
    '<label class="f">Intervalo em dias (personalizada)<input class="in" type="number" name="interval" min="2" max="365" value="'+(d.interval||2)+'"></label>'+
+   '<fieldset class="f full wdset"><legend>Dias da semana (frequência "Dias da semana")</legend><div class="row wd">'+WD.map((n,i)=>'<label class="chk"><input type="checkbox" name="wd" value="'+i+'" '+((d.weekdays||[]).includes(i)?'checked':'')+'> '+n+'</label>').join('')+'</div></fieldset>'+
    '<label class="f">Pontos (fixos)<input class="in" type="number" name="points" min="1" max="500" step="1" value="'+d.points+'" required></label>'+
    '<label class="f">Responsável<select class="in" name="assignedTo"><option value="">Sem responsável</option>'+actives().map(u=>o(u.id,esc(u.name),d.assignedTo)).join('')+'</select></label>'+
    '<label class="f">'+(isNew?'Prazo (ou primeira data)':'Próxima ocorrência')+'<input class="in" type="date" name="dueDate" value="'+(d.nextDue||today())+'" required></label></div>'+
@@ -1500,7 +1512,7 @@ const F={...PET_F,
    UI.obStep=Math.min(OBN-1,st+1);commit();
  },
  task:async(fd,f)=>{
-   const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency')==='biweekly'?'custom':fd.get('frequency'),interval:fd.get('frequency')==='biweekly'?14:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate')};
+   const d={title:fd.get('title'),desc:fd.get('desc'),categoryId:fd.get('categoryId'),frequency:fd.get('frequency')==='biweekly'?'custom':fd.get('frequency'),interval:fd.get('frequency')==='biweekly'?14:fd.get('frequency')==='custom'?num(fd,'interval'):null,points:num(fd,'points'),assignedTo:fd.get('assignedTo')||null,dueDate:fd.get('dueDate'),weekdays:fd.getAll('wd').map(Number)};
    const id=f.dataset.id;const r=id?await A.updateDef(UI.me,id,Object.assign(d,{nextDue:d.dueDate,active:fd.get('active')==='on'})):await A.createTask(UI.me,d);
    if(await res(r,id?'Tarefa atualizada':'Tarefa criada'))closeModal();
  },
@@ -1589,14 +1601,14 @@ const Remote=REMOTE?(()=>{
   }
   function build(r){
     const st=r.settings[0]||{};
-    const settings={appName:st.app_name||'Rei da Faxina',prize:+st.prize||0,restDays:st.rest_days||0,shop:st.shop_enabled!==false,coinRate:st.coin_rate||0,openSignup:st.open_signup!==false,startDate:today(),
+    const settings={appName:st.app_name||'Rei da Faxina',prize:+st.prize||0,restDays:st.rest_days||0,shop:st.shop_enabled!==false,coinRate:st.coin_rate||0,openSignup:st.open_signup!==false,startDate:today(),gameStart:st.game_start||'',
       penalty:st.penalty||{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:st.challenges||[],houseCode:r._house||''};
     const num_=a=>parseInt(String(a).replace(/\D/g,''),10)||0;
     return {v:1,setupDone:true,settings,
       users:r.profiles.map(p=>({id:p.id,name:p.name,avatar:p.avatar,color:p.color,role:p.role,plays:p.plays,active:p.active,title:p.title||'',avatars:p.unlocked_avatars||[],createdAt:p.created_at,pinHash:'x'})),
       categories:r.categories.map(c=>({id:c.id,name:c.name,icon:c.icon})),
       catalog:r.catalog.map(m=>({id:m.id,title:m.title,points:m.points,categoryId:m.category_id,freq:m.freq})).sort((a,b)=>num_(a.id)-num_(b.id)),
-      tasks:r.tasks.map(t=>({id:t.id,title:t.title,desc:t.description||'',categoryId:t.category_id,frequency:t.frequency,interval:t.interval_days,points:t.points,assignedTo:t.assigned_to,nextDue:D(t.next_due),anchorDay:t.anchor_day,active:t.active,createdAt:t.created_at,log:lg(t.log)})),
+      tasks:r.tasks.map(t=>({id:t.id,title:t.title,desc:t.description||'',categoryId:t.category_id,frequency:t.frequency,interval:t.interval_days,weekdays:t.weekdays||null,points:t.points,assignedTo:t.assigned_to,nextDue:D(t.next_due),anchorDay:t.anchor_day,active:t.active,createdAt:t.created_at,log:lg(t.log)})),
       occurrences:r.occurrences.map(o=>({id:o.id,taskId:o.task_id,title:o.title,desc:o.description||'',categoryId:o.category_id,points:o.points,assignedTo:o.assigned_to,periodId:o.period_id,dueDate:D(o.due_date),status:o.status,recurring:o.recurring,latePen:o.late_pen,missPen:o.miss_pen,createdAt:o.created_at,completedAt:o.completed_at,submittedBy:o.submitted_by,submittedAt:o.submitted_at,reviewedBy:o.reviewed_by,reviewedAt:o.reviewed_at,rejectionReason:o.rejection_reason||'',photoId:o.photo_path,log:lg(o.log)})),
       evidences:r.evidence.map(e=>({id:e.id,occId:e.occurrence_id,submittedBy:e.submitted_by,photoId:e.image_path,submittedAt:e.submitted_at,reviewStatus:e.review_status,reviewedBy:e.reviewed_by,reviewedAt:e.reviewed_at,rejectionReason:e.rejection_reason||''})),
       scoreTx:r.score_tx.map(t=>({id:t.id,userId:t.user_id,occId:t.occurrence_id,periodId:t.period_id,type:t.type,points:t.points,reason:t.reason||'',refTx:t.ref_tx,reversedBy:t.reversed_by,postClose:t.post_close,day:D(t.day),createdBy:t.created_by,createdAt:t.created_at,contest:t.contest||undefined})),
@@ -1692,8 +1704,8 @@ const Remote=REMOTE?(()=>{
 
   // Ações: cada uma vira uma função do servidor. O parâmetro "by" é ignorado: o servidor usa a sessão de quem chamou.
   const rpc=R.rpc;
-  A.createTask=(by,d)=>rpc('create_task',{p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate}});
-  A.updateDef=(by,id,d)=>rpc('update_task_def',{p_id:id,p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate,active:d.active}});
+  A.createTask=(by,d)=>rpc('create_task',{p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,weekdays:d.weekdays,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate}});
+  A.updateDef=(by,id,d)=>rpc('update_task_def',{p_id:id,p:{title:d.title,desc:d.desc,categoryId:d.categoryId,frequency:d.frequency,interval:d.interval,weekdays:d.weekdays,points:d.points,assignedTo:d.assignedTo,dueDate:d.dueDate,active:d.active}});
   A.deleteDef=(by,id)=>rpc('delete_task_def',{p_id:id});
   A.updateOcc=(by,id,d)=>rpc('update_occurrence',{p_id:id,p:{points:d.points,dueDate:d.dueDate,assignedTo:d.assignedTo,desc:d.desc}});
   A.cancelOcc=(by,id,reason)=>rpc('cancel_occurrence',{p_id:id,p_reason:reason||''});
