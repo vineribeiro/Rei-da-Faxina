@@ -1301,16 +1301,9 @@ function vTitle(){
     else if(ios)inst='<p class="hint">No iPhone: toque em Compartilhar e depois em "Adicionar à Tela de Início".</p>';
   }
   const stars=[[6,8],[14,22],[24,6],[33,16],[44,4],[52,20],[61,9],[70,26],[78,12],[88,18],[94,5],[10,36],[90,38]].map((p,i)=>'<i class="st'+(i%4==0?' b':'')+'" style="left:'+p[0]+'%;top:'+p[1]+'%;animation-delay:'+(i%5)*.3+'s"></i>').join('');
-  const ids=FX_IDS.slice().sort(()=>Math.random()-.5).slice(0,2);
-  const pf=(i,o)=>fxSprite(ids[i],Object.assign({mood:'happy',stage:'child',px:5},o));
-  return '<main class="t3">'+stars+'<img class="tmoon" src="img/lua.png" alt="">'+
-   '<img class="tcl" src="img/nuvem.png" alt="" style="top:14%"><img class="tcl c2" src="img/nuvem.png" alt="">'+
+  return '<main class="t3 solo">'+stars+'<img class="tmoon" src="img/lua.png" alt="">'+
    '<h1 class="sr">'+esc(name)+'</h1><img class="tlg" src="img/logo-title.png" alt="'+esc(name)+'" width="187" height="151">'+
-   '<div class="land" aria-hidden="true"><img class="tcs" src="img/castelo-noite.png" alt="">'+
-     '<div class="cast">'+pf(0,{px:6})+'<div class="king kidle"></div>'+pf(1,{px:6})+'</div></div>'+
-   '<div class="ground"><p class="tag">Limpeza também é uma missão.</p>'+
-   '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+
-   (gameStarted()?'':'<p class="soon">O jogo começa em '+longDate(S.settings.gameStart)+'</p>')+'<div class="foot">ORGANIZE · LIMPE · CONQUISTE</div><div class="ver">Rei da Faxina · edição 16 bits</div></div></main>';
+   '<button class="start" id="startbtn" data-a="begin"><span aria-hidden="true">▶</span> INICIAR</button>'+inst+'</main>';
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
@@ -1401,7 +1394,7 @@ const H={
  board:d=>{UI.board=d.b;render()},skin:d=>{LS.set('rdf:skin',d.k);applyLook();render()},fs:d=>{LS.set('rdf:fs',d.k);applyLook();render()},
  tutnext:d=>{tutorial(+d.i)},tutshow:()=>tutorial(0),
  lmode:d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()},
- begin:()=>{UI.started=true;sfx('win');render()},
+ begin:()=>{UI.started=true;sfx('win');render();if(!gameStarted()&&!UI.testSeen){UI.testSeen=1;openModal('<div class="col testpop"><div class="big-e" aria-hidden="true">🧪</div><h2>Este mês foi de teste</h2><p>Outubro serviu para testar o Rei da Faxina. Tudo foi zerado e <strong>o jogo começa de verdade em '+longDate(S.settings.gameStart)+'</strong>, com as tarefas fixas de cada um.</p><button class="btn primary" data-a="close">Entendi</button></div>')}},
  install:async()=>{const d=deferredInstall;if(!d)return;deferredInstall=null;d.prompt();try{await d.userChoice}catch(e){}render()},
  pickset:(d,el)=>{const f=el.closest('form');f.querySelectorAll('input[type=checkbox][data-fr]').forEach(c=>{if(d.g==='all'||c.dataset.fr===d.g)c.checked=d.v==='1'})},
  gopick:()=>{UI.view='set';UI.setTab='pick';closeModal();render()},
