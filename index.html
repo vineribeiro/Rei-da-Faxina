@@ -367,6 +367,7 @@ const AVATARS=[...Object.keys(IMG_AV),'🦊','🐙','🐸','🦉','🐼','🐯',
 const COLORS=['#2B63E8','#F2761F','#8B5CF6','#17A06A','#EC4899','#0EA5A4'];
 const DEFAULT_CHALLENGES=['Arrume 5 coisas fora do lugar em 5 minutos','Deixe a pia da cozinha vazia hoje','Limpe uma superfície que ninguém lembra de limpar','Organize uma gaveta','Passe um pano na porta da geladeira','Recolha tudo o que está fora do lugar na sala'];
 const STAT={available:'Disponível',in_progress:'Em andamento',awaiting_proof:'Aguardando comprovação',awaiting_approval:'Aguardando aprovação',done:'Concluída',rejected:'Rejeitada',late:'Atrasada',cancelled:'Cancelada'};
+const pl=(n,s,p)=>n+' '+(n===1?s:p);
 const FREQ={once:'Única',daily:'Diária',days:'Dias da semana',weekly:'Semanal',biweekly:'Quinzenal',monthly:'Mensal',custom:'Personalizada'};
 const WD=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 const nextWd=(s,wd)=>{let d=s,g=0;while(g++<8&&!wd.includes(pd(d).getDay()))d=addDays(d,1);return d};
@@ -850,7 +851,18 @@ const ICONS={
  set:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
  more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'
 };
-const ic=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
+const PXN={
+ home:['....c....','...ccc...','..ccccc..','.ccccccc.','ccccccccc','.cc...cc.','.cc...cc.','.cc...cc.'],
+ tasks:['ccccccccc','c.......c','c....c..c','c...cc..c','cc.cc...c','.ccc....c','c.c.....c','c.......c','ccccccccc'],
+ rank:['ccccccccc','ccccccccc','.ccccccc.','..ccccc..','...ccc...','....c....','....c....','..ccccc..','..ccccc..'],
+ wheel:['..ccccc..','.c..c..c.','c...c...c','c.c.c.c.c','ccccccccc','c.c.c.c.c','c...c...c','.c..c..c.','..ccccc..'],
+ ach:['.c.....c.','.cc...cc.','..cc.cc..','...ccc...','..ccccc..','.ccc.ccc.','.cc...cc.','.ccc.ccc.','..ccccc..'],
+ shop:['...ccc...','..c...c..','..c...c..','.ccccccc.','ccccccccc','ccccccccc','ccccccccc','ccccccccc','.ccccccc.'],
+ pet:['...ccc...','..c...c..','.c.....c.','.c.....c.','c.......c','c.......c','c.......c','.c.....c.','..ccccc..'],
+ hist:['..ccccc..','.c..c..c.','c...c...c','c...c...c','c...ccc.c','c.......c','c.......c','.c.....c.','..ccccc..'],
+ set:['...ccc...','c.ccccc.c','.ccc.ccc.','ccc...ccc','cc.....cc','ccc...ccc','.ccc.ccc.','c.ccccc.c','...ccc...'],
+ more:['.........','cc..cc..cc','cc..cc..cc']};
+const ic=n=>PXN[n]&&typeof pixSvg==='function'?pixSvg(PXN[n],{c:'currentColor'},3,'pxic'):'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';
 const crown='<svg class="crown" viewBox="0 0 18 14" aria-label="Primeiro lugar" role="img"><path d="M1 12L2 3l4 4 3-6 3 6 4-4 1 9z" fill="#FFC93C" stroke="#1B2340" stroke-width="1.6" stroke-linejoin="round"/></svg>';
 const avImg=a=>'<img src="img/av-'+esc(String(a).slice(4))+'.png" alt="" draggable="false">';
 const avHtml=(u,c)=>'<span class="av '+(c||'')+'" style="background:'+esc(u.color)+'22;border-color:'+esc(u.color)+'" aria-hidden="true">'+(isImg(u.avatar)?avImg(u.avatar):esc(u.avatar))+'</span>';
@@ -876,16 +888,16 @@ function levelUp(lv){vibrate([120,60,120,60,240]);sfx('win');confetti(36);const 
 function skeleton(){return '<div class="col" aria-busy="true" aria-label="Carregando"><div class="sk h"></div><div class="grid stats"><div class="sk h"></div><div class="sk h"></div><div class="sk h"></div></div><div class="sk h"></div><div class="sk h"></div></div>'}
 const BOSS=[['golem','Golem de Pó'],['verme','Verme de Mofo'],['aranha','Aranha de Teia'],['cobra','Cobra de Graxa']];
 function homeHero(me,mood){
-  const u=user(me),pl=plays(u),x=pl?xpInfo(me):null,k=pl?streak(me):0;
+  const u=user(me),isP=plays(u),x=isP?xpInfo(me):null,k=isP?streak(me):0;
   return '<section class="card hq"><div class="hq-k"><div class="king kidle sm" aria-hidden="true"></div></div><div class="hq-i">'+
-    '<div class="row"><strong class="hname">'+esc(u.name)+'</strong>'+(pl?px('crown-'+crownTier(x.lv)+'.png',30)+'<span class="pill lv">NV '+x.lv+'</span>':'<span class="pill">Administrador</span>')+'</div>'+
+    '<div class="row"><strong class="hname">'+esc(u.name)+'</strong>'+(isP?px('crown-'+crownTier(x.lv)+'.png',30)+'<span class="pill lv">NV '+x.lv+'</span>':'<span class="pill">Administrador</span>')+'</div>'+
     '<div class="speech" role="status">'+esc(dailyMsg(mood))+'</div>'+
-    (pl?'<div class="hud-row" title="Experiência"><span class="hl">XP</span><span class="hb" aria-hidden="true">'+bolts(Math.round(x.pct/20),5)+'</span><span class="sm muted">'+x.xp+' / '+x.hi+'</span></div>'+
-      '<div class="hud-row" title="Sequência de dias"><span class="hl">SEQ</span><span class="hb" aria-hidden="true">'+hearts(Math.min(5,k),5)+'</span><span class="sm muted">'+k+' dia(s)</span></div>':'')+
+    (isP?'<div class="hud-row" title="Experiência"><span class="hl">XP</span><span class="hb" aria-hidden="true">'+bolts(Math.round(x.pct/20),5)+'</span><span class="sm muted">'+x.xp+' / '+x.hi+'</span></div>'+
+      '<div class="hud-row" title="Sequência de dias"><span class="hl">SEQ</span><span class="hb" aria-hidden="true">'+hearts(Math.min(5,k),5)+'</span><span class="sm muted">'+pl(k,'dia','dias')+'</span></div>':'')+
     '</div></section>';
 }
 function bossCard(p){const l=S.occurrences.filter(o=>o.periodId===p.id&&o.status!=='cancelled'),tot=l.length;if(!tot)return '';const open=l.filter(o=>o.status!=='done').length,pct=Math.round(open/tot*100),b=BOSS[Math.floor(Date.now()/864e5)%BOSS.length],stt=!open?'death':pct<=34?'hit':pct<=67?'attack':'idle';
-  return '<section class="card boss" aria-label="Monstro da vez"><div class="boss-i">'+px('m-'+b[0]+'-'+stt+'.png',96,'mon-'+stt)+'</div><div class="col grow"><div class="row sp"><strong>'+b[1]+'</strong><span class="sm muted">'+(open?open+' de '+tot+' missões':'Derrotado!')+'</span></div><div class="bar" role="progressbar" aria-label="Vida do monstro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div><span class="sm muted">'+(open?'Cumpra as missões do mês para derrotar o monstro.':'A casa venceu a sujeira deste mês.')+'</span></div></section>'}
+  return '<section class="card boss" aria-label="Monstro da vez"><div class="boss-i">'+px('m-'+b[0]+'-'+stt+'.png',96,'mon-'+stt)+'</div><div class="col grow"><div class="row sp"><strong>'+b[1]+'</strong><span class="sm muted">'+(open?'Restam '+open+' de '+tot+' missões':'Derrotado!')+'</span></div><div class="bar" role="progressbar" aria-label="Vida do monstro" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><i style="width:'+pct+'%"></i></div><span class="sm muted">'+(open?'Cumpra as missões do mês para derrotar o monstro.':'A casa venceu a sujeira deste mês.')+'</span></div></section>'}
 const TUT=[['<img src="img/it-vassoura.png" alt="" width="72" height="72">','Pegue missões','Na aba Tarefas, assuma as missões da casa. Diárias valem pouco, mensais valem mais.'],['<img src="img/it-spray.png" alt="" width="72" height="72">','Prove com foto','Terminou? Envie uma foto. Outra pessoa da casa confere e aprova.'],['<img src="img/it-mop.png" alt="" width="72" height="72">','Suba no ranking','Cada aprovação dá pontos, XP e níveis. No fim do mês, quem tem mais pontos vira o Rei da Faxina.']];
 function tutorial(i){const t=TUT[i],last=i===TUT.length-1;openModal('<div class="tut col"><div class="big-e" aria-hidden="true">'+t[0]+'</div><h2>'+t[1]+'</h2><p>'+t[2]+'</p><div class="dots">'+TUT.map((_,k)=>'<i class="'+(k===i?'on':'')+'"></i>').join('')+'</div><div class="row" style="justify-content:center">'+(last?'':'<button class="btn ghost" data-a="close">Pular</button>')+'<button class="btn primary" data-a="'+(last?'close':'tutnext')+'" data-i="'+(i+1)+'">'+(last?'Vamos jogar!':'Próximo')+'</button></div></div>')}
 function freqKey(o){const d=S.tasks.find(x=>x.id===o.taskId);if(!d||d.frequency==='once')return 'once';if(d.frequency==='custom')return d.interval===14?'biweekly':'other';return d.frequency}
@@ -969,22 +981,23 @@ function vShell(inner){
   const side=items.map(n=>'<button class="nav" data-a="go" data-v="'+n[0]+'" '+(UI.view===n[0]?'aria-current="page"':'')+'>'+ic(n[0])+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+' <small>'+b.l+'</small>'+'</span>':'')(navBadge(n[0]))+'</button>').join('');
   const mob=['home','tasks','pet','rank'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+'</span>':'')(navBadge(k))+'</button>'}).join('')+'<button data-a="more" '+(['wheel','ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais'+(navBadge('shop')?'<span class="badge" aria-label="'+navBadge('shop').t+'">'+navBadge('shop').n+'</span>':'')+'</button>';
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
-  return '<div class="app"><aside class="side"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main">'+
+  return '<div class="app"><aside class="side"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main" data-v="'+UI.view+'">'+
    '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
-   '<div class="me">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">'+px('crown-'+crownTier(levelOf(me.id))+'.png',20)+' NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
+   '<div class="me'+(UI.view==='home'?' compact':'')+'">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">'+px('crown-'+crownTier(levelOf(me.id))+'.png',20)+' NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
    startBanner()+inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
 }
 const longDate=s=>{const m=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];return (+s.slice(8))+(s.slice(8)==='01'?'º':'')+' de '+m[+s.slice(5,7)-1]};
 function startBanner(){
   if(gameStarted())return '';const gs=S.settings.gameStart,n=diffDays(today(),gs);
-  return '<div class="banner start" role="status"><strong>O jogo começa em '+longDate(gs)+'.</strong> '+(n>0?'Faltam '+n+' dia'+(n>1?'s':'')+'. ':'')+'Até lá as tarefas ainda não valem pontos. Aproveite para conhecer o app e chocar o seu ovo.</div>';
+  return '<div class="banner start" role="status"><span class="bi" aria-hidden="true">🧪</span><span><strong>O jogo começa em '+longDate(gs)+'.</strong> '+(n>0?'Faltam '+n+' dia'+(n>1?'s':'')+'. ':'')+'Até lá as tarefas ainda não valem pontos. Aproveite para conhecer o app e chocar o seu ovo.</span></div>';
 }
 function moreModal(){
-  openModal('<h2>Mais</h2><div class="col">'+['wheel','ach','shop','hist','set'].filter(k=>k!=='shop'||S.settings.shop).map(k=>'<button class="btn" data-a="go" data-v="'+k+'">'+ic(k).replace('<svg','<svg width="22" height="22"')+NAV.find(n=>n[0]===k)[1]+'</button>').join('')+'</div>');
+  openModal('<h2>Mais</h2><div class="col">'+['wheel','ach','shop','hist','set'].filter(k=>k!=='shop'||S.settings.shop).map(k=>'<button class="btn" data-a="go" data-v="'+k+'">'+ic(k)+NAV.find(n=>n[0]===k)[1]+'</button>').join('')+'</div>');
 }
 /* ===== componentes de tarefa ===== */
 const canReview=o=>o.status==='awaiting_approval'&&o.submittedBy!==UI.me&&o.assignedTo!==UI.me;
+const dueLbl=s=>{const t=today();if(s===t)return 'Hoje';if(s===addDays(t,1))return 'Amanhã';if(s===addDays(t,-1))return 'Ontem';return WD[pd(s).getDay()]+' '+s.slice(8)+'/'+s.slice(5,7)};
 const empty=(e,t,s)=>'<div class="empty"><div class="big-e" aria-hidden="true">'+e+'</div><h3>'+t+'</h3><p>'+(s||'')+'</p></div>';
 function taskCard(o){
   const st=effStatus(o),c=cat(o.categoryId),a=o.assignedTo&&user(o.assignedTo),me=UI.me,adm=isAdmin(me),mine=o.assignedTo===me;let acts='';
@@ -995,7 +1008,7 @@ function taskCard(o){
   if(adm&&OPEN_ST.includes(o.status))acts+='<button class="btn sm" data-a="editocc" data-id="'+o.id+'">Editar</button>';
   if(adm&&(OPEN_ST.includes(o.status)||o.status==='awaiting_approval'))acts+='<button class="btn sm ghost" data-a="cancelocc" data-id="'+o.id+'">Cancelar</button>';
   return '<article class="card task"><div class="ic" aria-hidden="true">'+c.icon+'</div><div class="col" style="gap:6px"><div class="row sp"><h4>'+esc(o.title)+'</h4><span class="pill pts">'+o.points+' pts</span></div>'+
-   '<div class="meta">'+pill(st)+'<span>'+esc(c.name)+'</span><span>Prazo '+brDate(o.dueDate)+'</span><span>'+(a?'Responsável: '+esc(a.name):'Sem responsável')+'</span>'+(o.recurring?'<span>Recorrente</span>':'')+'</div>'+
+   '<div class="meta">'+pill(st)+'<span class="due" title="Prazo '+brDate(o.dueDate)+'">'+dueLbl(o.dueDate)+'</span><span>'+esc(c.name)+'</span>'+(a?(mine?'':'<span>'+esc(a.name)+'</span>'):'<span class="nobody">Sem responsável</span>')+(o.recurring?'<span class="tagfix">Fixa</span>':'')+'</div>'+
    (o.desc?'<p class="sm muted">'+esc(o.desc)+'</p>':'')+(o.status==='rejected'?'<p class="sm" style="color:var(--red)">Rejeitada: '+esc(o.rejectionReason)+'. Envie uma nova foto.</p>':'')+
    (o.status==='awaiting_approval'&&!canReview(o)?'<p class="sm muted">Aguardando aprovação de outra pessoa.</p>':'')+
    (acts?'<div class="acts" style="margin-top:2px">'+acts+'</div>':'')+'</div></article>';
@@ -1004,7 +1017,7 @@ function rankRows(pid,compact){
   const st=standings(pid),max=Math.max(1,...st.map(r=>r.pts)),lead=st[0]?st[0].pts:0;
   return st.map(r=>{const u=r.user;const w=Math.max(0,r.pts)/max*100;
     return '<div class="rank"><div class="pos">'+r.pos+'º</div>'+avHtml(u)+'<div class="col" style="gap:4px"><div class="row" style="gap:6px"><strong>'+uname(u)+'</strong>'+(r.pos===1&&r.pts>0?crown:'')+(r.tied&&r.pts>0?'<span class="pill">empate</span>':'')+(u.active?'':'<span class="pill">inativo</span>')+'</div>'+
-     '<div class="bar" role="img" aria-label="'+r.pts+' pontos"><i style="width:'+w+'%;background:'+esc(u.color)+'"></i></div>'+(compact?'':'<span class="sm muted">'+r.tasks+' tarefas aprovadas · '+(r.pos===1?'líder':(lead-r.pts)+' pts do líder')+' · '+trend(r.id,pid)+'</span>')+'</div><div class="big num" style="font-size:26px">'+r.pts+'</div></div>';
+     '<div class="bar" role="img" aria-label="'+r.pts+' pontos"><i style="width:'+w+'%;background:'+esc(u.color)+'"></i></div>'+(compact?'':'<span class="sm muted">'+pl(r.tasks,'tarefa aprovada','tarefas aprovadas')+' · '+(r.pos===1?'líder':(lead-r.pts)+' pts do líder')+' · '+trend(r.id,pid)+'</span>')+'</div><div class="big num" style="font-size:26px">'+r.pts+'</div></div>';
   }).join('')||empty('🏁','Nenhum jogador ainda','Cada pessoa cria o próprio cadastro na tela de entrada.');
 }
 function trend(uid,pid){
@@ -1028,7 +1041,7 @@ function lineChart(pid){
   series.forEach((s,k)=>{const d=s.pts.map((v,i)=>(i?'L':'M')+X(i)+' '+Y(v)).join(' ');
     g+='<path d="'+d+'" fill="none" stroke="'+esc(s.u.color)+'" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="'+dash[k%4]+'"/><circle cx="'+X(n-1)+'" cy="'+Y(s.pts[n-1])+'" r="6" fill="'+esc(s.u.color)+'" style="stroke:var(--line)" stroke-width="2.5"/>'});
   const leg=series.map((s,k)=>'<span><svg width="34" height="10" aria-hidden="true"><line x1="2" x2="32" y1="5" y2="5" stroke="'+esc(s.u.color)+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+dash[k%4]+'"/></svg>'+esc(s.u.name)+' ('+s.pts[n-1]+')</span>').join('');
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Pontos acumulados por dia">'+g+'</svg><div class="legend">'+leg+'</div><p class="sm muted">Pontos acumulados por dia, a partir de '+brDate(p.start)+'. Eixo vertical em pontos.</p>';
+  return '<svg class="lchart" viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto" role="img" aria-label="Pontos acumulados por dia">'+g+'</svg><div class="legend">'+leg+'</div><p class="sm muted">Pontos acumulados por dia, a partir de '+brDate(p.start)+'. Eixo vertical em pontos.</p>';
 }
 
 /* ===== Início ===== */
@@ -1038,23 +1051,20 @@ function vHome(){
   const late=S.occurrences.filter(o=>effStatus(o)==='late');const toReview=S.occurrences.filter(canReview);
   const done=taskTx(null,p.id).length,days=Math.max(0,diffDays(today(),p.end));
   const unassigned=S.occurrences.filter(o=>!o.assignedTo&&OPEN_ST.includes(o.status));
-  const feature=[...late,...unassigned.filter(o=>!late.includes(o)),...mine.filter(o=>!late.includes(o))].slice(0,5);
+  const feature=[...late,...unassigned.filter(o=>!late.includes(o)),...mine.filter(o=>!late.includes(o))].slice(0,3);
   let h='';
   if(isAdmin(me)&&(REMOTE?actives().length<4&&S.settings.openSignup!==false:!actives().length))h+='<div class="banner blue"><span><strong>'+(actives().length?actives().length+' de 4 jogadores cadastrados.':'Nenhum jogador cadastrado ainda.')+'</strong> Cada pessoa toca em "Criar meu cadastro" na tela de entrada'+(REMOTE&&S.settings.houseCode?' e digita o código da casa: <strong>'+esc(S.settings.houseCode)+'</strong>':'')+'.</span></div>';
   if(isAdmin(me)&&!S.tasks.some(d=>d.frequency!=='once'&&d.active))h+='<div class="banner blue"><span><strong>Nenhuma tarefa recorrente ativa.</strong> As 39 tarefas já estão cadastradas. Escolha quais valem no jogo.</span><button class="btn sm yellow" data-a="gopick">Escolher tarefas</button></div>';
   if(p.end<today()&&isAdmin(me))h+='<div class="banner red"><span><strong>O período terminou em '+brDate(p.end)+'.</strong> Encerre para anunciar o vencedor.</span><button class="btn sm yellow" data-a="close-period">Encerrar período</button></div>';
-  if(toReview.length)h+='<div class="banner blue"><span><strong>'+toReview.length+' comprovação(ões)</strong> esperando a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
+  if(toReview.length)h+='<div class="banner blue"><span><strong>'+(toReview.length===1?'1 comprovação espera':toReview.length+' comprovações esperam')+'</strong> a sua análise.</span><button class="btn sm primary" data-a="go" data-v="tasks" data-st="awaiting_approval">Analisar</button></div>';
   h+=homeHero(me,late.length?'late':done?'ok':'none');
-  h+=petHome();
-  h+=bossCard(p);
-  h+='<div class="grid stats">'+
-   '<div class="card stat"><span class="lbl">'+px('it-vassoura.png',22)+' Minhas pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(mine.filter(o=>effStatus(o)==='late').length)+' atrasada(s)</span></div>'+
-   '<div class="card stat"><span class="lbl">'+px('it-balde.png',22)+' Concluídas no mês</span><span class="big">'+done+'</span><span class="sm muted">por toda a casa</span></div>'+
-   '<div class="card stat"><span class="lbl">'+px('crown-2.png',24)+' Minha posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pontos · sequência de '+streak(me)+' dia(s)':'')+'</span></div>'+
-   '<div class="card stat"><span class="lbl">'+px('it-spray.png',22)+' Dias restantes</span><span class="big">'+days+'</span><span class="sm muted">até '+brDate(p.end)+'</span></div>'+
-   (S.settings.shop&&plays(user(me))?'<div class="card stat"><span class="lbl">'+px('coin.png',16)+' Minhas moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">não contam no ranking</span></div>':'')+'</div>';
-  h+='<div class="grid two"><section class="card"><div class="row sp"><h3>Ranking do mês</h3><button class="btn sm" data-a="go" data-v="rank">Ver tudo</button></div>'+rankRows(p.id,true)+'</section>'+
-   '<section class="card"><h3>Missões em destaque</h3>'+(feature.length?'<div class="col">'+feature.map(taskCard).join('')+'</div>':empty('🎯','Nenhuma missão urgente','Veja a aba Tarefas para o que está por vir.'))+'</section></div>';
+  h+='<section class="card sec-tasks"><div class="row sp"><h3>Missões em destaque</h3><button class="btn sm" data-a="go" data-v="tasks">Ver todas</button></div>'+(feature.length?'<div class="col">'+feature.map(taskCard).join('')+'</div>':empty('🎯','Nenhuma missão urgente','Veja a aba Tarefas para o que está por vir.'))+'</section>';
+  h+='<div class="stats3">'+
+   '<div class="card stat"><span class="lbl">'+px('it-vassoura.png',22)+' Pendentes</span><span class="big">'+mine.length+'</span><span class="sm muted">'+(n=>n===1?'1 atrasada':n+' atrasadas')(mine.filter(o=>effStatus(o)==='late').length)+'</span></div>'+
+   '<div class="card stat"><span class="lbl">'+px('crown-2.png',24)+' Posição</span><span class="big">'+(mypos?mypos.pos+'º':'—')+'</span><span class="sm muted">'+(mypos?mypos.pts+' pts':'')+'</span></div>'+
+   (S.settings.shop&&plays(user(me))?'<div class="card stat"><span class="lbl">'+px('coin.png',16)+' Moedas</span><span class="big">'+balance(me)+'</span><span class="sm muted">fora do ranking</span></div>':'<div class="card stat"><span class="lbl">'+px('it-balde.png',22)+' No mês</span><span class="big">'+done+'</span><span class="sm muted">concluídas</span></div>')+'</div>';
+  h+='<div class="grid two">'+petHome()+bossCard(p)+'</div>';
+  h+='<section class="card"><div class="row sp"><h3>Ranking do mês</h3><button class="btn sm" data-a="go" data-v="rank">Ver tudo</button></div>'+rankRows(p.id,true)+'</section>';
   const ua=S.unlocked.slice(-4).reverse();
   h+='<section class="card"><h3>Conquistas recentes</h3>'+(ua.length?'<div class="grid">'+ua.map(x=>{const a=ACH.find(k=>k.id===x.achId),u=user(x.userId);return '<div class="ach"><div class="ic">'+a.icon+'</div><div><strong>'+esc(a.name)+'</strong><div class="sm muted">'+esc(u.name)+' · '+brTime(x.at)+'</div></div></div>'}).join('')+'</div>':empty('🏅','Ainda sem conquistas','A primeira tarefa aprovada desbloqueia a Primeira Missão.'))+'</section>';
   return h;
@@ -1105,7 +1115,7 @@ function vRank(){
   if(p.status==='closed')h+='<div class="banner blue"><span><strong>Resultado oficial:</strong> '+(p.winnerId?'campeão '+esc(nameOf(p.winnerId))+' · prêmio R$ '+p.prizeAmount:'sem vencedor')+(p.tieResolution?' · empate decidido: '+esc(p.tieResolution.note):'')+'</span></div>';
   h+='<section class="card"><h3>Classificação</h3>'+rankRows(pid)+'</section>';
   const st=standings(pid);
-  h+='<section class="card"><h3>Comparação</h3><div class="scroll"><table class="tbl"><thead><tr><th>Jogador</th><th>Pontos</th><th>Tarefas</th><th>Pts recorrentes</th><th>Sequência</th><th>Histórico</th></tr></thead><tbody>'+st.map(r=>'<tr><td>'+esc(r.user.avatar+' '+r.user.name)+'</td><td class="num">'+r.pts+'</td><td class="num">'+r.tasks+'</td><td class="num">'+r.rec+'</td><td class="num">'+streak(r.id)+' dia(s)</td><td class="num">'+score(r.id)+' pts</td></tr>').join('')+'</tbody></table></div></section>';
+  h+='<section class="card"><h3>Comparação</h3><div class="scroll"><table class="tbl"><thead><tr><th>Jogador</th><th>Pontos</th><th>Tarefas</th><th>Pts recorrentes</th><th>Sequência</th><th>Histórico</th></tr></thead><tbody>'+st.map(r=>'<tr><td><span class="row" style="gap:8px">'+avHtml(r.user,'sm')+esc(r.user.name)+'</span></td><td class="num">'+r.pts+'</td><td class="num">'+r.tasks+'</td><td class="num">'+r.rec+'</td><td class="num">'+pl(streak(r.id),'dia','dias')+'</td><td class="num">'+score(r.id)+' pts</td></tr>').join('')+'</tbody></table></div></section>';
   h+='<section class="card"><h3>Evolução no mês</h3>'+lineChart(pid)+'</section>';
   const cl=S.periods.filter(x=>x.status==='closed').reverse();
   h+='<section class="card"><h3>Campeões e prêmios</h3>'+(cl.length?cl.map(x=>{const rd=S.restDays.filter(r=>r.periodId===x.id);
@@ -1122,7 +1132,7 @@ function wheelSvg(pool){
   if(n===1)g='<circle r="98" cx="0" cy="0" style="fill:var(--yellow)" stroke-width="3" class="wl"/>';
   pool.forEach((o,i)=>{if(n===1)return;const a0=(i*seg-90)*Math.PI/180,a1=((i+1)*seg-90)*Math.PI/180,R=98;
     g+='<path d="M0 0L'+(R*Math.cos(a0)).toFixed(2)+' '+(R*Math.sin(a0)).toFixed(2)+'A'+R+' '+R+' 0 '+(seg>180?1:0)+' 1 '+(R*Math.cos(a1)).toFixed(2)+' '+(R*Math.sin(a1)).toFixed(2)+'Z" style="fill:var('+WCOL[i%5]+')" class="wl"/>'});
-  if(n<=12)pool.forEach((o,i)=>{const mid=(i+.5)*seg-90;const t=(o.icon?AVT(o.icon)+' ':'')+o.label;const flip=Math.cos(mid*Math.PI/180)<0;g+='<text transform="rotate('+(flip?mid+180:mid).toFixed(1)+') translate('+(flip?-30:30)+' 0)" text-anchor="'+(flip?'end':'start')+'" font-size="'+(n>8?5.5:7)+'" font-weight="800" dominant-baseline="middle" style="fill:#1B2340;paint-order:stroke;stroke:#ffffff88;stroke-width:1.2px">'+esc(t.length>(n>8?12:15)?t.slice(0,(n>8?11:14))+'…':t)+'</text>'});
+  if(n<=30)pool.forEach((o,i)=>{const mid=(i+.5)*seg-90;const t=(o.icon?AVT(o.icon)+' ':'')+o.label;const flip=Math.cos(mid*Math.PI/180)<0;g+='<text transform="rotate('+(flip?mid+180:mid).toFixed(1)+') translate('+(flip?-30:30)+' 0)" text-anchor="'+(flip?'end':'start')+'" font-size="'+(n>20?4:n>12?5.2:n>8?6.2:7.5)+'" font-weight="800" dominant-baseline="middle" style="fill:#1B2340;paint-order:stroke;stroke:#ffffff88;stroke-width:1.2px">'+esc(t.length>(n>20?9:n>12?11:n>8?12:15)?t.slice(0,(n>20?8:n>12?10:n>8?11:14))+'…':t)+'</text>'});
   return '<svg class="wheel" viewBox="-102 -102 204 204" role="img" aria-label="Roleta com '+n+' opções" style="transform:rotate('+UI.spin.rot+'deg)"><g stroke="#1B2340" stroke-width="2.5">'+g+'</g><circle r="9" style="fill:var(--surface)" stroke="#1B2340" stroke-width="3"/></svg>';
 }
 function vWheel(){
@@ -1147,7 +1157,7 @@ function vWheel(){
     if(sp.mode==='challenge')h+='<p class="muted sm">Sorteia um desafio da lista. Desafios não geram pontos automaticamente. A lista pode ser editada em Ajustes.</p>';
     if(sp.stage==='confirm'){
       h+=pool.length?'<div class="banner blue col" style="align-items:flex-start"><strong>Participam deste sorteio ('+pool.length+'):</strong><span>'+esc(pool.map(x=>x.label).join(', '))+'</span></div><div class="row"><button class="btn green" data-a="spin-go">Confirmar e girar</button><button class="btn ghost" data-a="spin-cancel">Cancelar</button></div>':'';
-    }else h+=pool.length?'<div><strong>'+pool.length+' opção(ões) elegível(is)</strong><p class="sm muted">'+esc(pool.map(x=>x.label).join(', '))+'</p></div><button class="btn yellow" data-a="spin-ask" '+(pool.length<2&&sp.mode==='user'?'disabled':'')+'>Sortear</button>':empty('🎡','Nada para sortear','Não há opções elegíveis neste modo.');
+    }else h+=pool.length?'<div><strong>'+(pool.length===1?'1 opção elegível':pool.length+' opções elegíveis')+'</strong><p class="sm muted">'+esc(pool.map(x=>x.label).join(', '))+'</p></div><button class="btn yellow" data-a="spin-ask" '+(pool.length<2&&sp.mode==='user'?'disabled':'')+'>Sortear</button>':empty('🎡','Nada para sortear','Não há opções elegíveis neste modo.');
     h+='</section><section class="card"><div class="wheelbox">'+(pool.length?wheelSvg(pool.slice(0,24)):'')+'</div></section>';
   }
   const last=S.spins.slice(-5).reverse();
@@ -1166,13 +1176,14 @@ function vAch(){
 }
 
 /* ===== Loja ===== */
+const rwIcon=r=>{const n=normT(r.name);return n.includes('filme')?'🎬':n.includes('jantar')?'🍽️':n.includes('hora livre')?'⏳':n.includes('playlist')?'🎵':n.includes('favor')?'🤝':r.kind==='avatar'?(r.emoji||'🦁'):r.kind==='title'?'👑':'🎁'};
 function vShop(){
   const me=UI.me,adm=isAdmin(me);let h='<div class="row sp"><div class="tabs" role="tablist"><button class="tab" role="tab" data-a="shoptab" data-t="shop" aria-selected="'+(UI.shopTab==='shop')+'">Recompensas</button><button class="tab" role="tab" data-a="shoptab" data-t="mine" aria-selected="'+(UI.shopTab==='mine')+'">Resgates</button></div><div class="card row" style="padding:8px 14px"><span class="lbl muted">Moedas</span><span class="big" style="font-size:26px">'+balance(me)+'</span></div></div>';
   h+='<p class="muted sm">Moedas vêm das tarefas aprovadas e não entram no ranking nem no prêmio do mês.</p>';
   if(UI.shopTab==='shop'){
     h+='<div class="grid">'+S.rewards.filter(r=>r.active||adm).map(r=>{const can=balance(me)>=r.cost&&(r.stock==null||r.stock>0)&&r.active;
-     return '<article class="card col"><div class="row sp"><h4>'+esc(r.name)+'</h4><span class="pill pts">'+r.cost+' moedas</span></div><p class="sm muted">'+esc(r.desc)+'</p><div class="meta">'+(r.stock!=null?'<span>Estoque: '+r.stock+'</span>':'')+(r.limit?'<span>Limite: '+r.limit+(r.kind==='normal'?' por mês':'')+'</span>':'')+(r.active?'':'<span class="pill">inativa</span>')+'</div>'+
-      '<div class="row"><button class="btn sm '+(can?'yellow':'')+'" data-a="buy" data-id="'+r.id+'" '+(can?'':'disabled')+'>'+(r.stock===0?'Esgotada':balance(me)<r.cost?'Faltam '+(r.cost-balance(me))+' moedas':'Resgatar')+'</button>'+(adm?'<button class="btn sm ghost" data-a="editreward" data-id="'+r.id+'">Editar</button>':'')+'</div></article>'}).join('')+'</div>'+(adm?'<button class="btn" data-a="editreward">Nova recompensa</button>':'');
+     return '<article class="card col rw"><div class="row sp"><div class="row"><div class="task"><div class="ic">'+rwIcon(r)+'</div></div><h4>'+esc(r.name)+'</h4></div><span class="pill pts">'+r.cost+'</span></div><p class="sm muted">'+esc(r.desc)+'</p><div class="meta">'+(r.stock!=null?'<span>Estoque: '+r.stock+'</span>':'')+(r.limit?'<span>Limite: '+r.limit+(r.kind==='normal'?' por mês':'')+'</span>':'')+(r.active?'':'<span class="pill">inativa</span>')+'</div>'+
+      (!can&&r.active&&r.stock!==0?'<div class="bar" aria-hidden="true"><i style="width:'+Math.min(100,Math.round(balance(me)/r.cost*100))+'%;background:var(--yellow)"></i></div>':'')+'<div class="row"><button class="btn sm '+(can?'yellow':'')+'" data-a="buy" data-id="'+r.id+'" '+(can?'':'disabled')+'>'+(r.stock===0?'Esgotada':balance(me)<r.cost?'Faltam '+(r.cost-balance(me))+' moedas':'Resgatar')+'</button>'+(adm?'<button class="btn sm ghost" data-a="editreward" data-id="'+r.id+'">Editar</button>':'')+'</div></article>'}).join('')+'</div>'+(adm?'<button class="btn" data-a="editreward">Nova recompensa</button>':'');
   }else{
     const l=S.redemptions.filter(r=>adm||r.userId===me||r.status==='pending'||r.status==='approved').slice().reverse();
     h+='<div class="col">'+(l.length?l.map(r=>{const mineR=r.userId===me,lab={pending:'Pendente',approved:'Aprovada',done:'Concluída',cancelled:'Cancelada'}[r.status];
