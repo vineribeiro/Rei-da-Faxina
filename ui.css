@@ -117,3 +117,33 @@ article.task{padding:14px}
 .sheet:has(.testpop){border:4px solid #FFC21A}
 @media(min-width:900px){.side{position:sticky;top:12px;align-self:start}}
 .rw>.row.sp{flex-wrap:nowrap;align-items:flex-start}.rw>.row.sp>.row{flex:1;min-width:0;flex-wrap:nowrap;gap:10px}.rw .task{flex:none}
+
+/* ===== acessibilidade: tamanhos mínimos e toque de 44px ===== */
+.btn,.tab,.nav{min-height:44px}
+.btn.sm{font-size:12px;min-height:44px;padding:6px 12px}
+.tab{font-size:12px}
+.pill.lv,.badge,.toast,h4,.rw h4,.nav{font-size:12px}
+label.f,.fs,.lbl,.stat .lbl,.stats3 .lbl,.tbl th,.hud-row .hl,.slot .sm,.title .foot{font:400 17px/1.2 var(--font-b);letter-spacing:.02em}
+.hud-row .hl{width:38px}
+.bottom button{font:400 17px/1 var(--font-b);min-height:60px}
+.bottom button svg{width:28px;height:28px}
+.t3 .foot{font-size:12px}
+.meta .tagfix{font-size:17px}
+.proofopt{display:flex;flex-direction:column;gap:8px;margin-top:6px}.proofopt p{margin:0}
+@media(max-width:700px){
+ .top{flex-wrap:nowrap;align-items:flex-start;gap:8px}
+ .top .dr{display:none}
+ .top small{font-size:17px}
+ .top h1{font-size:18px}
+ .me strong,.me .pill{display:none}
+ .me{gap:6px;flex:none}
+ .btn.sm.mute{padding:6px 10px}
+}
+
+@media(max-width:700px){
+ .bchips{display:flex;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:6px;-webkit-overflow-scrolling:touch}
+ .bchips .tab{flex:none}
+ .card.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+ .card.form>label:last-child{grid-column:1/-1}
+}
+.stat .big,.stats3 .big{font-size:28px}

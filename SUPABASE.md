@@ -96,3 +96,7 @@ Documentação oficial das chaves: https://supabase.com/docs/guides/getting-star
 ## Reinício geral e tarefas fixas (1º de novembro de 2026)
 
 Rode `supabase/reinicio.sql` uma vez no SQL Editor. Ele adiciona a frequência "Dias da semana" e a data de início do jogo, apaga o andamento (tarefas, pontos, moedas, histórico, bichinhos e períodos, mantendo contas, loja e tabela de pontos), abre o período 01/11 a 30/11 e cadastra as tarefas fixas de Davi, Camila e Vinicius. Antes de 1º de novembro nenhuma tarefa é gerada e o app mostra o aviso de início. Se um nome de perfil não for encontrado, o script para sem alterar nada e lista os nomes cadastrados.
+
+## Comprovação sem foto
+
+Rode `supabase/comprovacao.sql` uma vez no SQL Editor. O administrador escolhe o modo em Ajustes, no bloco "Jogo e premiação": só foto, foto ou "fiz, sem foto" (outra pessoa confirma, padrão) ou sem foto na confiança (vale na hora).

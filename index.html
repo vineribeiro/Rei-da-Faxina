@@ -393,7 +393,7 @@ function seed(){
   const mk=(n,a,c,r)=>({id:uid('u'),name:n,avatar:a,color:c,role:r,active:true,email:null,pinHash:null,salt:null,avatars:[],title:'',createdAt:t});
   const users=[Object.assign(mk('Administrador','🛡️',COLORS[0],'admin'),{plays:false})];
   return {v:1,setupDone:false,
-    settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,startDate:today(),gameStart:'2026-11-01',
+    settings:{appName:'Rei da Faxina',openSignup:true,prize:50,restDays:2,shop:true,coinRate:1,proofMode:'both',startDate:today(),gameStart:'2026-11-01',
       penalty:{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:DEFAULT_CHALLENGES.slice()},
     users,categories:CATS.map(c=>({id:c[0],name:c[1],icon:c[2]})),
     catalog:CATALOG.map((c,i)=>({id:'m'+i,title:c[0],points:c[1],categoryId:c[2],freq:c[3]})),
@@ -593,6 +593,25 @@ A.submit=async(by,id,photo)=>{
   S.evidences.push({id:uid('e'),occId:id,submittedBy:by,photoId:pid,submittedAt:nowIso(),reviewStatus:'pending',reviewedBy:null,reviewedAt:null,rejectionReason:''});
   o.log.push({at:nowIso(),by,text:'Comprovação enviada'});audit(by,'submit','occurrence',id,'');commit();return ok();
 };
+A.noPhoto=(by,id)=>{
+  const u=actor(by);if(!u)return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
+  if(o.assignedTo!==by)return fail('Só o responsável pode enviar a comprovação.');
+  if(!['available','in_progress','rejected'].includes(o.status))return fail('Esta tarefa não aceita novo envio agora.');
+  const p=openPeriod();if(!p||o.periodId!==p.id)return fail('O período desta tarefa foi encerrado.');
+  const mode=S.settings.proofMode||'both';if(mode==='photo')return fail('Neste jogo a comprovação é só por foto.');
+  o.submittedBy=by;o.submittedAt=nowIso();o.rejectionReason='';o.photoId=null;
+  if(mode==='trust'){
+    if(S.scoreTx.some(t=>t.occId===id&&t.type==='task'))return fail('Os pontos desta tarefa já foram creditados.');
+    o.status='done';o.completedAt=nowIso();o.reviewedBy=null;o.reviewedAt=nowIso();
+    addTx(by,'task',o.points,id,o.title,'system');
+    const coins=Math.floor(o.points*(S.settings.coinRate||0));if(coins>0)wallet(by,'earn',coins,id,'Tarefa: '+o.title);
+    o.log.push({at:nowIso(),by,text:'Feita sem foto, aprovada na confiança, +'+o.points+' pontos'});audit(by,'approve','occurrence',id,'auto');
+    checkAch(by);commit();return ok({points:o.points,auto:true});
+  }
+  o.status='awaiting_approval';
+  S.evidences.push({id:uid('e'),occId:id,submittedBy:by,photoId:null,submittedAt:nowIso(),reviewStatus:'pending',reviewedBy:null,reviewedAt:null,rejectionReason:''});
+  o.log.push({at:nowIso(),by,text:'Marcada como feita, sem foto'});audit(by,'submit','occurrence',id,'sem foto');commit();return ok({auto:false});
+};
 A.review=(by,id,approve,reason)=>{
   const u=actor(by);if(!u)return NOAUTH;const o=occ(id);if(!o)return fail('Tarefa não encontrada.');
   if(o.status!=='awaiting_approval')return fail('Esta tarefa não está aguardando aprovação.');
@@ -756,12 +775,14 @@ A.signup=d=>{
   const u={id:uid('u'),name,avatar:AVATARS.includes(d.avatar)?d.avatar:AVATARS[0],color:COLORS.includes(d.color)?d.color:COLORS[0],role:'user',plays:true,active:true,email:em,pinHash:null,salt:null,avatars:[],title:'',createdAt:nowIso()};
   S.users.push(u);audit(u.id,'signup','user',u.id,name);commit();return ok({id:u.id});
 };
+A.setProof=(by,m)=>A.saveSettings(by,{proofMode:m});
 A.saveSettings=(by,d)=>{
   if(!actor(by,true))return NOAUTH;const s=S.settings;
   if(d.appName!=null){const n=String(d.appName).trim();if(n.length<2||n.length>30)return fail('O nome do app deve ter de 2 a 30 caracteres.');s.appName=n}
   if(d.prize!=null){if(!(d.prize>=0&&d.prize<=100000))return fail('Valor do prêmio inválido.');s.prize=d.prize}
   if(d.restDays!=null){if(!(Number.isInteger(d.restDays)&&d.restDays>=0&&d.restDays<=10))return fail('Dias de descanso inválidos.');s.restDays=d.restDays}
   if(d.shop!=null)s.shop=!!d.shop;
+  if(d.proofMode!=null){if(!['both','photo','trust'].includes(d.proofMode))return fail('Modo de comprovação inválido.');s.proofMode=d.proofMode}
   if(d.openSignup!=null)s.openSignup=!!d.openSignup;
   if(d.coinRate!=null){if(!(d.coinRate>=0&&d.coinRate<=10))return fail('Taxa de moedas inválida.');s.coinRate=d.coinRate}
   if(d.penalty){const p=d.penalty,c=s.penalty;
@@ -825,7 +846,7 @@ function verifyIntegrity(st){
 }
 async function exportBackup(){
   const photos={};for(const o of S.occurrences){if(o.photoId){const d=await Adapter.getPhoto(o.photoId);if(d)photos[o.photoId]=d}}
-  for(const e of S.evidences){if(!photos[e.photoId]){const d=await Adapter.getPhoto(e.photoId);if(d)photos[e.photoId]=d}}
+  for(const e of S.evidences){if(e.photoId&&!photos[e.photoId]){const d=await Adapter.getPhoto(e.photoId);if(d)photos[e.photoId]=d}}
   return JSON.stringify({app:'casa-em-jogo',version:1,exportedAt:nowIso(),state:S,photos});
 }
 async function importBackup(by,text){
@@ -982,7 +1003,7 @@ function vShell(inner){
   const mob=['home','tasks','pet','rank'].map(k=>{const n=NAV.find(x=>x[0]===k);return '<button data-a="go" data-v="'+k+'" '+(UI.view===k?'aria-current="page"':'')+'>'+ic(k)+n[1]+(b=>b?'<span class="badge" aria-label="'+b.t+'">'+b.n+'</span>':'')(navBadge(k))+'</button>'}).join('')+'<button data-a="more" '+(['wheel','ach','shop','hist','set'].includes(UI.view)?'aria-current="page"':'')+'>'+ic('more')+'Mais'+(navBadge('shop')?'<span class="badge" aria-label="'+navBadge('shop').t+'">'+navBadge('shop').n+'</span>':'')+'</button>';
   const days=p?Math.max(0,diffDays(today(),p.end)):0;
   return '<div class="app"><aside class="side"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(S.settings.appName)+'</div>'+side+'</aside><div class="main" data-v="'+UI.view+'">'+
-   '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · '+(days===0?'último dia':days+' dias restantes'):'')+' · hoje '+brDate(today())+'</small></div>'+
+   '<header class="top"><div class="t"><h1>'+esc(NAV.find(n=>n[0]===UI.view)[1])+'</h1><small>'+(p?'<span class="dr">'+esc(periodLabel(p))+' · '+brDate(p.start)+' a '+brDate(p.end)+' · </span>'+(days===0?'último dia':days+' dias restantes'):'')+'<span class="dr"> · hoje '+brDate(today())+'</span></small></div>'+
    '<div class="me'+(UI.view==='home'?' compact':'')+'">'+avHtml(me,'sm')+'<strong>'+esc(me.name)+'</strong>'+(me.plays===false?'<span class="pill">Administrador</span>':'<span class="pill lv">'+px('crown-'+crownTier(levelOf(me.id))+'.png',20)+' NV '+levelOf(me.id)+'</span>')+'<button class="btn sm mute" data-a="mute" aria-label="'+(SFX.muted()?'Ligar som':'Desligar som')+'">'+(SFX.muted()?'🔇':'🔊')+'</button><button class="btn sm" data-a="logout">Sair</button></div></header>'+
    (Adapter.volatile?'<div class="banner red" role="alert">Este navegador não permite salvar dados. As alterações serão perdidas ao fechar a página.</div>':'')+
    startBanner()+inner+'</div><nav class="bottom" aria-label="Navegação">'+mob+'</nav></div>';
@@ -1001,15 +1022,15 @@ const dueLbl=s=>{const t=today();if(s===t)return 'Hoje';if(s===addDays(t,1))retu
 const empty=(e,t,s)=>'<div class="empty"><div class="big-e" aria-hidden="true">'+e+'</div><h3>'+t+'</h3><p>'+(s||'')+'</p></div>';
 function taskCard(o){
   const st=effStatus(o),c=cat(o.categoryId),a=o.assignedTo&&user(o.assignedTo),me=UI.me,adm=isAdmin(me),mine=o.assignedTo===me;let acts='';
-  if(mine&&['available','in_progress','rejected'].includes(o.status)){if(o.status==='available')acts+='<button class="btn sm" data-a="start" data-id="'+o.id+'">Iniciar</button>';acts+='<button class="btn sm green" data-a="submit" data-id="'+o.id+'">Enviar foto</button>'}
+  if(mine&&['available','in_progress','rejected'].includes(o.status)){if(o.status==='available')acts+='<button class="btn sm" data-a="start" data-id="'+o.id+'">Iniciar</button>';acts+='<button class="btn sm green" data-a="submit" data-id="'+o.id+'">Concluir</button>'}
   if(!o.assignedTo&&OPEN_ST.includes(o.status))acts+='<button class="btn sm yellow" data-a="claim" data-id="'+o.id+'">Assumir</button>';
   if(canReview(o))acts+='<button class="btn sm primary" data-a="review" data-id="'+o.id+'">Revisar</button>';
-  if(o.photoId&&o.status!=='awaiting_approval')acts+='<button class="btn sm" data-a="proof" data-id="'+o.id+'">Ver prova</button>';
+  if(o.submittedBy&&o.status!=='awaiting_approval')acts+='<button class="btn sm" data-a="proof" data-id="'+o.id+'">Ver prova</button>';
   if(adm&&OPEN_ST.includes(o.status))acts+='<button class="btn sm" data-a="editocc" data-id="'+o.id+'">Editar</button>';
   if(adm&&(OPEN_ST.includes(o.status)||o.status==='awaiting_approval'))acts+='<button class="btn sm ghost" data-a="cancelocc" data-id="'+o.id+'">Cancelar</button>';
   return '<article class="card task"><div class="ic" aria-hidden="true">'+c.icon+'</div><div class="col" style="gap:6px"><div class="row sp"><h4>'+esc(o.title)+'</h4><span class="pill pts">'+o.points+' pts</span></div>'+
    '<div class="meta">'+pill(st)+'<span class="due" title="Prazo '+brDate(o.dueDate)+'">'+dueLbl(o.dueDate)+'</span><span>'+esc(c.name)+'</span>'+(a?(mine?'':'<span>'+esc(a.name)+'</span>'):'<span class="nobody">Sem responsável</span>')+(o.recurring?'<span class="tagfix">Fixa</span>':'')+'</div>'+
-   (o.desc?'<p class="sm muted">'+esc(o.desc)+'</p>':'')+(o.status==='rejected'?'<p class="sm" style="color:var(--red)">Rejeitada: '+esc(o.rejectionReason)+'. Envie uma nova foto.</p>':'')+
+   (o.desc?'<p class="sm muted">'+esc(o.desc)+'</p>':'')+(o.status==='rejected'?'<p class="sm" style="color:var(--red)">Rejeitada: '+esc(o.rejectionReason)+'. Envie a comprovação de novo.</p>':'')+
    (o.status==='awaiting_approval'&&!canReview(o)?'<p class="sm muted">Aguardando aprovação de outra pessoa.</p>':'')+
    (acts?'<div class="acts" style="margin-top:2px">'+acts+'</div>':'')+'</div></article>';
 }
@@ -1197,7 +1218,7 @@ function vShop(){
 function events(){
   const E=[];const tc=t=>{const o=occ(t.occId);return o?o.categoryId:null};
   S.scoreTx.forEach(t=>{const sg=t.points>0?'+':'';
-    const m={task:['task','Tarefa aprovada: '+t.reason],adjust:['adjust','Ajuste manual: '+t.reason],penalty:['penalty','Penalidade: '+t.reason],reversal:['adjust','Estorno: '+t.reason]}[t.type];E.push({at:t.createdAt,userId:t.userId,type:m[0],text:m[1],pts:sg+t.points,cat:tc(t)})});
+    const m={task:['task','Tarefa aprovada'+(t.reason?': '+t.reason:'')],adjust:['adjust','Ajuste manual: '+t.reason],penalty:['penalty','Penalidade: '+t.reason],reversal:['adjust','Estorno: '+t.reason]}[t.type];E.push({at:t.createdAt,userId:t.userId,type:m[0],text:m[1],pts:sg+t.points,cat:tc(t)})});
   S.evidences.filter(e=>e.reviewStatus==='rejected').forEach(e=>{const o=occ(e.occId);E.push({at:e.reviewedAt,userId:e.submittedBy,type:'reject',text:'Comprovação rejeitada ('+(o?o.title:'')+'): '+e.rejectionReason,cat:o?o.categoryId:null})});
   S.unlocked.forEach(x=>E.push({at:x.at,userId:x.userId,type:'ach',text:'Conquista: '+ACH.find(a=>a.id===x.achId).name}));
   S.redemptions.forEach(r=>E.push({at:r.createdAt,userId:r.userId,type:'shop',text:'Resgate: '+r.name+' ('+r.cost+' moedas, '+({pending:'pendente',approved:'aprovado',done:'concluído',cancelled:'cancelado'}[r.status])+')'}));
@@ -1273,7 +1294,7 @@ function vSet(){
   }
   if(t==='rules'&&adm){
     const pe=s.penalty,p=openPeriod();
-    h+='<form class="card col" data-f="rules"><h3>Jogo e premiação</h3><div class="form"><label class="f">Nome do app<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label><label class="f">Prêmio (R$)<input class="in" type="number" min="0" name="prize" value="'+s.prize+'" required></label><label class="f">Dias de descanso<input class="in" type="number" min="0" max="10" name="restDays" value="'+s.restDays+'" required></label><label class="f">Moedas por ponto<input class="in" type="number" min="0" max="10" name="coinRate" value="'+s.coinRate+'" required></label></div><label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Loja de recompensas ativa</label>'+
+    h+='<form class="card col" data-f="rules"><h3>Jogo e premiação</h3><div class="form"><label class="f">Nome do app<input class="in" name="appName" value="'+esc(s.appName)+'" maxlength="30" required></label><label class="f">Prêmio (R$)<input class="in" type="number" min="0" name="prize" value="'+s.prize+'" required></label><label class="f">Dias de descanso<input class="in" type="number" min="0" max="10" name="restDays" value="'+s.restDays+'" required></label><label class="f">Moedas por ponto<input class="in" type="number" min="0" max="10" name="coinRate" value="'+s.coinRate+'" required></label></div><label class="f">Comprovação das tarefas<select class="in" name="proof"><option value="both" '+((s.proofMode||'both')==='both'?'selected':'')+'>Foto ou "fiz sem foto" (outra pessoa confirma)</option><option value="photo" '+(s.proofMode==='photo'?'selected':'')+'>Só com foto</option><option value="trust" '+(s.proofMode==='trust'?'selected':'')+'>Na confiança (vale na hora, sem aprovação)</option></select></label><label class="chk"><input type="checkbox" name="shop" '+(s.shop?'checked':'')+'> Loja de recompensas ativa</label>'+
      '<h3>Penalidades</h3><label class="chk"><input type="checkbox" name="pen" '+(pe.enabled?'checked':'')+'> Penalidades ativas</label><div class="form"><label class="f">Pontos por atraso<input class="in" type="number" min="0" max="100" name="late" value="'+pe.latePoints+'"></label><label class="f">Pontos por não execução<input class="in" type="number" min="0" max="100" name="miss" value="'+pe.missPoints+'"></label><label class="f">Tolerância (dias)<input class="in" type="number" min="0" max="30" name="grace" value="'+pe.grace+'"></label><label class="f">Máximo por tarefa<input class="in" type="number" min="0" max="100" name="max" value="'+pe.maxPerOcc+'"></label></div><p class="sm muted">Recomenda-se definir as regras antes do início do período. Mudanças valem para os próximos eventos e ficam na auditoria.</p>'+
      '<label class="f">Desafios da roleta (um por linha)<textarea class="in" name="challenges">'+esc(s.challenges.join('\n'))+'</textarea></label><button class="btn primary" type="submit">Salvar regras</button></form>';
     h+='<form class="card col" data-f="catalog"><h3>Tabela de pontos (modelos)</h3><div class="form">'+S.catalog.map(m=>'<label class="f">'+esc(cat(m.categoryId).icon+' '+m.title)+'<input class="in" type="number" min="1" max="500" name="m_'+m.id+'" value="'+m.points+'"></label>').join('')+'</div><button class="btn primary" type="submit">Salvar pontos dos modelos</button></form>';
@@ -1365,22 +1386,24 @@ function taskForm(def){
    '<p class="sm muted">Tarefa sem responsável aparece para qualquer pessoa assumir e só pontua depois de atribuída.</p><div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>');
 }
 function submitModal(id){
-  const o=occ(id);UI.photo=null;
-  openModal('<h2>Enviar comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos · prazo '+brDate(o.dueDate)+'</p>'+(o.status==='rejected'?'<div class="banner red">Rejeitada: '+esc(o.rejectionReason)+'</div>':'')+
-   '<div class="drop"><label class="btn" for="photocam">Tirar foto</label><label class="btn" for="photofile">Escolher da galeria</label></div>'+
+  const o=occ(id),mode=S.settings.proofMode||'both';UI.photo=null;
+  const noPhoto=mode==='photo'?'':'<div class="proofopt"><p class="sm muted">Sem tempo para foto?</p><button class="btn yellow" data-a="nophoto" data-id="'+id+'">'+(mode==='trust'?'Marcar como feita (vale agora)':'Fiz, sem foto (outra pessoa confirma)')+'</button></div>';
+  openModal('<h2>Concluir tarefa</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos · prazo '+brDate(o.dueDate)+'</p>'+(o.status==='rejected'?'<div class="banner red">Rejeitada: '+esc(o.rejectionReason)+'</div>':'')+
+   '<h4>Com foto</h4><div class="drop"><label class="btn" for="photocam">Tirar foto</label><label class="btn" for="photofile">Escolher da galeria</label></div>'+
    '<input class="sr" id="photocam" type="file" accept="image/jpeg,image/png,image/webp" capture="environment"><input class="sr" id="photofile" type="file" accept="image/jpeg,image/png,image/webp">'+
    '<div id="prevbox" class="muted sm">Nenhuma foto escolhida. Aceitamos JPEG, PNG e WebP de até 10 MB.</div>'+
-   '<div class="row"><button class="btn green" id="sendbtn" data-a="send-proof" data-id="'+id+'" disabled>Enviar para aprovação</button><button class="btn ghost" data-a="close">Cancelar</button></div>');
+   '<button class="btn green" id="sendbtn" data-a="send-proof" data-id="'+id+'" disabled>Enviar foto para aprovação</button>'+noPhoto+
+   '<div class="row"><button class="btn ghost" data-a="close">Cancelar</button></div>');
 }
 function reviewModal(id){
   const o=occ(id);
-  openModal('<h2>Revisar comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos<br><span class="muted sm">Enviada por '+esc(nameOf(o.submittedBy))+' em '+brTime(o.submittedAt)+'</span></p><img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação enviada por '+esc(nameOf(o.submittedBy))+'">'+
+  openModal('<h2>Revisar comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+o.points+' pontos<br><span class="muted sm">Enviada por '+esc(nameOf(o.submittedBy))+' em '+brTime(o.submittedAt)+'</span></p>'+(o.photoId?'<img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação enviada por '+esc(nameOf(o.submittedBy))+'">':'<div class="banner blue">Sem foto. '+esc(nameOf(o.submittedBy))+' disse que fez. Aprove só se você viu que está feito.</div>')+
    '<p class="sm muted">A foto mostra uma situação, não garante todo o trabalho. Aprove se a tarefa parece feita.</p><button class="btn green" data-a="approve" data-id="'+id+'">Aprovar e creditar '+o.points+' pontos</button>'+
    '<label class="f">Se for rejeitar, explique o motivo<textarea class="in" id="rejreason" placeholder="Ex.: a pia ainda tem louça"></textarea></label><button class="btn danger" data-a="reject" data-id="'+id+'">Rejeitar</button><button class="btn ghost" data-a="close">Voltar</button>');
 }
 function proofModal(id){
   const o=occ(id);
-  openModal('<h2>Comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+(o.status==='done'?'aprovada':STAT[o.status].toLowerCase())+'</p><img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação"><div class="meta"><span>Enviada por '+esc(nameOf(o.submittedBy))+' '+(o.submittedAt?brTime(o.submittedAt):'')+'</span>'+(o.reviewedBy?'<span>Analisada por '+esc(nameOf(o.reviewedBy))+' '+brTime(o.reviewedAt)+'</span>':'')+'</div>'+
+  openModal('<h2>Comprovação</h2><p><strong>'+esc(o.title)+'</strong> · '+(o.status==='done'?'aprovada':STAT[o.status].toLowerCase())+'</p>'+(o.photoId?'<img class="proof" data-photo="'+o.photoId+'" alt="Foto de comprovação">':'<div class="banner blue">Comprovada sem foto.</div>')+'<div class="meta"><span>Enviada por '+esc(nameOf(o.submittedBy))+' '+(o.submittedAt?brTime(o.submittedAt):'')+'</span>'+(o.reviewedBy?'<span>Analisada por '+esc(nameOf(o.reviewedBy))+' '+brTime(o.reviewedAt)+'</span>':'')+'</div>'+
    '<h4>Histórico da tarefa</h4><div>'+o.log.slice().reverse().map(l=>'<div class="ev"><span></span><span>'+esc(l.text)+' <span class="muted sm">· '+esc(nameOf(l.by))+'</span></span><span class="sm muted">'+brTime(l.at)+'</span></div>').join('')+'</div><button class="btn" data-a="close">Fechar</button>');
 }
 function winnerModal(pid){
@@ -1416,6 +1439,7 @@ const H={
  pick:async d=>{UI.login={sel:d.id,err:'',mode:''};render()},unpick:()=>{UI.login={sel:null,err:'',mode:''};render()},signup:()=>{UI.login={sel:null,err:'',mode:'signup'};render()},
  start:async d=>{await res(A.start(UI.me,d.id))},
  claim:async d=>{if(await res(A.claim(UI.me,d.id),'Tarefa assumida. Boa missão!')&&UI.spin.stage==='result')render()},
+ nophoto:async d=>{if(UI.busy)return;UI.busy=true;try{const r=await A.noPhoto(UI.me,d.id);if(await res(r,r.auto?'Pronto! +'+(r.points||0)+' pontos creditados.':'Enviada! Agora outra pessoa precisa confirmar.')){closeModal();if(r.auto)confetti(30)}}finally{UI.busy=false}},
  submit:async d=>submitModal(d.id),review:d=>reviewModal(d.id),proof:d=>proofModal(d.id),
  newtask:async ()=>taskForm(),editdef:d=>taskForm(S.tasks.find(x=>x.id===d.id)),
  deldef:async d=>confirmModal('Remover tarefa recorrente?','Se ela já tem ocorrências, será apenas desativada e o histórico continua.','Remover',async ()=>{const r=await A.deleteDef(UI.me,d.id);if(await res(r,r.deactivated?'Tarefa desativada':'Tarefa removida'));}),
@@ -1530,7 +1554,7 @@ const F={...PET_F,
  profile:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),plays:isAdmin(UI.me)?fd.get('plays')==='on':null}),'Perfil salvo')},
  person:async(fd,f)=>{await res(A.saveUser(UI.me,{id:f.dataset.id,name:fd.get('name'),active:fd.get('active')==null?null:fd.get('active')==='1'}),'Participante salvo')},
  adduser:async fd=>{await res(A.addUser(UI.me,fd.get('name')),'Participante adicionado.')},
- rules:async fd=>{const g=k=>Math.floor(num(fd,k));await res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
+ rules:async fd=>{const g=k=>Math.floor(num(fd,k));if(REMOTE)await A.setProof(UI.me,fd.get('proof')||'both');await res(A.saveSettings(UI.me,{appName:fd.get('appName'),prize:num(fd,'prize'),restDays:g('restDays'),coinRate:num(fd,'coinRate'),shop:fd.get('shop')==='on',proofMode:fd.get('proof')||'both',penalty:{enabled:fd.get('pen')==='on',latePoints:g('late'),missPoints:g('miss'),grace:g('grace'),maxPerOcc:g('max')},challenges:String(fd.get('challenges')).split('\n')}),'Regras salvas')},
  pick:async fd=>{const picks=S.catalog.map(m=>({id:m.id,on:fd.get('on_'+m.id)==='on',points:num(fd,'p_'+m.id)}));const r=await A.applyPicks(UI.me,picks);if(!r.ok){toast(r.err,'err');return}const n=picks.filter(x=>x.on).length;toast(n+' tarefas valendo. Bom jogo!','star');},
  catalog:async fd=>{let ok_=true;for(const m of S.catalog){const v=num(fd,'m_'+m.id);if(v!==m.points){const r=await A.saveCatalog(UI.me,m.id,v);if(!r.ok){toast(m.title+': '+r.err,'err');ok_=false}}}if(ok_)toast('Pontos atualizados','ok')},
  adjust:async fd=>{await res(A.adjust(UI.me,fd.get('uid'),num(fd,'delta'),fd.get('reason'),fd.get('pid')),'Ajuste registrado')},
@@ -1605,7 +1629,7 @@ const Remote=REMOTE?(()=>{
   }
   function build(r){
     const st=r.settings[0]||{};
-    const settings={appName:st.app_name||'Rei da Faxina',prize:+st.prize||0,restDays:st.rest_days||0,shop:st.shop_enabled!==false,coinRate:st.coin_rate||0,openSignup:st.open_signup!==false,startDate:today(),gameStart:st.game_start||'',
+    const settings={appName:st.app_name||'Rei da Faxina',prize:+st.prize||0,restDays:st.rest_days||0,shop:st.shop_enabled!==false,coinRate:st.coin_rate||0,openSignup:st.open_signup!==false,startDate:today(),proofMode:st.proof_mode||'both',gameStart:st.game_start||'',
       penalty:st.penalty||{enabled:false,latePoints:0,missPoints:0,maxPerOcc:5,grace:1},challenges:st.challenges||[],houseCode:r._house||''};
     const num_=a=>parseInt(String(a).replace(/\D/g,''),10)||0;
     return {v:1,setupDone:true,settings,
@@ -1728,6 +1752,8 @@ const Remote=REMOTE?(()=>{
       return await rpc('submit_evidence',{p_occ:id,p_path:path});
     }catch(e){return fail(msg(e))}
   };
+  A.noPhoto=(by,id)=>rpc('submit_nophoto',{p_occ:id},d=>{(d.achievements||[]).forEach(a=>{const x=ACH.find(k=>k.id===a);if(x)celebrations.push({type:'ach',userId:by,ach:x})})});
+  A.setProof=(by,m)=>rpc('set_proof_mode',{p:m});
   A.review=(by,id,approve,reason)=>rpc('review_occurrence',{p_occ:id,p_approve:!!approve,p_reason:reason||null},d=>{
     (d.achievements||[]).forEach(a=>{const x=ACH.find(k=>k.id===a);if(x)celebrations.push({type:'ach',userId:d.userId,ach:x})});
   });
