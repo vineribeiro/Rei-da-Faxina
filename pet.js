@@ -95,7 +95,7 @@ const petMood=(st,now)=>{
 /* ---- estado salvo ---- */
 const petGet=()=>(S.pets||{})[UI.me]||null;
 const petOwn=P=>(P&&P.own)||[];
-const petCur=P=>P&&P.cur?petTick(P.cur,Date.now(),petOwn(P)):null;
+const petCur=P=>P&&P.cur?(REMOTE?P.cur:petTick(P.cur,Date.now(),petOwn(P))):null;
 async function petPersist(P,spend,reason){
   const r=await A.petSave(UI.me,P,spend||0,reason||'');
   if(r&&r.ok&&!REMOTE){/* local: já gravado */}
@@ -120,6 +120,7 @@ const PET_ACT={
 const PET_LABEL={racao:'Ração',fruta:'Fruta',banquete:'Banquete',agua:'Água',brincar:'Brincar',passear:'Passear',carinho:'Carinho',banho:'Banho',limpar:'Limpar',cobertor:'Cobertor',gelo:'Gelo',remedio:'Remédio'};
 const PET_ICON={racao:'🍖',fruta:'🍎',banquete:'🍰',agua:'💧',brincar:'🎾',passear:'🌳',carinho:'💗',banho:'🛁',limpar:'🧹',cobertor:'🧣',gelo:'🧊',remedio:'💊'};
 async function petDo(id){
+  if(REMOTE)return petCommand('care',id);
   const P=petGet(),me=UI.me;if(!P||!P.cur)return;const now=Date.now(),def=PET_ACT[id];
   const s=petTick(P.cur,now,petOwn(P));
   if(s.stage==='egg'||s.dead||s.retired)return;
@@ -158,9 +159,20 @@ const PET_H={
 };
 const PET_F={pname:async fd=>{const n=String(fd.get('n')||'').trim().slice(0,16);if(n.length<2)return toast('Use pelo menos 2 letras.','err');const P=petGet();if(!P||!P.cur)return;
   const s=JSON.parse(JSON.stringify(P.cur));s.name=n;s.named=true;closeModal();const r=await petPersist(Object.assign({},P,{cur:s}),0,'');if(r.ok&&!REMOTE)render()}};
+// Commands are evaluated on the server. Never submit client-computed pet state/cost.
+async function petCommand(action,value){
+  const r=await A.petAction(action,value);if(!r.ok){toast(r.err,'err');return r}
+  if(action!=='tick')toast('Faxinho atualizado!','ok');return r;
+}
+for(const [key,action] of Object.entries({pget:'adopt',pegg:'egg',pwarm:'warm',previve:'revive',pbuy:'buy',pwear:'wear'})){
+ const local=PET_H[key];PET_H[key]=async d=>REMOTE?petCommand(action,d&&d.k):local(d);
+}
+const localPetName=PET_F.pname;
+PET_F.pname=async fd=>{if(!REMOTE)return localPetName(fd);const r=await petCommand('name',String(fd.get('n')||'').trim());if(r.ok)closeModal()};
 /* ---- eventos: chocar, partir, aposentar ---- */
 async function petCheck(){
-  if(UI.pbusy||!UI.me||!S.pets)return;const P=petGet();if(!P||!P.cur)return;const was=P.cur,s=petCur(P);
+  if(UI.pbusy||!UI.me||!S.pets)return;
+  if(REMOTE){if(!petGet()||Date.now()-(UI.lastPetTick||0)<60000)return;UI.lastPetTick=Date.now();UI.pbusy=true;try{await A.petAction('tick','')}finally{UI.pbusy=false}return}const P=petGet();if(!P||!P.cur)return;const was=P.cur,s=petCur(P);
   const hatched=was.stage==='egg'&&s.stage!=='egg',died=!was.dead&&s.dead,retired=!was.retired&&s.retired;
   if(!hatched&&!died&&!retired)return;
   UI.pbusy=true;
@@ -308,3 +320,5 @@ function petHome(){
   const spr=st.stage==='egg'?fxEgg(st.seed,st.warm,3):petSpr(st.species,{px:3,mood:petFace(st,now).mood,stage:st.stage,wear:P.wear,form:st.form});
   return '<section class="card row sp pmini"><div class="row"><span class="pm-s">'+spr+'</span><div><strong>'+esc(st.name||(sp?sp.n:'Ovo misterioso'))+'</strong><div class="sm muted">'+esc(m.t)+'</div></div></div><button class="btn sm '+(m.sev?'yellow':'')+'" data-a="go" data-v="pet">'+(m.sev?'Cuidar':'Ver')+'</button></section>';
 }
+
+setInterval(()=>{if(typeof UI!=='undefined'&&UI.me&&!document.hidden)petCheck()},60000);

@@ -100,3 +100,7 @@ Rode `supabase/reinicio.sql` uma vez no SQL Editor. Ele adiciona a frequência "
 ## Comprovação sem foto
 
 Rode `supabase/comprovacao.sql` uma vez no SQL Editor. O administrador escolhe o modo em Ajustes, no bloco "Jogo e premiação": só foto, foto ou "fiz, sem foto" (outra pessoa confirma, padrão) ou sem foto na confiança (vale na hora).
+
+## Atualização de segurança e confiabilidade
+
+Para instalar a versão que usa `pet_action`, aplique `supabase/audit-upgrade.sql` **depois** dos scripts de configuração existentes. Em uma instalação que já tem dados, execute somente esse upgrade, nunca o schema inicial ou o reinício. Consulte `AUDIT-FIXES.md` para a ordem de publicação e a recuperação de senha.

@@ -147,3 +147,11 @@ label.f,.fs,.lbl,.stat .lbl,.stats3 .lbl,.tbl th,.hud-row .hl,.slot .sm,.title .
  .card.form>label:last-child{grid-column:1/-1}
 }
 .stat .big,.stats3 .big{font-size:28px}
+
+/* Texto de uso diário permanece legível; títulos e botões preservam a identidade retrô. */
+.f,.in,.login p,.sheet p,.muted,.sm{font-family:system-ui,-apple-system,'Segoe UI',sans-serif;line-height:1.5}
+.f{font-size:14px}.in{font-size:16px}.login p,.sheet p{font-size:16px}.sm{font-size:14px}
+body:has(.login)::after,body:has(.sheet)::after{display:none}
+.login{width:min(100%,520px);padding-inline:4px}
+.login .tabs{flex-wrap:wrap}.login .tab{min-height:44px}
+@media(max-width:480px){.login{margin-top:24px}.login .tab{font-size:9px;flex:1}.sheet{max-height:90dvh;overflow:auto}}

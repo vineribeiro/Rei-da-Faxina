@@ -859,7 +859,7 @@ async function importBackup(by,text){
 function resetAll(){Adapter.clear();S=seed();commit()}
 /* ===== UI: base ===== */
 const $=(s,r=document)=>r.querySelector(s);
-const UI={view:'home',me:null,filters:{who:'all',cat:'all',st:'open',q:''},tab:'occ',rankP:null,hist:{who:'all',type:'all',month:'all',cat:'all'},obStep:0,login:{sel:null,err:'',mode:''},spin:{mode:'task',cat:'cozinha',excl:[],stage:'pick',rot:0,res:null},shopTab:'shop',setTab:'me',achWho:null,busy:false,photo:null,modal:null};
+const UI={recovery:false,formDirty:false,view:'home',me:null,filters:{who:'all',cat:'all',st:'open',q:''},tab:'occ',rankP:null,hist:{who:'all',type:'all',month:'all',cat:'all'},obStep:0,login:{sel:null,err:'',mode:''},spin:{mode:'task',cat:'cozinha',excl:[],stage:'pick',rot:0,res:null},shopTab:'shop',setTab:'me',achWho:null,busy:false,photo:null,modal:null};
 const ICONS={
  home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
  tasks:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/>',
@@ -933,8 +933,19 @@ function confetti(n){
   for(let i=0;i<(n||40);i++){const s=document.createElement('span');s.textContent=em[i%em.length];s.style.left=Math.random()*100+'%';s.style.animationDuration=(1.6+Math.random()*1.8)+'s';s.style.animationDelay=Math.random()*.5+'s';w.appendChild(s)}
   document.body.appendChild(w);setTimeout(()=>w.remove(),4200);
 }
-function openModal(html){UI.modal=html;$('#modal').innerHTML='<div class="ov" data-a="ov"><div class="sheet" role="dialog" aria-modal="true">'+html+'</div></div>';hydrate();const f=$('#modal [autofocus],#modal input:not([type=hidden]),#modal textarea,#modal select');if(f&&!f.type?.match(/file/))try{f.focus()}catch(e){}}
-function closeModal(){UI.modal=null;UI.photo=null;$('#modal').innerHTML=''}
+let modalReturn=null,modalDirtyBefore=false;
+const focusables=()=>[...document.querySelectorAll('#modal button:not([disabled]),#modal input:not([disabled]),#modal select:not([disabled]),#modal textarea:not([disabled]),#modal a[href],[tabindex="0"]')].filter(e=>e.closest('#modal')&&!e.hidden&&e.type!=='hidden');
+function openModal(html){
+  if(!UI.modal){modalReturn=document.activeElement;modalDirtyBefore=UI.formDirty;}
+  UI.modal=html;$('#modal').innerHTML='<div class="ov" data-a="ov"><div class="sheet" role="dialog" aria-modal="true" tabindex="-1">'+html+'</div></div>';
+  const sheet=$('#modal .sheet'),title=sheet.querySelector('h1,h2,h3');
+  if(title){title.id='dialog-title';sheet.setAttribute('aria-labelledby',title.id)}else sheet.setAttribute('aria-label','Rei da Faxina');
+  $('#app').inert=true;hydrate();(sheet.querySelector('[autofocus]')||focusables()[0]||sheet).focus();
+}
+function closeModal(){const wasOpen=!!UI.modal;if(wasOpen)UI.formDirty=modalDirtyBefore;UI.modal=null;UI.photo=null;$('#modal').innerHTML='';$('#app').inert=false;
+  if(modalReturn&&modalReturn.isConnected)modalReturn.focus();else $('#app button')?.focus();modalReturn=null;
+  if(wasOpen&&REMOTE&&Remote.dirty&&!UI.formDirty)queueMicrotask(()=>Remote.draw(false));
+}
 async function hydrate(){
   for(const img of document.querySelectorAll('img[data-photo]')){
     if(img.dataset.done)continue;img.dataset.done='1';const d=await Adapter.getPhoto(img.dataset.photo);
@@ -1339,6 +1350,7 @@ function vTitle(){
 }
 function render(){
   const app=$('#app'),y=window.scrollY,fid=document.activeElement&&document.activeElement.id;
+  if(UI.recovery){app.innerHTML=vRecovery();return}
   if(!UI.started){app.innerHTML=vTitle();document.title=(S.settings&&S.settings.appName)||'Rei da Faxina';const b=$('#startbtn');if(b&&!UI.autof){UI.autof=1;b.focus()}return}
   if(!S.setupDone)app.innerHTML=vOnboard();
   else if(needMigrate()){UI.me=null;app.innerHTML=vMigrate()}
@@ -1347,7 +1359,7 @@ function render(){
   else{if(UI.view==='shop'&&!S.settings.shop)UI.view='home';app.innerHTML=vShell(VIEWS[UI.view]())}
   document.title=S.settings.appName;
   if(fid==='q'){const q=$('#q');if(q){q.focus();q.setSelectionRange(q.value.length,q.value.length)}}
-  window.scrollTo(0,y);hydrate();flush();
+  UI.formDirty=false;window.scrollTo(0,y);hydrate();flush();
 }
 function flush(){
   const c=celebrations;celebrations=[];
@@ -1428,7 +1440,7 @@ const H={
  board:d=>{UI.board=d.b;render()},skin:d=>{LS.set('rdf:skin',d.k);applyLook();render()},fs:d=>{LS.set('rdf:fs',d.k);applyLook();render()},
  tutnext:d=>{tutorial(+d.i)},tutshow:()=>tutorial(0),
  lmode:d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()},
- begin:()=>{UI.started=true;sfx('win');render();if(!gameStarted()&&!UI.testSeen){UI.testSeen=1;openModal('<div class="col testpop"><div class="big-e" aria-hidden="true">🧪</div><h2>Este mês foi de teste</h2><p>Outubro serviu para testar o Rei da Faxina. Tudo foi zerado e <strong>o jogo começa de verdade em '+longDate(S.settings.gameStart)+'</strong>, com as tarefas fixas de cada um.</p><button class="btn primary" data-a="close">Entendi</button></div>')}},
+ begin:()=>{UI.started=true;sfx('win');render()},
  install:async()=>{const d=deferredInstall;if(!d)return;deferredInstall=null;d.prompt();try{await d.userChoice}catch(e){}render()},
  pickset:(d,el)=>{const f=el.closest('form');f.querySelectorAll('input[type=checkbox][data-fr]').forEach(c=>{if(d.g==='all'||c.dataset.fr===d.g)c.checked=d.v==='1'})},
  gopick:()=>{UI.view='set';UI.setTab='pick';closeModal();render()},
@@ -1578,7 +1590,7 @@ document.addEventListener('submit',async e=>{
   UI.formBusy=true;try{await fn(new FormData(f),f)}catch(err){toast('Algo deu errado. Tente de novo.','err');console.error(err)}finally{UI.formBusy=false}
 });
 document.addEventListener('change',async e=>{
-  const t=e.target;
+  const t=e.target;if(t.closest('form[data-f]'))UI.formDirty=true;
   if(t.dataset.filter){const k=t.dataset.filter;if(k==='rankP')UI.rankP=t.value;else if(k==='spinCat')UI.spin.cat=t.value;else UI.filters[k]=t.value;render()}
   else if(t.dataset.hist){UI.hist[t.dataset.hist]=t.value;render()}
   else if(t.dataset.excl){const x=UI.spin.excl,id=t.dataset.excl;UI.spin.excl=t.checked?x.filter(i=>i!==id):x.concat(id);UI.spin.stage='pick';render()}
@@ -1586,8 +1598,13 @@ document.addEventListener('change',async e=>{
   else if(t.id==='photocam'||t.id==='photofile'){const file=t.files&&t.files[0];if(file)loadPhoto(file)}
   else if(t.id==='restorefile'){const file=t.files&&t.files[0];if(file){const r=new FileReader();r.onload=()=>{$('#restoretxt').value=r.result};r.readAsText(file)}}
 });
-document.addEventListener('input',e=>{if(e.target.id==='q'){UI.filters.q=e.target.value;const l=$('#tasklist');if(l)l.innerHTML=taskList()}});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.modal)closeModal()});
+document.addEventListener('input',e=>{if(e.target.closest('form[data-f]'))UI.formDirty=true;if(e.target.id==='q'){UI.filters.q=e.target.value;const l=$('#tasklist');if(l)l.innerHTML=taskList()}});
+document.addEventListener('keydown',e=>{
+ if(!UI.modal)return;
+ if(e.key==='Escape'){e.preventDefault();closeModal();return}
+ if(e.key==='Tab'){const f=focusables();if(!f.length){e.preventDefault();$('#modal .sheet').focus();return}
+ const i=f.indexOf(document.activeElement);if(e.shiftKey&&(i<=0)){e.preventDefault();f[f.length-1].focus()}else if(!e.shiftKey&&(i<0||i===f.length-1)){e.preventDefault();f[0].focus()}}
+});
 function loadPhoto(file){
   const box=$('#prevbox'),btn=$('#sendbtn');
   if(!/^image\/(jpeg|png|webp)$/.test(file.type)){toast('Use uma imagem JPEG, PNG ou WebP.','err');return}
@@ -1602,7 +1619,8 @@ function loadPhoto(file){
 /* ===== modo Supabase (ativo quando config.js traz url e anonKey) =====
    O app só LÊ as tabelas e chama funções (RPC). Quem decide pontos, permissões e regras é o servidor. */
 const Remote=REMOTE?(()=>{
-  const sb=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
+  const linkError=new URLSearchParams(location.hash.slice(1)).get('error_description');
+  const sb=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
   const R={sb,me:null,sig:'',houseCode:'',status:null,booting:true,timer:null,dirty:false,q:Promise.resolve()};
   const msg=e=>{
     const m=(e&&e.message)||String(e||'Erro');
@@ -1650,25 +1668,31 @@ const Remote=REMOTE?(()=>{
       pets:Object.fromEntries((r.pets||[]).map(x=>[x.id,x.data])),
       audit:r.audit_log.map(a=>({id:a.id,actorId:a.actor_id||'system',action:a.action,entity:a.entity_type,entityId:a.entity_id,reason:a.reason||'',at:a.created_at})).reverse()};
   }
+  R.raw=null;R.versions={};R.versionSupport=null;
   R.load=async()=>{
-    const rs=await Promise.all(TABLES.map(all));const raw={};TABLES.forEach((t,i)=>raw[t]=rs[i]);
-    try{raw.pets=await all('pets');R.petsOk=true}catch(e){raw.pets=[];R.petsOk=false}
+    let versions=null;
+    if(R.versionSupport!==false){const v=await sb.rpc('sync_versions');if(v.error){if(v.error.code==='PGRST202')R.versionSupport=false;else throw v.error}else{versions=v.data;R.versionSupport=true}}
+    const names=[...TABLES,'pets'],raw=R.raw?{...R.raw}:{};
+    const changed=names.filter(t=>!R.raw||!versions||R.versions[t]!==versions[t]);
+    await Promise.all(changed.map(async t=>{if(t==='pets'){try{raw.pets=await all(t);R.petsOk=true}catch(e){if(e.code!=='42P01'&&e.code!=='PGRST205')throw e;raw.pets=[];R.petsOk=false}}else raw[t]=await all(t)}));
     const mine=raw.profiles.find(p=>p.id===R.me);
-    raw._house=(mine&&mine.role==='admin')?((await sb.rpc('get_house_code')).data||''):'';
-    return raw;
+    if(mine&&mine.role==='admin'){if(!R.raw||changed.includes('settings')){const h=await sb.rpc('get_house_code');if(h.error)throw h.error;raw._house=h.data||''}}else raw._house='';
+    R.raw=raw;R.versions=versions||{};return raw;
   };
   R.apply=raw=>{const sig=JSON.stringify(raw);if(sig===R.sig)return false;R.sig=sig;S=build(raw);return true};
   // Não redesenha a tela enquanto a pessoa digita ou a roleta gira (a não ser após uma ação dela mesma)
   R.draw=force=>{
+    if(UI.modal){R.dirty=true;return}
     const a=document.activeElement;
-    const typing=a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest('#app');
-    if(!force&&(typing||UI.spin.stage==='spin')){R.dirty=true;return}
+    const typing=UI.modal||UI.formDirty||a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)&&a.closest&&a.closest('#app');
+    if((!force||!UI.formBusy)&&(typing||UI.spin.stage==='spin')){R.dirty=true;return}
     R.dirty=false;render();
   };
-  R.refresh=force=>{R.q=R.q.then(async()=>{
-    if(!R.me)return;
+  R.refresh=force=>{if(R.refreshing&&!force)return R.q;R.refreshing=true;R.q=R.q.catch(()=>{}).then(async()=>{
+    if(!R.me){R.refreshing=false;return}
     try{const raw=await R.load();const ch=R.apply(raw);if(ch||force)R.draw(force)}
     catch(e){if(!R.warned){R.warned=true;toast(msg(e),'err');setTimeout(()=>{R.warned=false},60000)}}
+    finally{R.refreshing=false}
   });return R.q};
   R.rpc=async(fn,args,before)=>{
     try{
@@ -1681,14 +1705,14 @@ const Remote=REMOTE?(()=>{
     }catch(e){return fail(msg(e))}
   };
   R.fetchStatus=async()=>{try{const {data}=await sb.rpc('public_status');R.status=data||null}catch(e){R.status=null}};
-  R.startPolling=()=>{R.stopPolling();R.timer=setInterval(()=>{if(!document.hidden)R.refresh(false)},20000)};
+  R.startPolling=()=>{R.stopPolling();R.timer=setInterval(()=>{if(!document.hidden&&!R.refreshing)R.refresh(false)},R.versionSupport===false?120000:20000)};
   R.stopPolling=()=>{if(R.timer){clearInterval(R.timer);R.timer=null}};
   R.enter=async id=>{
-    R.me=id;R.sig='';
+    R.me=id;R.sig='';R.raw=null;R.versions={};
     try{R.apply(await R.load())}catch(e){R.me=null;return fail(msg(e))}
     const u=user(id);
     if(!u||!u.active){try{await sb.auth.signOut()}catch(e){}R.me=null;S=remoteSkeleton();return fail('Sua conta não tem acesso ao jogo (desativada ou sem cadastro). Fale com o administrador.')}
-    UI.me=id;UI.view='home';R.startPolling();
+    UI.me=id;UI.view='home';R.startPolling();R.cleanUploads().catch(()=>{});
     sb.rpc('sweep').then(()=>R.refresh(false),()=>{});   // gera as tarefas recorrentes e aplica penalidades vencidas
     return ok();
   };
@@ -1707,7 +1731,7 @@ const Remote=REMOTE?(()=>{
     return R.enter(data.user.id);
   };
   R.signOut=async()=>{
-    R.stopPolling();R.me=null;UI.me=null;R.sig='';S=remoteSkeleton();UI.login={sel:null,err:'',mode:'in'};
+    R.stopPolling();R.me=null;UI.me=null;R.sig='';R.raw=null;R.versions={};Adapter.mem.clear();S=remoteSkeleton();UI.login={sel:null,err:'',mode:'in'};
     try{await sb.auth.signOut()}catch(e){}
     await R.fetchStatus();render();
   };
@@ -1715,9 +1739,10 @@ const Remote=REMOTE?(()=>{
     await R.fetchStatus();
     try{const {data}=await sb.auth.getSession();
       if(data&&data.session){const r=await R.enter(data.session.user.id);if(!r.ok)UI.login={sel:null,err:r.err,mode:'in'}}}catch(e){}
+    if(linkError){UI.started=true;UI.login={mode:'in',err:'Este link expirou ou é inválido. Solicite um novo link em Esqueci minha senha.'};history.replaceState(null,'',location.pathname)}
     R.booting=false;render();
   };
-  sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&R.me){R.stopPolling();R.me=null;UI.me=null;S=remoteSkeleton();render()}});
+  sb.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){UI.recovery=true;UI.started=true;setTimeout(()=>{closeModal();render()},0)}if(ev==='SIGNED_OUT'&&R.me){R.stopPolling();R.me=null;UI.me=null;S=remoteSkeleton();render()}});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&R.me)R.refresh(false)});
   document.addEventListener('focusout',()=>{if(R.dirty)setTimeout(()=>{if(R.dirty)R.draw(false)},250)});
 
@@ -1746,11 +1771,24 @@ const Remote=REMOTE?(()=>{
     try{
       const blob=await (await fetch(photo)).blob();
       const path=by+'/'+id+'-'+Date.now()+'.jpg';
+      const pending=JSON.parse(LS.get('rdf:uploads:'+by)||'[]');pending.push({path,at:Date.now()});LS.set('rdf:uploads:'+by,JSON.stringify(pending));
       const up=await sb.storage.from('evidence').upload(path,blob,{contentType:blob.type||'image/jpeg',upsert:false});
-      if(up.error)return fail(msg(up.error));
+      if(up.error){await R.cleanUploads(path);return fail(msg(up.error))}
       Adapter.mem.set(path,photo);
-      return await rpc('submit_evidence',{p_occ:id,p_path:path});
+      const result=await rpc('submit_evidence',{p_occ:id,p_path:path});
+      if(result.ok)LS.set('rdf:uploads:'+by,JSON.stringify(JSON.parse(LS.get('rdf:uploads:'+by)||'[]').filter(p=>(typeof p==='string'?p:p.path)!==path)));
+      if(!result.ok)await R.cleanUploads(path);
+      return result;
     }catch(e){return fail(msg(e))}
+  };
+  R.cleanUploads=async failedPath=>{
+    if(!R.me)return;const key='rdf:uploads:'+R.me;let paths;try{paths=JSON.parse(LS.get(key)||'[]')}catch(e){return}
+    const keep=[];
+    for(const entry of paths){const path=typeof entry==='string'?entry:entry.path;if(path!==failedPath&&Date.now()-(entry.at||0)<600000){keep.push(entry);continue}try{
+      const r=await sb.rpc('abandon_evidence_upload',{p_path:path});
+      if(r.error){keep.push(entry);continue}
+      if(r.data===true){const d=await sb.storage.from('evidence').remove([path]);if(d.error){keep.push(entry);continue}Adapter.mem.delete(path)}
+    }catch(e){keep.push(entry)}}const seen=new Set(paths.map(e=>typeof e==='string'?e:e.path));const extra=JSON.parse(LS.get(key)||'[]').filter(e=>!seen.has(typeof e==='string'?e:e.path));LS.set(key,JSON.stringify([...keep,...extra]));
   };
   A.noPhoto=(by,id)=>rpc('submit_nophoto',{p_occ:id},d=>{(d.achievements||[]).forEach(a=>{const x=ACH.find(k=>k.id===a);if(x)celebrations.push({type:'ach',userId:by,ach:x})})});
   A.setProof=(by,m)=>rpc('set_proof_mode',{p:m});
@@ -1777,7 +1815,17 @@ const Remote=REMOTE?(()=>{
   A.addUser=()=>fail('Cada jogador faz o próprio cadastro na tela de entrada.');
   A.saveSettings=(by,d)=>rpc('save_settings',{p:d});
   A.saveCategory=(by,d)=>rpc('save_category',{p:{id:d.id||null,name:d.name,icon:d.icon}});
-  A.petSave=async(by,P,spend,reason)=>{S.pets=S.pets||{};const old=S.pets[by];S.pets[by]=P;const r=await rpc('pet_save',{p_state:P,p_spend:Math.round(spend||0),p_reason:reason||''});if(!r.ok)S.pets[by]=old;return r};
+  A.petAction=async(action,value)=>{
+    const storageKey='rdf:pet-request:'+UI.me;let pending;try{pending=JSON.parse(LS.get(storageKey)||'null')}catch(e){}
+    if(pending&&(pending.action!==action||pending.value!==(value||''))){const resolved=await A.petAction(pending.action,pending.value);if(!resolved.ok)return resolved;pending=null}
+    pending=pending||{action,value:value||'',key:crypto.randomUUID()};LS.set(storageKey,JSON.stringify(pending));
+    try{
+      const r=await sb.rpc('pet_action',{p_action:pending.action,p_value:pending.value,p_key:pending.key});
+      if(r.error){if(r.error.code)LS.set(storageKey,'null');return fail(msg(r.error))}
+      LS.set(storageKey,'null');await R.refresh(true);return ok(r.data||{});
+    }catch(e){return fail(msg(e))}
+  };
+  A.petSave=()=>Promise.resolve(fail('Atualize o aplicativo para cuidar do Faxinho.'));
   A.applyPicks=(by,picks)=>rpc('apply_task_picks',{p:picks.map(x=>({id:x.id,on:!!x.on,points:x.points}))});
   A.saveCatalog=(by,id,points)=>rpc('save_catalog_points',{p_id:id,p_points:Number.isFinite(points)?points:null});
   sweep=async()=>{try{await sb.rpc('sweep')}catch(e){}await R.refresh(false)};
@@ -1785,7 +1833,18 @@ const Remote=REMOTE?(()=>{
   H.lmode=d=>{UI.login={sel:null,err:'',mode:d.m,draft:(UI.login&&UI.login.draft)||null};render()};
   H.logout=()=>R.signOut();
   H.changepass=()=>passModal();
+  H.forgot=()=>openModal('<h2>Recuperar acesso</h2><form class="col" data-f="forgot"><p>Enviaremos um link para você definir uma nova senha.</p><label class="f">E-mail<input class="in" name="email" type="email" autocomplete="email" required></label><button class="btn primary" type="submit">Enviar link</button><button class="btn ghost" type="button" data-a="close">Voltar</button></form>');
   Object.assign(F,{
+    forgot:async fd=>{
+      const {error}=await sb.auth.resetPasswordForEmail(String(fd.get('email')||'').trim(),{redirectTo:new URL('./',location.href).href});
+      if(error){toast(msg(error),'err');return}
+      closeModal();toast('Se o e-mail estiver cadastrado, você receberá um link de recuperação. Confira também o spam.','ok');
+    },
+    recoverpass:async fd=>{
+      const pw=String(fd.get('p1')||'');if(pw.length<6||pw!==fd.get('p2'))return toast('Use pelo menos 6 caracteres e repita a mesma senha.','err');
+      const {error}=await sb.auth.updateUser({password:pw});if(error)return toast(msg(error),'err');
+      UI.recovery=false;history.replaceState(null,'',location.pathname);await R.signOut();toast('Senha atualizada. Entre com sua nova senha.','ok');
+    },
     auth:async(fd,f)=>{
       const mode=f.dataset.mode,email=String(fd.get('email')||'').trim(),pw=String(fd.get('password')||'');
       const dr={name:fd.get('name'),avatar:fd.get('avatar'),color:fd.get('color'),code:fd.get('code'),email};
@@ -1805,6 +1864,7 @@ const Remote=REMOTE?(()=>{
 })():null;
 function passModal(){openModal('<h2>Trocar senha</h2><form class="col" data-f="pass"><label class="f">Nova senha<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label><div class="row"><button class="btn primary" type="submit">Salvar senha</button><button class="btn ghost" type="button" data-a="close">Cancelar</button></div></form>')}
 function vLoginRemote(){return vAuthForm(Remote.status||{},Remote.booting,true)}
+function vRecovery(){return '<div class="login"><h1>Nova senha</h1><form class="card col" data-f="recoverpass"><p>Escolha uma nova senha para sua conta.</p><label class="f">Nova senha<input class="in" name="p1" type="password" autocomplete="new-password" minlength="6" required></label><label class="f">Repita a senha<input class="in" name="p2" type="password" autocomplete="new-password" minlength="6" required></label><button class="btn primary" type="submit">Salvar nova senha</button></form></div>'}
 function vAuthForm(st,booting,remote){
   const L=UI.login||{},mode=L.mode==='up'?'up':'in',dr=L.draft||{};
   let h='<div class="login"><div class="brand"><img class="logo-i" src="img/crown-3.png" alt="" width="34" height="25">'+esc(st.appName||'Rei da Faxina')+'</div>';
@@ -1813,6 +1873,7 @@ function vAuthForm(st,booting,remote){
   if(remote&&Remote.status&&!st.hasAdmin)h+='<div class="banner blue"><span><strong>O jogo ainda não tem administrador.</strong> Quem administra cria o cadastro na aba "Criar meu cadastro" com o e-mail definido na instalação do banco. O administrador não precisa do código da casa.</span></div>';
   else if(mode==='up'&&st.openSignup===false)h+='<div class="banner red">Os cadastros estão fechados pelo administrador.</div>';
   else if(mode==='up'&&st.players>=4)h+='<div class="banner red">O jogo já tem 4 jogadores.</div>';
+  if(remote&&st.gameStart&&today()<st.gameStart)h+='<p class="banner blue" role="status">A competição começa em '+esc(longDate(st.gameStart))+'. Você já pode acessar sua conta.</p>';
   h+='<form class="card col" data-f="auth" data-mode="'+mode+'"><h2>'+(mode==='up'?'Criar meu cadastro':'Entrar')+'</h2>';
   if(mode==='up'){
     const av=dr.avatar||AVATARS[0],co=dr.color||COLORS[0];
@@ -1823,7 +1884,7 @@ function vAuthForm(st,booting,remote){
    '<label class="f">Senha'+(mode==='up'?' (mínimo 6 caracteres)':'')+'<input class="in" name="password" type="password" autocomplete="'+(mode==='up'?'new-password':'current-password')+'" minlength="6" required></label>';
   if(mode==='up'&&remote)h+='<label class="f">Código da casa<input class="in" name="code" autocomplete="off" value="'+esc(dr.code||'')+'" placeholder="Peça ao administrador" style="text-transform:uppercase"></label>';
   if(L.err)h+='<div class="banner red" role="alert">'+esc(L.err)+'</div>';
-  return h+'<button class="btn primary" type="submit">'+(mode==='up'?'Criar cadastro e entrar':'Entrar')+'</button></form></div>';
+  return h+'<button class="btn primary" type="submit">'+(mode==='up'?'Criar cadastro e entrar':'Entrar')+'</button>'+(remote&&mode==='in'?'<button class="btn ghost" type="button" data-a="forgot">Esqueci minha senha</button>':'')+'</form></div>';
 }
 function remoteSkeleton(){const s=seed();s.setupDone=true;s.users=[];s.categories=[];s.catalog=[];s.rewards=[];s.periods=[];s.settings.challenges=[];return s}
 
