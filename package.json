@@ -1,0 +1,1 @@
+{"name":"rei-da-faxina","private":true,"scripts":{"test":"node --test tests/*.test.cjs"},"devDependencies":{"@electric-sql/pglite":"0.3.14","jsdom":"26.1.0"}}
